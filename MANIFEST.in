@@ -1,0 +1,4 @@
+include README.md
+recursive-include octoprint_SMuFF/templates *
+recursive-include octoprint_SMuFF/translations *
+recursive-include octoprint_SMuFF/static *
