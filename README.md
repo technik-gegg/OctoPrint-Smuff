@@ -23,7 +23,9 @@ Set **login shell over serial** to **No** and **serial port hardware enabled** t
 Finish raspi-config and reboot. After rebooting, make sure you'll see the **ttyS0** device in your **/dev** folder.
 
 For the physical, serial connection take a 3-Wire cable and connect the pins **6 or 9 (GND)**, **8 (TX, aka GPIO14 aka UART0_TXD)** and **10 (RX aka GPIO15 aka UART0_RXD)** of the Raspi extension connector to the serial interface of your SMuFF (on the SKR V1.1 mini that's the Serial 1 port).
+
 ![Raspi-Connector](http://www.ozone3d.net/public/jegx/201503/raspberry-pi-26-pin-gpio-layout.jpg)
+Raspberry Pi extension connector
 
 Make sure that you have a cross-over connection:
 
@@ -32,6 +34,7 @@ Make sure that you have a cross-over connection:
 - and RX goes to TX
 
 You don't have to wire any of the power pins (+5V or +3.3V).
+Please make sure you have your SMuFF configured for **115200 baud** as well.
 
 ## Configuration
 
