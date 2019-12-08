@@ -24,7 +24,7 @@ Finish raspi-config and reboot. After rebooting, make sure you'll see the **ttyS
 
 For the physical, serial connection take a 3-Wire cable and connect the pins **6 or 9 (GND)**, **8 (TX, aka GPIO14 aka UART0_TXD)** and **10 (RX aka GPIO15 aka UART0_RXD)** of the Raspi extension connector to the serial interface of your SMuFF (on the SKR V1.1 mini that's the port named TFT).
 
-![Raspi-Connector](http://www.ozone3d.net/public/jegx/201503/raspberry-pi-26-pin-gpio-layout.jpg)
+![Raspi-Connector](https://www.rs-online.com/designspark/rel-assets/dsauto/temp/uploaded/githubpin.JPG)
 
 Image: Raspberry Pi extension connector
 
@@ -39,15 +39,16 @@ Please make sure you have your SMuFF configured for **115200 baud** as well.
 
 ## Interfacing
 
-The connection between all components looks like this:
+Here's a picture how all the stuff comes together:
 
 ![OctoPrint Config](https://github.com/technik-gegg/SMuFF-Ifc/blob/master/images/Config_OctoPrint.png)
 
-The main difference would be, that your printers extuder stepper driver (E0/E1) is not connected to your extruder anymore but instead to the Feeder of the SMuFF directly.
-OctoPrint is used to controll your printer and feed it with the GCodes needed, while it's also controlling the SMuFF when a tool change is pending.
+The main difference to point out would be, that your printers extuder stepper driver (E0/E1) is not connected to your extruder anymore but instead to the Feeder of the SMuFF directly.
+OctoPrint is controlling your printer and feeding it with the GCodes, while it's also controlling the SMuFF when a tool change is pending.
+All necessary operations for a tool change (i.e. unloading current filament, loading new filament, purging etc.) need to be configured in the OctoPrint settings within the GCode-Scripts section **Before tool change** and **After tool change**.
 
 ## Configuration
 
 There's not much configuration going on here, since the only relevant paramter is the baudrate using to connect between from the Raspberry Pi to the SMuFF.
-This has been constantly set to 115200 baud, which is supposed to be fast enough.
+This has been constantly set to **115200 baud**, which ought to be fast enough.
 If, for some reason, you have to change this baudrate, you'll have to modify it within the __init__.py source file.

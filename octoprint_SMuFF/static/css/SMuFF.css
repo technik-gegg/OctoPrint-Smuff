@@ -1,1 +1,20 @@
-/* TODO: Have your plugin's CSS files generated to here. */
+.header {
+    background: #000;
+    font-size: 24pt;
+    color: #fff;
+    height: 2em;
+    align-items: center;
+    display: flex;
+    padding-left: 2em;
+    margin-bottom: 1em;
+}
+
+.header-logo {
+    background-image: url(../img/Logo_200x200.png);
+    background-size: contain;
+    background-repeat: no-repeat;
+    float: left;
+    width: 1.5em;
+    height: 1.5em;
+    margin: 0 0.5em 0 -1.5em;
+}
