@@ -31,12 +31,12 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			tty=["Not found. Please enable the UART on your Raspi!"]
 		)
 
-			__fw_info__ = self.send_and_wait("M115")
-			if __fw_info__:
-					params['firmware_info'] = __fw_info__
-			drvr = self.find_file(__ser_drvr__, "/dev")
-			if len(drvr) > 0:
-                        params['tty'] = "Found! (/dev/" + __ser_drvr__ +")"
+		__fw_info__ = self.send_and_wait("M115")
+		if __fw_info__:
+			params['firmware_info'] = __fw_info__
+		drvr = self.find_file(__ser_drvr__, "/dev")
+		if len(drvr) > 0:
+            params['tty'] = "Found! (/dev/" + __ser_drvr__ +")"
 		return  params
 
 
