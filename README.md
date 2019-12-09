@@ -24,7 +24,7 @@ Finish raspi-config and reboot. After rebooting, make sure you'll see the **ttyS
 
 Here's a nice article on that topic from [ABelectronics UK](https://www.abelectronics.co.uk/kb/article/1035/raspberry-pi-3--4-and-zero-w-serial-port-usage).
 
-For the physical, serial connection take a 3-Wire cable and connect the pins **6 or 9 (GND)**, **8 (TX, aka GPIO14 aka UART0_TXD)** and **10 (RX aka GPIO15 aka UART0_RXD)** of the Raspi extension connector to the serial interface of your SMuFF (on the SKR V1.1 mini that's the port named TFT).
+For the physical, serial connection take a 3-Wire cable and connect the pins **6 or 9 (GND)**, **8 (TX, aka GPIO14 aka UART0_TXD)** and **10 (RX aka GPIO15 aka UART0_RXD)** of the Raspi extension connector to the serial interface of your SMuFF (on the SKR V1.1 mini that's the header named **TFT**).
 
 ![Raspi-Connector](https://www.rs-online.com/designspark/rel-assets/dsauto/temp/uploaded/githubpin.JPG)
 
