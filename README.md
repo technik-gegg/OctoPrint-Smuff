@@ -57,3 +57,5 @@ If, for some reason, you have to change this baudrate, you'll have to modify it 
 
 As you open the **Settings** dialog for the plugin, you'll be provided with some information whether or not the plugin was able to connect to the SMuFF. If the connection was sucessful, you'll see the firmware information coming directly from the SMuFF.
 If you don't see the firmware info here, you'll need to check your physical connection.
+
+![OctoPrint SMuFF plugin](https://github.com/technik-gegg/SMuFF-Ifc/blob/master/images/OctoPrint%20plugin.jpg)
