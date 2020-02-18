@@ -125,23 +125,22 @@ def __plugin_load__():
 	global __fw_info__
 	__fw_info__ = "?"
 
-        global __ser0__
-        global __ser_drvr__
-        global __ser_baud__
+	global __ser0__
+	global __ser_drvr__
+	global __ser_baud__
 
-		# change the baudrate here if you have to
-		__ser_baud__ = 115200
-		__ser_drvr__ = "ttyS0"
-		try:
-			__ser0__ = serial.Serial("/dev/"+__ser_drvr__, __ser_baud__, timeout=5)
-			break
-		except SerialException:
-			self._logger.info("Serial port not found!")
-
+	# change the baudrate here if you have to
+	__ser_baud__ = 115200
+	__ser_drvr__ = "ttyS0"
+	try:
+		__ser0__ = serial.Serial("/dev/"+__ser_drvr__, __ser_baud__, timeout=5)
+		break
+	except SerialException:
+		self._logger.info("Serial port not found!")
 
 	global __plugin_hooks__
 	__plugin_hooks__ = {
-       	"octoprint.comm.protocol.gcode.queuing": __plugin_implementation__.extend_tool_change,
+    	"octoprint.comm.protocol.gcode.queuing": __plugin_implementation__.extend_tool_change,
 		"octoprint.plugin.softwareupdate.check_config": __plugin_implementation__.get_update_information
 	}
 
