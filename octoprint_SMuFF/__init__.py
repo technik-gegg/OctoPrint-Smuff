@@ -132,11 +132,11 @@ def __plugin_load__():
 	# change the baudrate here if you have to
 	__ser_baud__ = 115200
 	__ser_drvr__ = "ttyS0"
-try:
-	__ser0__ = serial.Serial("/dev/"+__ser_drvr__, __ser_baud__, timeout=5)
-except (OSError, serial.SerialException):
-	self._logger.info("Serial port not found!")
-	pass
+	try:
+		__ser0__ = serial.Serial("/dev/"+__ser_drvr__, __ser_baud__, timeout=5)
+	except (OSError, serial.SerialException):
+		self._logger.info("Serial port not found!")
+		pass
 
 	global __plugin_hooks__
 	__plugin_hooks__ = {
@@ -146,16 +146,16 @@ except (OSError, serial.SerialException):
 
 
 def __plugin_unload__():
-try:
-	if __ser0__.is_open:
-		__ser0__.close()
-except (OSError, serial.SerialException):
-	pass
+	try:
+		if __ser0__.is_open:
+			__ser0__.close()
+	except (OSError, serial.SerialException):
+		pass
 
 
 def __plugin_disabled():
-try:
-	if __ser0__.is_open:
-		__ser0__.close()
-except (OSError, serial.SerialException):
-	pass
+	try:
+		if __ser0__.is_open:
+			__ser0__.close()
+	except (OSError, serial.SerialException):
+		pass
