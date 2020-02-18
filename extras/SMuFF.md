@@ -13,11 +13,6 @@ homepage: https://github.com/technik-gegg/OctoPrint-Smuff
 source: https://github.com/technik-gegg/OctoPrint-Smuff
 archive: https://github.com/technik-gegg/OctoPrint-Smuff/archive/master.zip
 
-# TODO
-# Set this to true if your plugin uses the dependency_links setup parameter to include
-# library versions not yet published on PyPi. SHOULD ONLY BE USED IF THERE IS NO OTHER OPTION!
-#follow_dependency_links: false
-
 tags:
 - SMuFF
 - MMU
