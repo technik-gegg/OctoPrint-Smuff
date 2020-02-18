@@ -59,3 +59,12 @@ As you open the **Settings** dialog for the plugin, you'll be provided with some
 If you don't see the firmware info here, you'll need to check your physical connection.
 
 ![OctoPrint SMuFF plugin](https://github.com/technik-gegg/SMuFF-Ifc/blob/master/images/OctoPrint%20plugin.jpg)
+
+## Additional setup
+
+The main configuration will happen in the **OctoPrint GCODE Scripts section**.
+You have to apply the GCodes that will be executed **before** and **after** the tool change triggers. In those scripts you have to configure all the movements and retractions/feeds needed for a successful filament swapping.
+The picture below shows you a sample of such scripts. Be aware that you have to modify these scripts to accomodate your printer setup (i.e. bowden tube length, speeds, etc.).
+
+![OctoPrint GCODE Scripts](https://github.com/technik-gegg/SMuFF-Ifc/blob/master/images/OctoPrint_GCODE_Scripts.jpg)
+
