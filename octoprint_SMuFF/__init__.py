@@ -12,7 +12,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 
 
 	def get_settings_defaults(self):
-        self._logger.info("SMuFF plugin loaded, getting defaults")
+		self._logger.info("SMuFF plugin loaded, getting defaults")
 
 		# after connecting, read the response from the SMuFF
 		resp = __ser0__.readline()
@@ -36,7 +36,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			params['firmware_info'] = __fw_info__
 		drvr = self.find_file(__ser_drvr__, "/dev")
 		if len(drvr) > 0:
-            params['tty'] = "Found! (/dev/" + __ser_drvr__ +")"
+			params['tty'] = "Found! (/dev/" + __ser_drvr__ +")"
 		return  params
 
 
