@@ -27,7 +27,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 
 		params = dict(
 			firmware_info=["No data. Please check connection!"],
-			baudrate=[__ser_baud__]
+			baudrate=[__ser_baud__],
 			tty=["Not found. Please enable the UART on your Raspi!"]
 		)
 
