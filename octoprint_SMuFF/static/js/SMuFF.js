@@ -16,7 +16,7 @@ $(function() {
 
         self.onAfterBinding = function() {
             self._settings = self.settingsViewModel.settings.plugins.SMuFF;
-            console.log("_settings initialized. FW-Info: {" + self._settings.firmware_info + "}");
+            console.log("_settings initialized. FW-Info: {" + self._settings.firmware_info() + "}");
         };
 
         self.onDataUpdaterPluginMessage = function(plugin, message) {
