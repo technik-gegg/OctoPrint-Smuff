@@ -136,7 +136,7 @@ def __plugin_load__():
 		__ser0__ = serial.Serial("/dev/"+__ser_drvr__, __ser_baud__, timeout=5)
 	except (OSError, serial.SerialException):
 		self._logger.info("Serial port not found!")
-		pass
+		#pass
 
 	global __plugin_hooks__
 	__plugin_hooks__ = {
