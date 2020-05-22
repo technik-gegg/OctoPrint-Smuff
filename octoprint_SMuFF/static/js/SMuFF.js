@@ -11,6 +11,7 @@ $(function() {
         // assign the injected parameters, e.g.:
         // self.loginStateViewModel = parameters[0];
         self.settingsViewModel = parameters[0];
+        console.log("SMuFF ViewModel params: " + self.settingsViewModel);
         self._settings = null;
 
         self.onBeforeBinding = function() {
