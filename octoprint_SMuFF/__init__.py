@@ -2,10 +2,11 @@
 
 from __future__ import absolute_import
 
-import octoprint.plugin
+from octoprint.util import RepeatedTimer
 import serial			# we need this for the serial communcation with the SMuFF
 import os, fnmatch
 import re
+import octoprint.plugin
 
 class SmuffPlugin(octoprint.plugin.SettingsPlugin,
                   octoprint.plugin.AssetPlugin,
@@ -15,6 +16,8 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 	##~~ StartupPlugin mixin
 
 	def on_timer_event(self):
+		self.get_tool()
+		self.get_endstops()
 		self._plugin_manager.send_plugin_message(self._identifier, {'type': 'status', 'tool': __cur_tool__, 'feeder': __feeder__, 'feeder2': __feeder2__ })
 
 	def on_after_startup(self):
