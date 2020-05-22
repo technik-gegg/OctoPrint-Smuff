@@ -44,7 +44,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			params['tool'] = __cur_tool__
 			__tool_no__ = int(re.search(r'\d+', __cur_tool__).group(0))
 		
-		self._logger.info("Current tool from SMuFF [" + __cur_tool__ + " (" + __tool_no__ + ")]")
+		self._logger.info("Current tool from SMuFF [" + __cur_tool__ + " (" + str(__tool_no__) + ")]")
 
 		drvr = self.find_file(__ser_drvr__, "/dev")
 		if len(drvr) > 0:
