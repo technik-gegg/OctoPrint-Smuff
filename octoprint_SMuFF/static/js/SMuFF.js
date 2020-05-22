@@ -23,7 +23,18 @@ $(function() {
             if(plugin !== "SMuFF") {
                 return;
             }
-            console.log("DataUpdaterPluginMessage message-type: " + message.type + " tool: " + message.tool);
+            if(message.tool != null) {
+                console.log(" tool: " + message.tool);
+                $('#SMuFF_setting_tool').val(message.tool);
+            }
+            if(message.feeder != null) {
+                console.log(" tool: " + message.feeder);
+                $('#SMuFF_setting_feeder').prop('checked', message.feeder);
+            }
+            if(message.feeder2 != null) {
+                console.log(" tool: " + message.feeder2);
+                $('#SMuFF_setting_feeder2').prop('checked', message.feeder2);
+            }
         };
     }
 
