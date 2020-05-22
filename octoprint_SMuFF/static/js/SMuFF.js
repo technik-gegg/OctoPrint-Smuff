@@ -14,7 +14,7 @@ $(function() {
         console.log("SMuFF ViewModel params: " + self.settingsViewModel);
         self._settings = null;
 
-        self.onAfterBinding = function() {
+        self.onBeforeBinding = function() {
             self._settings = self.settingsViewModel.settings.plugins.SMuFF;
             console.log("_settings initialized. FW-Info: {" + self._settings.firmware_info() + "}");
         };
