@@ -28,12 +28,12 @@ $(function() {
                 $('#SMuFF_setting_tool').val(message.tool);
             }
             if(message.feeder != null) {
-                console.log(" tool: " + message.feeder);
-                $('#SMuFF_setting_feeder').prop('checked', message.feeder);
+                console.log(" feeder: " + message.feeder);
+                $('#SMuFF_setting_feeder').prop('checked', message.feeder == true);
             }
             if(message.feeder2 != null) {
-                console.log(" tool: " + message.feeder2);
-                $('#SMuFF_setting_feeder2').prop('checked', message.feeder2);
+                console.log(" feeder2: " + message.feeder2);
+                $('#SMuFF_setting_feeder2').prop('checked', message.feeder2 == true);
             }
         };
     }
