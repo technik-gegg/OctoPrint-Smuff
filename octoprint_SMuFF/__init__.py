@@ -30,10 +30,10 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		__ser0__.timeout = 1
 
 		params = dict(
-			firmware_info=["No data. Please check connection!"],
-			baudrate=[__ser_baud__],
-			tty=["Not found. Please enable the UART on your Raspi!"],
-			tool=[__cur_tool__]
+			firmware_info="No data. Please check connection!",
+			baudrate=__ser_baud__,
+			tty="Not found. Please enable the UART on your Raspi!",
+			tool=__cur_tool__
 		)
 
 		__fw_info__ = self.send_and_wait("M115")
@@ -43,13 +43,19 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		__cur_tool__ = self.send_and_wait("T")
 		if __cur_tool__:
 			params['tool'] = __cur_tool__
-			__tool_no__ = int(re.search(r'\d+', __cur_tool__).group(0))
+			__tool_no__ = self.parse_tool_number()
 		
 		self._logger.info("Current tool on SMuFF [" + __cur_tool__ + "]")
 
 		drvr = self.find_file(__ser_drvr__, "/dev")
 		if len(drvr) > 0:
 			params['tty'] = "Found! (/dev/" + __ser_drvr__ +")"
+
+		self._logger.info("Param 'firmware_info' ="+ params['firmware_info'])
+		self._logger.info("Param 'baudrate' ="+ str(params['baudrate']))
+		self._logger.info("Param 'tty' ="+ params['tty'])
+		self._logger.info("Param 'tool' ="+ params['tool'])
+
 		return  params
 
 
@@ -101,7 +107,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			self.send_and_wait(cmd)
 			__pre_tool__ = __cur_tool__
 			__cur_tool__ = cmd.rstrip("\n")
-			__tool_no__ = int(re.search(r'\d+', __cur_tool__).group(0))
+			__tool_no__ = self.parse_tool_number()
 		return None
 
 
@@ -134,6 +140,10 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 					result.append(os.path.join(root, name))
 		return result
 
+	def parse_tool_number(self)
+		result = -1
+		result = int(re.search(r'\d+', __cur_tool__).group(0))
+		return result
 
 __plugin_name__ = "Smuff Plugin"
 
