@@ -40,8 +40,8 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		return  params
 
 
-        def get_template_configs(self):
-            return [
+		def get_template_configs(self):
+			return [
                 dict(type="settings", custom_bindings=False)
             ]
 
