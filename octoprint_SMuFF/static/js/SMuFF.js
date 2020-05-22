@@ -10,9 +10,21 @@ $(function() {
 
         // assign the injected parameters, e.g.:
         // self.loginStateViewModel = parameters[0];
-        // self.settingsViewModel = parameters[1];
+        self.settingsViewModel = parameters[0];
+        self._settings = null;
 
-        // TODO: Implement your plugin's view model here.
+        self.onBeforeBinding = function() {
+            // Make plugin setting access a little more terse
+            self._settings = self.settingsViewModel.settings.plugins.SMuFF;
+            console.log("_settings initialized. FW-Info: {" + _settings.firmware_info + "}");
+        };
+
+        self.onDataUpdaterPluginMessage = function(plugin, message) {
+            if(plugin !== "SMuFF") {
+                return;
+            }
+            console.log("DataUpdaterPluginMessage for: [" + plugin + "] message: " + message.type);
+        };
     }
 
     /* view model class, parameters for constructor, container to bind to
@@ -22,8 +34,8 @@ $(function() {
     OCTOPRINT_VIEWMODELS.push({
         construct: SmuffViewModel,
         // ViewModels your plugin depends on, e.g. loginStateViewModel, settingsViewModel, ...
-        dependencies: [ /* "loginStateViewModel", "settingsViewModel" */ ],
+        dependencies: [ "settingsViewModel" ],
         // Elements to bind to, e.g. #settings_plugin_SMuFF, #tab_plugin_SMuFF, ...
-        elements: [ /* ... */ ]
+        elements: [ "#settings_plugin_SMuFF" ]
     });
 });
