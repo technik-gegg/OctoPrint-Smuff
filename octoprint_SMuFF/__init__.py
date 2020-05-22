@@ -195,7 +195,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			__selector__ = m.group(2).strip() == "triggered"
 			__revolver__ = m.group(4).strip() == "triggered"
 			__feeder__ 	 = m.group(6).strip() == "triggered"
-			__feeder2__  = false # m.group(8).strip() == "triggered"
+			__feeder2__  = False # m.group(8).strip() == "triggered"
 			self._logger.info("SELECTOR end: [" + str(__selector__) +"]")
 			self._logger.info("REVOLVER end: [" + str(__revolver__) +"]")
 			self._logger.info("FEEDER   end: [" + str(__feeder__)   +"]")

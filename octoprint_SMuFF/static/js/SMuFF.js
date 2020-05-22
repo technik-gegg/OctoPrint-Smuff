@@ -24,16 +24,16 @@ $(function() {
                 return;
             }
             if(message.tool != null) {
-                console.log(" tool: " + message.tool);
+                // console.log(" tool: " + message.tool);
                 $('#SMuFF_setting_tool').val(message.tool);
             }
             if(message.feeder != null) {
-                console.log(" feeder: " + message.feeder);
-                $('#SMuFF_setting_feeder').prop('checked', message.feeder == true);
+                // console.log(" feeder: " + message.feeder);
+                $('#SMuFF_setting_feeder').prop('checked', message.feeder);
             }
             if(message.feeder2 != null) {
-                console.log(" feeder2: " + message.feeder2);
-                $('#SMuFF_setting_feeder2').prop('checked', message.feeder2 == true);
+                //console.log(" feeder2: " + message.feeder2);
+                $('#SMuFF_setting_feeder2').prop('checked', message.feeder2);
             }
         };
     }
