@@ -23,7 +23,7 @@ $(function() {
             if(plugin !== "SMuFF") {
                 return;
             }
-            console.log("DataUpdaterPluginMessage for: [" + plugin + "] message: " + message.type);
+            console.log("DataUpdaterPluginMessage message-type: " + message.type + " tool: " + message.tool);
         };
     }
 

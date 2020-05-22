@@ -9,8 +9,18 @@ import re
 
 class SmuffPlugin(octoprint.plugin.SettingsPlugin,
                   octoprint.plugin.AssetPlugin,
-                  octoprint.plugin.TemplatePlugin):
+                  octoprint.plugin.TemplatePlugin,
+				  octoprint.plugin.StartupPlugin):
 
+	##~~ StartupPlugin mixin
+
+	def on_timer_event(self):
+		self._plugin_manager.send_plugin_message(self._identifier, {'type': 'status', 'tool': __cur_tool__, 'feeder': __feeder__, 'feeder2': __feeder2__ })
+
+	def on_after_startup(self):
+    	self.timer = RepeatedTimer(1.0, self.on_timer_event, run_first=True,)
+    	self.timer.start()
+	
 	##~~ SettingsPlugin mixin
 
 	def get_settings_defaults(self):
@@ -45,22 +55,14 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		if __fw_info__:
 			params['firmware_info'] = __fw_info__
 
-		__cur_tool__ = self.send_and_wait("T")
-		if __cur_tool__:
+		if self.get_tool():
 			params['tool'] = __cur_tool__
-			__tool_no__ = self.parse_tool_number()
-		
-		self._logger.info("Current tool on SMuFF [" + __cur_tool__ + "]")
+			self._logger.info("Current tool on SMuFF [" + __cur_tool__ + "]")
 
-		__endstops__ = self.send_and_wait("M119")
-		if __endstops__:
+		if self.get_endstops():
 			self._logger.info("Endstops: [" + __endstops__ +"]")
-			self.parse_endstop_states(__endstops__)
-			params['selector_end'] = __selector__ == "triggered"
-			params['revolver_end'] = __revolver__ == "triggered"
 			params['feeder_end']   = __feeder__ == "triggered"
 			params['feeder2_end']  = __feeder2__ == "triggered"
-
 
 		drvr = self.find_file(__ser_drvr__, "/dev")
 		if len(drvr) > 0:
@@ -155,6 +157,22 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 				if fnmatch.fnmatch(name, pattern):
 					result.append(os.path.join(root, name))
 		return result
+
+	def get_tool(self):
+		global __cur_tool__
+		__cur_tool__ = self.send_and_wait("T")
+		if __cur_tool__:
+			__tool_no__ = self.parse_tool_number()
+			return True
+		return False
+
+	def get_endstops(self):
+		global __endstops__
+		__endstops__ = self.send_and_wait("M119")
+		if __endstops__:
+			self.parse_endstop_states(__endstops__)
+			return True
+		return False
 
 	def parse_tool_number(self):
 		result = -1
