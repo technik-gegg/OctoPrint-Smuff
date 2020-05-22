@@ -157,12 +157,12 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		global __feeder__
 		m = re.search(r'^(\w+:.)(\w+).(\w+:.)(\w+).(\w+:.)(\w+)', states)
 		if m:
-			__selector__ = m.group(1).strip() == "triggered"
-			__revolver__ = m.group(3).strip() == "triggered"
-			__feeder__ 	 = m.group(5).strip() == "triggered"
-			self._logger.info("SELECTOR end: [" + str(__selector__) + "(" + m.group(1) + ")]")
-			self._logger.info("REVOLVER end: [" + str(__revolver__) + "(" + m.group(3) + ")]")
-			self._logger.info("FEEDER   end: [" + str(__feeder__)   + "(" + m.group(5) + ")]")
+			__selector__ = m.group(2).strip() == "triggered"
+			__revolver__ = m.group(4).strip() == "triggered"
+			__feeder__ 	 = m.group(6).strip() == "triggered"
+			self._logger.info("SELECTOR end: [" + str(__selector__) + " (" + m.group(2) + ")]")
+			self._logger.info("REVOLVER end: [" + str(__revolver__) + " (" + m.group(4) + ")]")
+			self._logger.info("FEEDER   end: [" + str(__feeder__)   + " (" + m.group(6) + ")]")
 			return True
 		return False
 		
