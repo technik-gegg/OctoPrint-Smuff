@@ -28,12 +28,14 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		params = dict(
 			firmware_info=["No data. Please check connection!"],
 			baudrate=[__ser_baud__],
-			tty=["Not found. Please enable the UART on your Raspi!"]
+			tty=["Not found. Please enable the UART on your Raspi!"],
+			tool=[__cur_tool__]
 		)
 
 		__fw_info__ = self.send_and_wait("M115")
 		if __fw_info__:
 			params['firmware_info'] = __fw_info__
+
 		drvr = self.find_file(__ser_drvr__, "/dev")
 		if len(drvr) > 0:
 			params['tty'] = "Found! (/dev/" + __ser_drvr__ +")"
@@ -83,6 +85,8 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		if gcode and gcode.startswith('T'):
 			self._logger.info("Sending tool change: " + cmd)
 			self.send_and_wait(cmd)
+			__pre_tool__ = __cur_tool__
+			__cur_tool__ = cmd
 		return None
 
 
@@ -123,7 +127,11 @@ def __plugin_load__():
 	__plugin_implementation__ = SmuffPlugin()
 
 	global __fw_info__
+	global __cur_tool__
+	global __pre_tool__
 	__fw_info__ = "?"
+	__cur_tool__ = "?"
+	__pre_tool__ = "?"
 
 	global __ser0__
 	global __ser_drvr__
