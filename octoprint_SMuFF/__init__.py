@@ -21,8 +21,8 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		self._plugin_manager.send_plugin_message(self._identifier, {'type': 'status', 'tool': __cur_tool__, 'feeder': __feeder__, 'feeder2': __feeder2__ })
 
 	def on_after_startup(self):
-    	timer = RepeatedTimer(1.0, self.on_timer_event)
-    	timer.start()
+		timer = RepeatedTimer(1.0, self.on_timer_event)
+		timer.start()
 	
 	##~~ SettingsPlugin mixin
 
