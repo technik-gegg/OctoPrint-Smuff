@@ -34,7 +34,11 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			firmware_info="No data. Please check connection!",
 			baudrate=__ser_baud__,
 			tty="Not found. Please enable the UART on your Raspi!",
-			tool=__cur_tool__
+			tool=__cur_tool__,
+			selector_end="?",
+			revolver_end="?",
+			feeder_end="?",
+			feeder2_end="?"
 		)
 
 		__fw_info__ = self.send_and_wait("M115")
@@ -52,6 +56,11 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		if __endstops__:
 			self._logger.info("Endstops: [" + __endstops__ +"]")
 			self.parse_endstop_states(__endstops__)
+			params['selector_end'] = __selector__ == "triggered"
+			params['revolver_end'] = __revolver__ == "triggered"
+			params['feeder_end']   = __feeder__ == "triggered"
+			params['feeder2_end']  = __feeder2__ == "triggered"
+
 
 		drvr = self.find_file(__ser_drvr__, "/dev")
 		if len(drvr) > 0:
@@ -156,11 +165,13 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		global __selector__
 		global __revolver__
 		global __feeder__
+		global __feeder2__
 		m = re.search(r'^(\w+:.)(\w+).(\w+:.)(\w+).(\w+:.)(\w+)', states)
 		if m:
 			__selector__ = m.group(2).strip() == "triggered"
 			__revolver__ = m.group(4).strip() == "triggered"
 			__feeder__ 	 = m.group(6).strip() == "triggered"
+			__feeder2__  = "not installed"
 			self._logger.info("SELECTOR end: [" + str(__selector__) +"]")
 			self._logger.info("REVOLVER end: [" + str(__revolver__) +"]")
 			self._logger.info("FEEDER   end: [" + str(__feeder__)   +"]")

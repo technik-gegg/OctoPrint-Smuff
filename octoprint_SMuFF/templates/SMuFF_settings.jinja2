@@ -29,6 +29,16 @@
             </div>
         </div>
 
+        <div class="control-group">
+            <label class="control-label">{{ _('Endstops:') }}</label>
+            <div class="controls">
+                <input type="checkbox" id="SMuFF_setting_selector_end" class="input-checkbox" data-bind="checked: _settings.selector_end()" readonly />
+                <input type="checkbox" id="SMuFF_setting_revolver_end" class="input-checkbox" data-bind="checked: _settings.revolver_end()" readonly />
+                <input type="checkbox" id="SMuFF_setting_feeder_end"   class="input-checkbox" data-bind="checked: _settings.feeder_end()" readonly />
+                <input type="checkbox" id="SMuFF_setting_feeder2_end"  class="input-checkbox" data-bind="checked: _settings.feeder2_end()" readonly />
+            </div>
+        </div>
+
         <div>For connection details please visit <a href="https://github.com/technik-gegg/OctoPrint-Smuff" target="_blank">Github</a>.</div>
     </form>
 </div>

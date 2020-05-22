@@ -11,12 +11,12 @@ $(function() {
         // assign the injected parameters, e.g.:
         // self.loginStateViewModel = parameters[0];
         self.settingsViewModel = parameters[0];
-        console.log("SMuFF ViewModel params: " + self.settingsViewModel);
+        //console.log("SMuFF ViewModel params: " + self.settingsViewModel);
         self._settings = null;
 
         self.onBeforeBinding = function() {
             self._settings = self.settingsViewModel.settings.plugins.SMuFF;
-            console.log("_settings initialized. FW-Info: {" + self._settings.firmware_info() + "}");
+            //console.log("_settings initialized. FW-Info: {" + self._settings.firmware_info() + "}");
         };
 
         self.onDataUpdaterPluginMessage = function(plugin, message) {
