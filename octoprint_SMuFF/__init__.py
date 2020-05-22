@@ -36,6 +36,12 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		if __fw_info__:
 			params['firmware_info'] = __fw_info__
 
+		__cur_tool__ = self.send_and_wait("T")
+		if __cur_tool__:
+			params['tool'] = __cur_tool__
+		
+		self._logger.info("Current tool from SMuFF [" + __cur_tool__ + "]")
+
 		drvr = self.find_file(__ser_drvr__, "/dev")
 		if len(drvr) > 0:
 			params['tty'] = "Found! (/dev/" + __ser_drvr__ +")"
@@ -44,7 +50,8 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 
 		def get_template_configs(self):
 			return [
-				dict(type="settings", custom_bindings=False)
+				dict(type="settings", custom_bindings=False),
+				dict(type="navbar", custom_bindings=False)
 			]
 
 	##~~ AssetPlugin mixin
