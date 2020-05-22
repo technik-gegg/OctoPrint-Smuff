@@ -51,15 +51,16 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		__endstops__ = self.send_and_wait("M119")
 		if __endstops__:
 			self._logger.info("Endstops: [" + __endstops__ +"]")
+			self.parse_endstop_states(__endstops__)
 
 		drvr = self.find_file(__ser_drvr__, "/dev")
 		if len(drvr) > 0:
 			params['tty'] = "Found! (/dev/" + __ser_drvr__ +")"
 
-		self._logger.info("Param 'firmware_info' ="+ params['firmware_info'])
-		self._logger.info("Param 'baudrate' ="+ str(params['baudrate']))
-		self._logger.info("Param 'tty' ="+ params['tty'])
-		self._logger.info("Param 'tool' ="+ params['tool'])
+		#self._logger.info("Param 'firmware_info' = "+ params['firmware_info'])
+		#self._logger.info("Param 'baudrate' = "+ str(params['baudrate']))
+		#self._logger.info("Param 'tty' = "+ params['tty'])
+		#self._logger.info("Param 'tool' = "+ params['tool'])
 
 		return  params
 
@@ -149,6 +150,22 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		result = -1
 		result = int(re.search(r'\d+', __cur_tool__).group(0))
 		return result
+
+	def parse_endstop_states(self, states):
+		global __selector__
+		global __revolver__
+		global __feeder__
+		m = re.search(r'^(\w+:.)(\w+).(\w+:.)(\w+).(\w+:.)(\w+)', states)
+		if m:
+			__selector__ = m.group(1).strip() == "triggered"
+			__revolver__ = m.group(3).strip() == "triggered"
+			__feeder__ = m.group(5).strip() == "triggered"
+			self._logger.info("SELECTOR end: [" + str(__selector__) + "]")
+			self._logger.info("REVOLVER end: [" + str(__revolver__) + "]")
+			self._logger.info("FEEDER   end: [" + str(__feeder__) + "]")
+			return True
+		return False
+		
 
 __plugin_name__ = "Smuff Plugin"
 
