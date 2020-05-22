@@ -16,6 +16,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 	def get_settings_defaults(self):
 		global __cur_tool__
 		global __tool_no__
+		global __endstops__
 		self._logger.info("SMuFF plugin loaded, getting defaults")
 
 		# after connecting, read the response from the SMuFF
@@ -46,6 +47,10 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			__tool_no__ = self.parse_tool_number()
 		
 		self._logger.info("Current tool on SMuFF [" + __cur_tool__ + "]")
+
+		__endstops__ = self.send_and_wait("M119")
+		if __endstops__:
+			self._logger.info("Endstops: [" + __endstops__ +"]")
 
 		drvr = self.find_file(__ser_drvr__, "/dev")
 		if len(drvr) > 0:
@@ -140,7 +145,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 					result.append(os.path.join(root, name))
 		return result
 
-	def parse_tool_number(self)
+	def parse_tool_number(self):
 		result = -1
 		result = int(re.search(r'\d+', __cur_tool__).group(0))
 		return result
