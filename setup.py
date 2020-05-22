@@ -14,7 +14,7 @@ plugin_package = "octoprint_SMuFF"
 plugin_name = "OctoPrint-Smuff"
 
 # The plugin's version. Can be overwritten within OctoPrint's internal data via __plugin_version__ in the plugin module
-plugin_version = "1.0.0"
+plugin_version = "1.0.1"
 
 # The plugin's description. Can be overwritten within OctoPrint's internal data via __plugin_description__ in the plugin
 # module
@@ -24,7 +24,7 @@ plugin_description = """A plugin for controlling tool changes on the SMuFF from 
 plugin_author = "Technik Gegg"
 
 # The plugin's author's mail address.
-plugin_author_email = "you@example.com"
+plugin_author_email = "technik.gegg@gmail.com"
 
 # The plugin's homepage URL. Can be overwritten within OctoPrint's internal data via __plugin_url__ in the plugin module
 plugin_url = "https://github.com/technik-gegg/OctoPrint-Smuff"
