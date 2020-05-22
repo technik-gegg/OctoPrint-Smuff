@@ -147,8 +147,8 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 					return prev_resp
 				else:
 					prev_resp = response.rstrip("\n")
-					if prev_resp:
-						self._logger.info("SMuFF says: [" + prev_resp +"]")
+					#if prev_resp:
+					#	self._logger.info("SMuFF says: [" + prev_resp +"]")
 					retry -= 1
 					if retry == 0:
 						return None
@@ -196,9 +196,9 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			__revolver__ = m.group(4).strip() == "triggered"
 			__feeder__ 	 = m.group(6).strip() == "triggered"
 			__feeder2__  = False # m.group(8).strip() == "triggered"
-			self._logger.info("SELECTOR end: [" + str(__selector__) +"]")
-			self._logger.info("REVOLVER end: [" + str(__revolver__) +"]")
-			self._logger.info("FEEDER   end: [" + str(__feeder__)   +"]")
+			# self._logger.info("SELECTOR end: [" + str(__selector__) +"]")
+			# self._logger.info("REVOLVER end: [" + str(__revolver__) +"]")
+			# self._logger.info("FEEDER   end: [" + str(__feeder__)   +"]")
 			return True
 		return False
 		
