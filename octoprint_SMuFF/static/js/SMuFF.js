@@ -16,7 +16,7 @@ $(function() {
         self.onBeforeBinding = function() {
             // Make plugin setting access a little more terse
             self._settings = self.settingsViewModel.settings.plugins.SMuFF;
-            console.log("_settings initialized. FW-Info: {" + _settings.firmware_info + "}");
+            console.log("_settings initialized. FW-Info: {" + self._settings.firmware_info + "}");
         };
 
         self.onDataUpdaterPluginMessage = function(plugin, message) {
