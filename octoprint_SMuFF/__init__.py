@@ -12,6 +12,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 
 
 	def get_settings_defaults(self):
+		global __cur_tool__
 		self._logger.info("SMuFF plugin loaded, getting defaults")
 
 		# after connecting, read the response from the SMuFF
