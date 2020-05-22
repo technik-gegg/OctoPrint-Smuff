@@ -9,7 +9,7 @@ When triggered, it'll send the according command to the SMuFF via the Raspberry'
 Install via the bundled [Plugin Manager](https://github.com/foosel/OctoPrint/wiki/Plugin:-Plugin-Manager)
 or manually using this URL:
 
-    https://github.com/technik-gegg/OctoPrint-Smuff/archive/master.zip
+    https://github.com/technik-gegg/OctoPrint-Smuff/archive/Development.zip
 
 In order to make this plugin working as expected, you have to do two additional things:
 

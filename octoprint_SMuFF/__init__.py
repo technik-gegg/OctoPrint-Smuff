@@ -11,6 +11,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
                   octoprint.plugin.AssetPlugin,
                   octoprint.plugin.TemplatePlugin):
 
+	##~~ SettingsPlugin mixin
 
 	def get_settings_defaults(self):
 		global __cur_tool__
@@ -44,7 +45,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			params['tool'] = __cur_tool__
 			__tool_no__ = int(re.search(r'\d+', __cur_tool__).group(0))
 		
-		self._logger.info("Current tool from SMuFF [" + __cur_tool__ + " (" + str(__tool_no__) + ")]")
+		self._logger.info("Current tool on SMuFF [" + __cur_tool__ + "]")
 
 		drvr = self.find_file(__ser_drvr__, "/dev")
 		if len(drvr) > 0:
@@ -92,11 +93,15 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 
 
 	def extend_tool_change(self, comm_instance, phase, cmd, cmd_type, gcode, *args, **kwargs):
+		global __cur_tool__
+		global __pre_tool__
+		global __tool_no__
 		if gcode and gcode.startswith('T'):
 			self._logger.info("Sending tool change: " + cmd)
 			self.send_and_wait(cmd)
 			__pre_tool__ = __cur_tool__
-			__cur_tool__ = cmd
+			__cur_tool__ = cmd.rstrip("\n")
+			__tool_no__ = int(re.search(r'\d+', __cur_tool__).group(0))
 		return None
 
 
