@@ -215,12 +215,16 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 
 	def parse_tool_number(self):
 		result = -1
+		
+		if len(__cur_tool__) == 0:
+			return result
+
 		try:
 			result = int(re.search(r'\d+', __cur_tool__).group(0))
 		except ValueError:
 			self._logger.into("Can't parse tool number: [" + __cur_tool__ + "]")
 		except:
-			self._logger.info("Can't parse tool number: [Unexpected error:" + sys.exc_info()[0] + "]")
+			self._logger.info("Can't parse tool number: [Unexpected error]")
 		return result
 
 
