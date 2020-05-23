@@ -22,18 +22,25 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		global __pre_tool__
 		global __tool_no__
 		global __toolchange__
+		global __endstops__
+		global __selector__
+		global __revolver__
+		global __feeder__
+		global __feeder2__
+		global __timer__
+		global __ser0__
+		global __ser_drvr__
+		global __ser_baud__
+
 		__fw_info__ = "?"
 		__cur_tool__ = "?"
 		__pre_tool__ = "?"
 		__tool_no__ = -1
 		__toolchange__ = False
 
-		global __ser0__
-		global __ser_drvr__
-		global __ser_baud__
-
 		# change the baudrate here if you have to
 		__ser_baud__ = 115200
+		# do __not__ change the serial port device
 		__ser_drvr__ = "ttyS0"
 		try:
 			__ser0__ = serial.Serial("/dev/"+__ser_drvr__, __ser_baud__, timeout=5)
@@ -41,9 +48,11 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			self._logger.info("Serial port not found!")
 			#pass
 
+
 	##~~ StartupPlugin mixin
 
 	def on_timer_event(self):
+		# poll tool active and endstop states periodically
 		if __toolchange__ == False:
 			self.get_tool()
 			self.get_endstops()
@@ -51,16 +60,13 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		self._plugin_manager.send_plugin_message(self._identifier, {'type': 'status', 'tool': __cur_tool__, 'feeder': __feeder__, 'feeder2': __feeder2__ })
 
 	def on_after_startup(self):
-		global __timer__
+		# set up a timer to poll the SMuFF
 		__timer__ = RepeatedTimer(1.0, self.on_timer_event)
 		__timer__.start()
 
 	##~~ SettingsPlugin mixin
 
 	def get_settings_defaults(self):
-		#global __cur_tool__
-		#global __tool_no__
-		#global __endstops__
 		self._logger.info("SMuFF plugin loaded, getting defaults")
 
 		# after connecting, read the response from the SMuFF
@@ -68,11 +74,6 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		# which is supposed to be 'start'
 		if resp.startswith('start'):
 			self._logger.info("SMuFF has sent \"start\" response")
-			# if start was received, read out the firmware info for later use
-		else:
-			self._logger.info("No response from SMuFF [" + resp + "]")
-
-		__ser0__.timeout = 1
 
 		params = dict(
 			firmware_info="No data. Please check connection!",
@@ -85,27 +86,28 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			feeder2_end="?"
 		)
 
+		__ser0__.timeout = 1
+
+		# request firmware info from SMuFF 
 		__fw_info__ = self.send_and_wait("M115")
 		if __fw_info__:
 			params['firmware_info'] = __fw_info__
-
+		
+		# request the currently active tool
 		if self.get_tool():
 			params['tool'] = __cur_tool__
 			self._logger.info("Current tool on SMuFF [" + __cur_tool__ + "]")
 
+		# request the endstop states
 		if self.get_endstops():
 			self._logger.info("Endstops: [" + __endstops__ +"]")
 			params['feeder_end']   = __feeder__ == "triggered"
 			params['feeder2_end']  = __feeder2__ == "triggered"
 
+		# look up the serial port driver
 		drvr = self.find_file(__ser_drvr__, "/dev")
 		if len(drvr) > 0:
 			params['tty'] = "Found! (/dev/" + __ser_drvr__ +")"
-
-		#self._logger.info("Param 'firmware_info' = "+ params['firmware_info'])
-		#self._logger.info("Param 'baudrate' = "+ str(params['baudrate']))
-		#self._logger.info("Param 'tty' = "+ params['tty'])
-		#self._logger.info("Param 'tool' = "+ params['tool'])
 
 		return  params
 
@@ -149,22 +151,30 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			)
 		)
 
+	##~~ GCode hook
 
 	def extend_tool_change(self, comm_instance, phase, cmd, cmd_type, gcode, *args, **kwargs):
-		#global __cur_tool__
-		#global __pre_tool__
-		#global __tool_no__
-		#global __toolchange__
+		if gcode and gcode.startswith('@SMuFF-B'):
+			self._logger.info("@SMuFF-B received: ")
+			return None
+
+		if gcode and gcode.startswith('@SMuFF-A'):
+			self._logger.info("@SMuFF-A received: ")
+			return None
+
 		if gcode and gcode.startswith('T'):
 			self._logger.info("Sending tool change: " + cmd)
-			__toolchange__ = True
-			self.send_and_wait(cmd)
-			__pre_tool__ = __cur_tool__
-			__cur_tool__ = cmd.rstrip("\n")
-			__tool_no__ = self.parse_tool_number()
+			__toolchange__ = True		# signal tool change in progress
+
+			if self.send_and_wait(cmd):
+				__pre_tool__ = __cur_tool__
+				__cur_tool__ = cmd.rstrip("\n")
+				__tool_no__ = self.parse_tool_number()
+			
 			__toolchange__ = False
 		return None
 
+	##~~ helper functions
 
 	def send_and_wait(self, data):
 		if __ser0__.is_open:
@@ -195,32 +205,30 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 					result.append(os.path.join(root, name))
 		return result
 
+
 	def get_tool(self):
-		global __cur_tool__
 		__cur_tool__ = self.send_and_wait("T")
 		if __cur_tool__:
 			__tool_no__ = self.parse_tool_number()
 			return True
 		return False
 
+
 	def get_endstops(self):
-		global __endstops__
 		__endstops__ = self.send_and_wait("M119")
 		if __endstops__:
 			self.parse_endstop_states(__endstops__)
 			return True
 		return False
 
+
 	def parse_tool_number(self):
 		result = -1
 		result = int(re.search(r'\d+', __cur_tool__).group(0))
 		return result
 
+
 	def parse_endstop_states(self, states):
-		global __selector__
-		global __revolver__
-		global __feeder__
-		global __feeder2__
 		m = re.search(r'^(\w+:.)(\w+).(\w+:.)(\w+).(\w+:.)(\w+)', states)
 		if m:
 			__selector__ = m.group(2).strip() == "triggered"
@@ -233,6 +241,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			return True
 		return False
 		
+
 
 __plugin_name__ = "Smuff Plugin"
 
