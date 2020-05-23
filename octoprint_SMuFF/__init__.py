@@ -46,6 +46,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 	##~~ StartupPlugin mixin
 
 	def on_timer_event(self):
+		global __no_log__
 		# poll tool active and endstop states periodically
 		if __toolchange__ == False:
 			__no_log__ = True
