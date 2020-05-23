@@ -239,7 +239,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		except ValueError:
 			self._logger.error("Can't parse tool number: [" + __cur_tool__ + "]")
 		except:
-    		self._logger.error("Can't parse tool number: [Unexpected error]")
+			self._logger.error("Can't parse tool number: [Unexpected error]")
 		return result
 
 
