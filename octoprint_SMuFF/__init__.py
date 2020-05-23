@@ -234,6 +234,10 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 
 
 	def parse_endstop_states(self, states):
+		global __selector__
+		global __revolver__
+		global __feeder__
+		global __feeder2__
 		self._logger.into("Endstop states: [" + states + "]")
 		if len(states) == 0:
 			return False
