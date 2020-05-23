@@ -159,7 +159,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		global __cur_tool__
 		global __pre_tool__
 		global __tool_no__
-		
+
 		if gcode and gcode.startswith('T'):
 			self._logger.info("Sending tool change: " + cmd)
 			__toolchange__ = True		# signal tool change in progress
@@ -170,7 +170,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 				__tool_no__ = self.parse_tool_number(__cur_tool__)
 			
 			__toolchange__ = False
-			return ";Tool change"
+			return "M117 SMuFF-ToolChange T" + __tool_no__	# replace command that is sent to the printer
 		
 		return None
 
