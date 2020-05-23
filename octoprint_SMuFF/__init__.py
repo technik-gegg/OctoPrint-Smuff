@@ -15,24 +15,52 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
                   octoprint.plugin.TemplatePlugin,
 				  octoprint.plugin.StartupPlugin):
 
+	
+	def __init__(self):
+		global __fw_info__
+		global __cur_tool__
+		global __pre_tool__
+		global __tool_no__
+		global __toolchange__
+		__fw_info__ = "?"
+		__cur_tool__ = "?"
+		__pre_tool__ = "?"
+		__tool_no__ = -1
+		__toolchange__ = False
+
+		global __ser0__
+		global __ser_drvr__
+		global __ser_baud__
+
+		# change the baudrate here if you have to
+		__ser_baud__ = 115200
+		__ser_drvr__ = "ttyS0"
+		try:
+			__ser0__ = serial.Serial("/dev/"+__ser_drvr__, __ser_baud__, timeout=5)
+		except (OSError, serial.SerialException):
+			self._logger.info("Serial port not found!")
+			#pass
+
 	##~~ StartupPlugin mixin
 
 	def on_timer_event(self):
-		self.get_tool()
-		self.get_endstops()
+		if __toolchange__ == False:
+			self.get_tool()
+			self.get_endstops()
+		
 		self._plugin_manager.send_plugin_message(self._identifier, {'type': 'status', 'tool': __cur_tool__, 'feeder': __feeder__, 'feeder2': __feeder2__ })
 
 	def on_after_startup(self):
 		global __timer__
 		__timer__ = RepeatedTimer(1.0, self.on_timer_event)
 		__timer__.start()
-	
+
 	##~~ SettingsPlugin mixin
 
 	def get_settings_defaults(self):
-		global __cur_tool__
-		global __tool_no__
-		global __endstops__
+		#global __cur_tool__
+		#global __tool_no__
+		#global __endstops__
 		self._logger.info("SMuFF plugin loaded, getting defaults")
 
 		# after connecting, read the response from the SMuFF
@@ -123,15 +151,18 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 
 
 	def extend_tool_change(self, comm_instance, phase, cmd, cmd_type, gcode, *args, **kwargs):
-		global __cur_tool__
-		global __pre_tool__
-		global __tool_no__
+		#global __cur_tool__
+		#global __pre_tool__
+		#global __tool_no__
+		#global __toolchange__
 		if gcode and gcode.startswith('T'):
 			self._logger.info("Sending tool change: " + cmd)
+			__toolchange__ = True
 			self.send_and_wait(cmd)
 			__pre_tool__ = __cur_tool__
 			__cur_tool__ = cmd.rstrip("\n")
 			__tool_no__ = self.parse_tool_number()
+			__toolchange__ = False
 		return None
 
 
@@ -208,28 +239,6 @@ __plugin_name__ = "Smuff Plugin"
 def __plugin_load__():
 	global __plugin_implementation__
 	__plugin_implementation__ = SmuffPlugin()
-
-	global __fw_info__
-	global __cur_tool__
-	global __pre_tool__
-	global __tool_no__
-	__fw_info__ = "?"
-	__cur_tool__ = "?"
-	__pre_tool__ = "?"
-	__tool_no__ = -1
-
-	global __ser0__
-	global __ser_drvr__
-	global __ser_baud__
-
-	# change the baudrate here if you have to
-	__ser_baud__ = 115200
-	__ser_drvr__ = "ttyS0"
-	try:
-		__ser0__ = serial.Serial("/dev/"+__ser_drvr__, __ser_baud__, timeout=5)
-	except (OSError, serial.SerialException):
-		self._logger.info("Serial port not found!")
-		#pass
 
 	global __plugin_hooks__
 	__plugin_hooks__ = {
