@@ -145,42 +145,28 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 	##~~ GCode hooks
 
 	def extend_tool_queuing(self, comm_instance, phase, cmd, cmd_type, gcode, subcode, tags, *args, **kwargs):
-		self._logger.info("Processing queuing: [" + cmd + "," + str(cmd_type)+ "," + str(tags) + "]")
-		if gcode and gcode.startswith('T'):
-			self._logger.info("Queuing: [" + cmd + "," + str(cmd_type) + "," + str(tags) + "]")
-
-
-	def extend_tool_sending(self, comm_instance, phase, cmd, cmd_type, gcode, subcode, tags, *args, **kwargs):
-		global __toolchange__
-
-		__toolchange__ = True		# signal tool change in progress
-		
-		if gcode and gcode.startswith('T'):
-			self._logger.info("Sending tool change: [" + cmd + "," + str(cmd_type) + "," + str(tags) + "]")
-			
-			# take "Before Tool Change Script", split it in lines and return this
-			btc = __before_script__.splitlines()
-			btc.append("@SMuFF " + __cur_tool__)
-			return btc
-
-		return None
-	
-	def extend_tool_sent(self, comm_instance, phase, cmd, cmd_type, gcode, subcode, tags, *args, **kwargs):
 		global __toolchange__
 		global __cur_tool__
 		global __pre_tool__
 		global __tool_no__
-		global __timer__
-
-		__toolchange__ = True		# signal tool change in progress
+		self._logger.info("Processing queuing: [" + cmd + "," + str(cmd_type)+ "," + str(tags) + "]")
 		
-		if cmd and cmd.startswith('@SMuFF '):
-			self._logger.info("Sent tool change: [" + cmd + "," + str(cmd_type) + "," + str(tags) + "]")
-			
-			# After Tool Change
+		if gcode and gcode.startswith('T'):
+			# take "Before Tool Change" script and "After Tool Change" script, split them in lines and return this
+			btc = __before_script__.splitlines()
 			atc = __after_script__.splitlines()
 
+			btc.append("@SMuFF " + __cur_tool__)
+			btc.append(atc)
+
+			return btc
+
+
+	def extend_tool_sending(self, comm_instance, phase, cmd, cmd_type, gcode, subcode, tags, *args, **kwargs):
+
+		if cmd and cmd.startswith('@SMuFF '):
 			self._logger.info("Sending to SMuFF: [" + cmd[:7] + "]")
+			__toolchange__ = True
 			stat = self.send_and_wait(cmd[:7])
 			__toolchange__ = False
 
@@ -188,7 +174,12 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 				__pre_tool__ = __cur_tool__
 				__cur_tool__ = cmd
 				__tool_no__ = self.parse_tool_number(__cur_tool__)
-				return atc
+				return None
+		return None
+	
+	def extend_tool_sent(self, comm_instance, phase, cmd, cmd_type, gcode, subcode, tags, *args, **kwargs):
+
+		#if cmd and cmd.startswith('@SMuFF '):
 
 		return None
 
