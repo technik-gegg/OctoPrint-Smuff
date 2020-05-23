@@ -74,9 +74,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			selector_end	= "?",
 			revolver_end	= "?",
 			feeder_end		= "?",
-			feeder2_end		= "?",
-			before			= "; BEFORE TOOL CHANGE",
-			after			= "; AFTER TOOL CHANGE"
+			feeder2_end		= "?"
 		)
 
 		__ser0__.timeout = 1
@@ -144,9 +142,10 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			)
 		)
 
-	##~~ GCode hook
+	##~~ GCode hooks
 
 	def extend_tool_change(self, comm_instance, phase, cmd, cmd_type, gcode, *args, **kwargs):
+		self._logger.info("Processing queuing: [" + cmd + "]")
 		if gcode and gcode.startswith('@SMuFF-B'):
 			self._logger.info("@SMuFF-B received: ")
 			return None
@@ -155,6 +154,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			self._logger.info("@SMuFF-A received: ")
 			return None
 
+	def extend_tool_send(self, comm_instance, phase, cmd, cmd_type, gcode, *args, **kwargs):
 		if gcode and gcode.startswith('T'):
 			self._logger.info("Sending tool change: " + cmd)
 			__toolchange__ = True		# signal tool change in progress
@@ -165,6 +165,8 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 				__tool_no__ = self.parse_tool_number(__cur_tool__)
 			
 			__toolchange__ = False
+			return ";Tool change"
+		
 		return None
 
 	##~~ helper functions
@@ -265,10 +267,14 @@ def __plugin_load__():
 	__plugin_implementation__ = SmuffPlugin()
 
 	global __plugin_hooks__
+	
 	__plugin_hooks__ = {
+    	"octoprint.comm.protocol.gcode.sending": __plugin_implementation__.extend_tool_send,
     	"octoprint.comm.protocol.gcode.queuing": __plugin_implementation__.extend_tool_change,
 		"octoprint.plugin.softwareupdate.check_config": __plugin_implementation__.get_update_information
 	}
+	global __before_script__
+	global __after_script__
 	global __ser0__
 	global __ser_drvr__
 	global __ser_baud__
@@ -290,6 +296,14 @@ def __plugin_load__():
 		self._logger.info("Serial port not found!")
 		#pass
 
+	# read before and after ToolChange scripts from the default OctoPrint folder
+	#file = open("/home/pi/.octoprint/scripts/gcode/beforeToolChange", "r") 
+	#__before_script__ = file.read();
+	#file.close();
+
+	#file = open("/home/pi/.octoprint/scripts/gcode/afterToolChange", "r") 
+	#__after_script__ = file.read();
+	#file.close();
 
 
 def __plugin_unload__():
