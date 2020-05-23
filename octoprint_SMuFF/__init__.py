@@ -247,7 +247,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 
 	def parse_endstop_states(self, states):
 		self._logger.into("Endstop states: [" + states + "]")
-		if len(states == 0)
+		if len(states) == 0:
 			return False
 		m = re.search(r'^(\w+:.)(\w+).(\w+:.)(\w+).(\w+:.)(\w+)', states)
 		if m:
