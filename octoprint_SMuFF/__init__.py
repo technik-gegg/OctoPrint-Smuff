@@ -155,6 +155,11 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			return None
 
 	def extend_tool_send(self, comm_instance, phase, cmd, cmd_type, gcode, *args, **kwargs):
+		global __toolchange__
+		global __cur_tool__
+		global __pre_tool__
+		global __tool_no__
+		
 		if gcode and gcode.startswith('T'):
 			self._logger.info("Sending tool change: " + cmd)
 			__toolchange__ = True		# signal tool change in progress
