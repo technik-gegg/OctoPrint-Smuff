@@ -67,14 +67,16 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		self._logger.info("SMuFF plugin loaded, getting defaults")
 
 		params = dict(
-			firmware_info	="No data. Please check connection!",
-			baudrate		=__ser_baud__,
-			tty 			="Not found. Please enable the UART on your Raspi!",
-			tool			=__cur_tool__,
-			selector_end	="?",
-			revolver_end	="?",
-			feeder_end		="?",
-			feeder2_end		="?"
+			firmware_info	= "No data. Please check connection!",
+			baudrate		= __ser_baud__,
+			tty 			= "Not found. Please enable the UART on your Raspi!",
+			tool			= __cur_tool__,
+			selector_end	= "?",
+			revolver_end	= "?",
+			feeder_end		= "?",
+			feeder2_end		= "?",
+			before			= "; BEFORE TOOL CHANGE",
+			after			= "; AFTER TOOL CHANGE"
 		)
 
 		__ser0__.timeout = 1
