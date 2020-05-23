@@ -7,22 +7,22 @@
         <div class="control-group">
             <label class="control-label">{{ _('Serial Port / Baudrate:') }}</label>
             <div class="controls">
-                <input type="text" id="SMuFF_setting_tty" class="input" data-bind="value: _settings.tty()" readonly />&nbsp;&nbsp;
-                <input type="text" id="SMuFF_setting_baudrate" class="input" data-bind="value: _settings.baudrate()" readonly />
+                <div id="SMuFF_setting_tty" class="data" data-bind="html: _settings.tty()" />&nbsp;&nbsp;
+                <div id="SMuFF_setting_baudrate" class="data" data-bind="html: _settings.baudrate()" />
             </div>
         </div>
 
         <div class="control-group">
             <label class="control-label">{{ _('Firmware Info:') }}</label>
             <div class="controls">
-                <div id="SMuFF_setting_firmware" class="input-block-level" data-bind="html: _settings.firmware_info()" readonly></div>
+                <div id="SMuFF_setting_firmware" class="data" data-bind="html: _settings.firmware_info()" readonly></div>
             </div>
         </div>
 
         <div class="control-group">
             <label class="control-label">{{ _('Active Tool:') }}</label>
             <div class="controls">
-                <input type="text" id="SMuFF_setting_tool" class="input" data-bind="value: _settings.tool()" readonly />
+                <div id="SMuFF_setting_tool" class="data" data-bind="html: _settings.tool()" readonly />
             </div>
         </div>
 
