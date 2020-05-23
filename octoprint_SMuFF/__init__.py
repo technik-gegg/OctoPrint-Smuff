@@ -28,15 +28,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		global __feeder__
 		global __feeder2__
 		global __timer__
-		global __ser0__
-		global __ser_drvr__
-		global __ser_baud__
 		global __no_log__
-
-		# change the baudrate here if you have to
-		__ser_baud__ = 115200
-		# do __not__ change the serial port device
-		__ser_drvr__ = "ttyS0"
 
 		__fw_info__ 	= "?"
 		__cur_tool__ 	= "?"
@@ -50,18 +42,6 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		__feeder2__		= False
 		__no_log__		= False
 
-		try:
-			__ser0__ = serial.Serial("/dev/"+__ser_drvr__, __ser_baud__, timeout=5)
-			# after connecting, read the response from the SMuFF
-			resp = __ser0__.readline()
-			# which is supposed to be 'start'
-			if resp.startswith('start'):
-				self._logger.info("SMuFF has sent \"start\" response")
-			self._logger.info("__init__ done!")
-
-		except (OSError, serial.SerialException):
-			self._logger.info("Serial port not found!")
-			#pass
 
 
 	##~~ StartupPlugin mixin
@@ -274,6 +254,27 @@ def __plugin_load__():
     	"octoprint.comm.protocol.gcode.queuing": __plugin_implementation__.extend_tool_change,
 		"octoprint.plugin.softwareupdate.check_config": __plugin_implementation__.get_update_information
 	}
+	global __ser0__
+	global __ser_drvr__
+	global __ser_baud__
+
+	# change the baudrate here if you have to
+	__ser_baud__ = 115200
+	# do __not__ change the serial port device
+	__ser_drvr__ = "ttyS0"
+
+	try:
+	__ser0__ = serial.Serial("/dev/"+__ser_drvr__, __ser_baud__, timeout=5)
+	# after connecting, read the response from the SMuFF
+	resp = __ser0__.readline()
+	# which is supposed to be 'start'
+	if resp.startswith('start'):
+		self._logger.info("SMuFF has sent \"start\" response")
+	self._logger.info("__plugin_load__ done!")
+
+except (OSError, serial.SerialException):
+	self._logger.info("Serial port not found!")
+	#pass
 
 
 def __plugin_unload__():
