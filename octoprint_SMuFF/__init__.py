@@ -165,6 +165,8 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		
 		if gcode and gcode.startswith('T'):
 			self._logger.info("Sending tool change: [" + cmd + "," + str(cmd_type) + "," + str(tags) + "]")
+			
+			# Before Tool Change
 
 			stat = self.send_and_wait(cmd)
 			__toolchange__ = False
@@ -306,13 +308,13 @@ def __plugin_load__():
 		#pass
 
 	# read before and after ToolChange scripts from the default OctoPrint folder
-	#file = open("/home/pi/.octoprint/scripts/gcode/beforeToolChange", "r") 
-	#__before_script__ = file.read();
-	#file.close();
+	file = open("/home/pi/.octoprint/scripts/gcode/beforeToolChange", "r") 
+	__before_script__ = file.read();
+	file.close();
 
-	#file = open("/home/pi/.octoprint/scripts/gcode/afterToolChange", "r") 
-	#__after_script__ = file.read();
-	#file.close();
+	file = open("/home/pi/.octoprint/scripts/gcode/afterToolChange", "r") 
+	__after_script__ = file.read();
+	file.close();
 
 
 def __plugin_unload__():
