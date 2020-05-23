@@ -144,17 +144,13 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 
 	##~~ GCode hooks
 
-	def extend_tool_change(self, comm_instance, phase, cmd, cmd_type, gcode, subcode, tags, *args, **kwargs):
+	def extend_tool_queuing(self, comm_instance, phase, cmd, cmd_type, gcode, subcode, tags, *args, **kwargs):
 		#self._logger.info("Processing queuing: [" + cmd + "," + str(cmd_type)+ "," + str(tags) + "]")
-		if cmd and cmd.startswith('@SMuFF-B'):
-			self._logger.info("@SMuFF-B received: ")
-			return None
+		if gcode and gcode.startswith('T'):
+			self._logger.info("Queuing: [" + cmd + "," + str(cmd_type) + "," + str(tags) + "]")
+			
 
-		if cmd and cmd.startswith('@SMuFF-A'):
-			self._logger.info("@SMuFF-A received: ")
-			return None
-
-	def extend_tool_send(self, comm_instance, phase, cmd, cmd_type, gcode, subcode, tags, *args, **kwargs):
+	def extend_tool_sending(self, comm_instance, phase, cmd, cmd_type, gcode, subcode, tags, *args, **kwargs):
 		global __toolchange__
 
 		__toolchange__ = True		# signal tool change in progress
@@ -184,6 +180,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			# After Tool Change
 			atc = __after_script__.splitlines()
 
+			self._logger.info("Sending to SMuFF: [" + cmd[:7] + "]")
 			stat = self.send_and_wait(cmd[:7])
 			__toolchange__ = False
 
@@ -297,8 +294,8 @@ def __plugin_load__():
 	
 	__plugin_hooks__ = {
     	"octoprint.comm.protocol.gcode.sent": __plugin_implementation__.extend_tool_sent,
-    	"octoprint.comm.protocol.gcode.sending": __plugin_implementation__.extend_tool_send,
-    	"octoprint.comm.protocol.gcode.queuing": __plugin_implementation__.extend_tool_change,
+    	"octoprint.comm.protocol.gcode.sending": __plugin_implementation__.extend_tool_sending,
+    	"octoprint.comm.protocol.gcode.queuing": __plugin_implementation__.extend_tool_queuing,
 		"octoprint.plugin.softwareupdate.check_config": __plugin_implementation__.get_update_information
 	}
 	global __before_script__
