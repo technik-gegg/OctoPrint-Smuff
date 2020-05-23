@@ -269,11 +269,11 @@ def __plugin_load__():
 		# which is supposed to be 'start'
 		if resp.startswith('start'):
 			self._logger.info("SMuFF has sent \"start\" response")
-		self._logger.info("__plugin_load__ done!")
 
 	except (OSError, serial.SerialException):
 		self._logger.info("Serial port not found!")
 		#pass
+
 
 
 def __plugin_unload__():
