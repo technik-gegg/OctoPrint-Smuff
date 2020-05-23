@@ -202,10 +202,10 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		global __cur_tool__
 		global __tool_no__
 		__cur_tool__ = self.send_and_wait("T")
-		self._logger.info("SMuFF says Tool is: [" + __cur_tool__ +"]")
+		#self._logger.info("SMuFF says Tool is: [" + __cur_tool__ +"]")
 		if __cur_tool__:
 			__tool_no__ = self.parse_tool_number(__cur_tool__)
-			self._logger.info("Plugin says Tool is: [" + str(__tool_no__) +"]")
+			#self._logger.info("Plugin says Tool is: [" + str(__tool_no__) +"]")
 			return True
 		return False
 
@@ -239,7 +239,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		global __revolver__
 		global __feeder__
 		global __feeder2__
-		self._logger.info("Endstop states: [" + states + "]")
+		#self._logger.info("Endstop states: [" + states + "]")
 		if len(states) == 0:
 			return False
 		m = re.search(r'^(\w+:.)(\w+).(\w+:.)(\w+).(\w+:.)(\w+)', states)
