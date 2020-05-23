@@ -145,7 +145,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 	##~~ GCode hooks
 
 	def extend_tool_change(self, comm_instance, phase, cmd, cmd_type, gcode, *args, **kwargs):
-		self._logger.info("Processing queuing: [" + cmd + "," + cmd_type + "]")
+		self._logger.info("Processing queuing: [" + cmd + "," + str(cmd_type) + "]")
 		if cmd and cmd.startswith('@SMuFF-B'):
 			self._logger.info("@SMuFF-B received: ")
 			return None
@@ -164,7 +164,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		__toolchange__ = True		# signal tool change in progress
 		
 		if gcode and gcode.startswith('T'):
-			self._logger.info("Sending tool change: [" + cmd + "," + cmd_type + "]")
+			self._logger.info("Sending tool change: [" + cmd + "," + str(cmd_type) + "]")
 			__pre_tool__ = __cur_tool__
 
 			if self.send_and_wait(cmd):
