@@ -29,11 +29,11 @@ $(function() {
             }
             if(message.feeder != null) {
                 // console.log(" feeder: " + message.feeder);
-                $('#SMuFF_setting_feeder').prop('checked', message.feeder);
+                $('#SMuFF_setting_feeder').prop('class', message.feeder ? "fa fa-check-circle" : "fa fa-times-circle");
             }
             if(message.feeder2 != null) {
                 //console.log(" feeder2: " + message.feeder2);
-                $('#SMuFF_setting_feeder2').prop('checked', message.feeder2);
+                $('#SMuFF_setting_feeder2').prop('class', message.feeder2  ? "fa fa-check-circle" : "fa fa-times-circle");
             }
         };
     }

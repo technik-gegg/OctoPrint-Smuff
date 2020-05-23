@@ -4,33 +4,37 @@
         <p>For connection details please visit <a href="https://github.com/technik-gegg/OctoPrint-Smuff" target="_blank">Github</a>.</p>
     </div>
     <form class="form-horizontal">
-        <div class="control-group">
-            <label class="control-label">{{ _('Serial Port / Baudrate:') }}</label>
-            <div class="controls">
-                <div id="SMuFF_setting_tty" class="data" data-bind="html: _settings.tty()" />&nbsp;&nbsp;
-                <div id="SMuFF_setting_baudrate" class="data" data-bind="html: _settings.baudrate()" />
+        <div class="aligned">
+            <label class="label-aligned">{{ _('Serial Port / Baudrate:') }}</label>
+            <div class="ml-1">
+                <span id="SMuFF_setting_tty"      class="data" data-bind="html: _settings.tty()"></span>&nbsp;&nbsp;
+                <span id="SMuFF_setting_baudrate" class="data" data-bind="html: _settings.baudrate()"></span>
             </div>
         </div>
 
-        <div class="control-group">
-            <label class="control-label">{{ _('Firmware Info:') }}</label>
-            <div class="controls">
-                <div id="SMuFF_setting_firmware" class="data" data-bind="html: _settings.firmware_info()" readonly></div>
+        <div class="aligned">
+            <label class="label-aligned">{{ _('Firmware Info:') }}</label>
+            <div class="ml-1">
+                <div id="SMuFF_setting_firmware" class="data" data-bind="html: _settings.firmware_info()"></div>
             </div>
         </div>
 
-        <div class="control-group">
-            <label class="control-label">{{ _('Active Tool:') }}</label>
-            <div class="controls">
-                <div id="SMuFF_setting_tool" class="data" data-bind="html: _settings.tool()" readonly />
+        <div class="aligned">
+            <label class="label-aligned">{{ _('Active Tool:') }}</label>
+            <div class="ml-1">
+                <span id="SMuFF_setting_tool" class="data" data-bind="html: _settings.tool()"></span>
             </div>
         </div>
 
-        <div class="control-group">
-            <label class="control-label">{{ _('Feeder:') }}</label>
-            <div class="controls">
-                1&nbsp;<input type="checkbox" id="SMuFF_setting_feeder"   class="input-checkbox" data-bind="checked: _settings.feeder_end()" readonly />&nbsp;&nbsp;
-                2&nbsp;<input type="checkbox" id="SMuFF_setting_feeder2"  class="input-checkbox" data-bind="checked: _settings.feeder2_end()" readonly />
+        <div class="aligned">
+            <label class="label-aligned">{{ _('Feeder:') }}</label>
+            <div class="ml-1">
+                <span style="margin-right: 1em;">
+                    1&nbsp;<i id="SMuFF_setting_feeder" class="fa fa-times-circle" data-bind="attr: { class: _settings.feeder_end() }"></i>
+                </span>
+                <span style="margin-left: 1em;">
+                    2&nbsp;<i id="SMuFF_setting_feeder2" class="fa fa-times-circle" data-bind="attr: { class: _settings.feeder2_end() }"></i>
+                </span>
             </div>
         </div>
 
