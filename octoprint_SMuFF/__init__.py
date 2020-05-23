@@ -159,7 +159,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			if self.send_and_wait(cmd):
 				__pre_tool__ = __cur_tool__
 				__cur_tool__ = cmd.rstrip("\n")
-				__tool_no__ = self.parse_tool_number()
+				__tool_no__ = self.parse_tool_number(__cur_tool__)
 			
 			__toolchange__ = False
 		return None
@@ -199,8 +199,10 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 
 	def get_tool(self):
 		__cur_tool__ = self.send_and_wait("T")
+		self._logger.info("SMuFF says Tool is: [" + __cur_tool__ +"]")
 		if __cur_tool__:
-			__tool_no__ = self.parse_tool_number()
+			__tool_no__ = self.parse_tool_number(__cur_tool__)
+			self._logger.info("Plugin says Tool is: [" + str(__tool_no__) +"]")
 			return True
 		return False
 
@@ -213,16 +215,16 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		return False
 
 
-	def parse_tool_number(self):
+	def parse_tool_number(self, tool):
 		result = -1
 		
-		if len(__cur_tool__) == 0:
+		if len(tool) == 0:
 			return result
 
 		try:
-			result = int(re.search(r'\d+', __cur_tool__).group(0))
+			result = int(re.search(r'\d+', tool).group(0))
 		except ValueError:
-			self._logger.into("Can't parse tool number: [" + __cur_tool__ + "]")
+			self._logger.into("Can't parse tool number: [" + tool + "]")
 		except:
 			self._logger.info("Can't parse tool number: [Unexpected error]")
 		return result
