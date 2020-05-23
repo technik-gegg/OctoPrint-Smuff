@@ -74,7 +74,9 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			selector_end	= "?",
 			revolver_end	= "?",
 			feeder_end		= "?",
-			feeder2_end		= "?"
+			feeder2_end		= "?",
+			before_script	= __before_script__,
+			after_script	= __after_script__
 		)
 
 		__ser0__.timeout = 1
