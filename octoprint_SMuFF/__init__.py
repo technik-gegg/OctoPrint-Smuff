@@ -145,10 +145,10 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 	##~~ GCode hooks
 
 	def extend_tool_queuing(self, comm_instance, phase, cmd, cmd_type, gcode, subcode, tags, *args, **kwargs):
-		#self._logger.info("Processing queuing: [" + cmd + "," + str(cmd_type)+ "," + str(tags) + "]")
+		self._logger.info("Processing queuing: [" + cmd + "," + str(cmd_type)+ "," + str(tags) + "]")
 		if gcode and gcode.startswith('T'):
 			self._logger.info("Queuing: [" + cmd + "," + str(cmd_type) + "," + str(tags) + "]")
-			
+
 
 	def extend_tool_sending(self, comm_instance, phase, cmd, cmd_type, gcode, subcode, tags, *args, **kwargs):
 		global __toolchange__
