@@ -32,18 +32,29 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		global __ser_drvr__
 		global __ser_baud__
 
-		__fw_info__ = "?"
-		__cur_tool__ = "?"
-		__pre_tool__ = "?"
-		__tool_no__ = -1
-		__toolchange__ = False
-
 		# change the baudrate here if you have to
 		__ser_baud__ = 115200
 		# do __not__ change the serial port device
 		__ser_drvr__ = "ttyS0"
+
+		__fw_info__ 	= "?"
+		__cur_tool__ 	= "?"
+		__pre_tool__ 	= "?"
+		__tool_no__ 	= -1
+		__toolchange__ 	= False
+		__selector__ 	= False
+		__revolver__ 	= False
+		__feeder__ 		= False
+		__feeder2__		= False
+
 		try:
 			__ser0__ = serial.Serial("/dev/"+__ser_drvr__, __ser_baud__, timeout=5)
+			# after connecting, read the response from the SMuFF
+			resp = __ser0__.readline()
+			# which is supposed to be 'start'
+			if resp.startswith('start'):
+				self._logger.info("SMuFF has sent \"start\" response")
+
 		except (OSError, serial.SerialException):
 			self._logger.info("Serial port not found!")
 			#pass
@@ -68,12 +79,6 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 
 	def get_settings_defaults(self):
 		self._logger.info("SMuFF plugin loaded, getting defaults")
-
-		# after connecting, read the response from the SMuFF
-		resp = __ser0__.readline()
-		# which is supposed to be 'start'
-		if resp.startswith('start'):
-			self._logger.info("SMuFF has sent \"start\" response")
 
 		params = dict(
 			firmware_info="No data. Please check connection!",
@@ -188,8 +193,8 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 					return prev_resp
 				else:
 					prev_resp = response.rstrip("\n")
-					#if prev_resp:
-					#	self._logger.info("SMuFF says: [" + prev_resp +"]")
+					if prev_resp:
+						self._logger.info("SMuFF says: [" + prev_resp +"]")
 					retry -= 1
 					if retry == 0:
 						return None
@@ -224,7 +229,10 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 
 	def parse_tool_number(self):
 		result = -1
-		result = int(re.search(r'\d+', __cur_tool__).group(0))
+		try:
+			result = int(re.search(r'\d+', __cur_tool__).group(0))
+		except ValueError:
+			self._logger.info("Can't parse tool number: [" + __cur_tool__ +"]")
 		return result
 
 
