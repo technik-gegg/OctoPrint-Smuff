@@ -238,7 +238,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		global __revolver__
 		global __feeder__
 		global __feeder2__
-		self._logger.into("Endstop states: [" + states + "]")
+		self._logger.info("Endstop states: [" + states + "]")
 		if len(states) == 0:
 			return False
 		m = re.search(r'^(\w+:.)(\w+).(\w+:.)(\w+).(\w+:.)(\w+)', states)
