@@ -23,8 +23,15 @@
     background: #E1F5FE;
     border-radius: 4px;
     border: 1px solid #81D4FA;
-    padding: 3px;
+    padding: 4px;
     width: 450px;
+}
+
+.info {
+    background-color: #F9FBE7;
+    border: 3px solid #CDDC39;
+    border-radius: 6px;
+    padding: 4px;
 }
 
 .aligned {

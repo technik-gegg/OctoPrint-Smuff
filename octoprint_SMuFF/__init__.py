@@ -322,11 +322,11 @@ def __plugin_load__():
 		#pass
 
 	# read before and after ToolChange scripts from the default OctoPrint folder
-	file = open("/home/pi/.octoprint/scripts/gcode/beforeToolChange", "r") 
+	file = open("/home/pi/.octoprint/scripts/gcode/SMuFF_beforeToolChange", "r") 
 	__before_script__ = file.read();
 	file.close();
 
-	file = open("/home/pi/.octoprint/scripts/gcode/afterToolChange", "r") 
+	file = open("/home/pi/.octoprint/scripts/gcode/SMuFF_afterToolChange", "r") 
 	__after_script__ = file.read();
 	file.close();
 
