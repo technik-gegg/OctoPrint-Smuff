@@ -169,7 +169,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			stat = self.send_and_wait(cmd)
 			__toolchange__ = False
 
-			if stat:
+			if stat != None:
 				__pre_tool__ = __cur_tool__
 				__cur_tool__ = cmd
 				__tool_no__ = self.parse_tool_number(__cur_tool__)
@@ -199,6 +199,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 						return None
 		else:
 			self._logger.info("Serial not open")
+			return None
 
 
 	def find_file(self, pattern, path):
