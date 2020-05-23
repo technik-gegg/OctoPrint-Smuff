@@ -10,7 +10,7 @@ last_position.t
 M83					; set extruder to relative mode (important)
 G1 E-5 F12000		; retract 5 mm fast to avoid oozing
 G91					; switch to relative positioning
-G1 Z15 F8000			; lift nozzle
+G1 Z15 F8000		; lift nozzle
 G90					; switch back to absolute positioning
 G1 X-25 Y160 F15000	; move to change position
 G0 E-720 F6000		; Retract filament
