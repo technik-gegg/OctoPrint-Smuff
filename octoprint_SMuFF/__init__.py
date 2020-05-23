@@ -159,6 +159,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		global __cur_tool__
 		global __pre_tool__
 		global __tool_no__
+		global __timer__
 
 		if gcode and gcode.startswith('T'):
 			self._logger.info("Sending tool change: [" + cmd + "]")
