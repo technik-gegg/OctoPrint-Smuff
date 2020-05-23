@@ -198,6 +198,8 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 
 
 	def get_tool(self):
+		global __cur_tool__
+		global __tool_no__
 		__cur_tool__ = self.send_and_wait("T")
 		self._logger.info("SMuFF says Tool is: [" + __cur_tool__ +"]")
 		if __cur_tool__:
@@ -208,6 +210,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 
 
 	def get_endstops(self):
+		global __endstops__
 		__endstops__ = self.send_and_wait("M119")
 		if __endstops__:
 			self.parse_endstop_states(__endstops__)
