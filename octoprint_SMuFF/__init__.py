@@ -174,9 +174,6 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 				__cur_tool__ = cmd
 				__tool_no__ = self.parse_tool_number(__cur_tool__)
 				return "M117 SMuFF-ToolChange " + __cur_tool__	# replace command that is sent to the printer
-			else
-				return None	# cancel this command 
-
 
 		return None
 
