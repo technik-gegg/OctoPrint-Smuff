@@ -162,8 +162,9 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		if gcode and gcode.startswith('T'):
 			self._logger.info("Sending tool change: [" + cmd + "," + str(cmd_type) + "," + str(tags) + "]")
 			
-			# take Before Tool Change Script, split it in lines and return this
-			btc = splitlines(__before_script__)
+			# take "Before Tool Change Script", split it in lines and return this
+			btc = __before_script__.splitlines()
+			btc.append("@SMuFF " + __cur_tool__)
 			return btc
 
 		return None
@@ -177,14 +178,13 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 
 		__toolchange__ = True		# signal tool change in progress
 		
-		if gcode and gcode.startswith('T'):
+		if cmd and cmd.startswith('@SMuFF '):
 			self._logger.info("Sent tool change: [" + cmd + "," + str(cmd_type) + "," + str(tags) + "]")
 			
 			# After Tool Change
-			atc = splitlines(__after_script__)
-			#atc.insert(0, "M117 SMuFF-ToolChange " + __cur_tool__)
+			atc = __after_script__.splitlines()
 
-			stat = self.send_and_wait(cmd)
+			stat = self.send_and_wait(cmd[:7])
 			__toolchange__ = False
 
 			if stat != None:
