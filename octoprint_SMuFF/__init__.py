@@ -31,6 +31,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		global __ser0__
 		global __ser_drvr__
 		global __ser_baud__
+		global __no_log__
 
 		# change the baudrate here if you have to
 		__ser_baud__ = 115200
@@ -46,6 +47,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		__revolver__ 	= False
 		__feeder__ 		= False
 		__feeder2__		= False
+		__no_log__		= False
 
 		try:
 			__ser0__ = serial.Serial("/dev/"+__ser_drvr__, __ser_baud__, timeout=5)
@@ -65,8 +67,10 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 	def on_timer_event(self):
 		# poll tool active and endstop states periodically
 		if __toolchange__ == False:
+			__no_log__ = True
 			self.get_tool()
 			self.get_endstops()
+			__no_log__ = False
 		
 		self._plugin_manager.send_plugin_message(self._identifier, {'type': 'status', 'tool': __cur_tool__, 'feeder': __feeder__, 'feeder2': __feeder2__ })
 
@@ -99,12 +103,12 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			params['firmware_info'] = __fw_info__
 		
 		# request the currently active tool
-		if self.get_tool():
+		if self.get_tool() == True:
 			params['tool'] = __cur_tool__
 			self._logger.info("Current tool on SMuFF [" + __cur_tool__ + "]")
 
 		# request the endstop states
-		if self.get_endstops():
+		if self.get_endstops() == True:
 			self._logger.info("Endstops: [" + __endstops__ +"]")
 			params['feeder_end']   = __feeder__ == "triggered"
 			params['feeder2_end']  = __feeder2__ == "triggered"
@@ -194,7 +198,8 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 				else:
 					prev_resp = response.rstrip("\n")
 					if prev_resp:
-						self._logger.info("SMuFF says: [" + prev_resp +"]")
+						if __no_log__ == False:
+							self._logger.info("SMuFF says: [" + prev_resp +"]")
 					retry -= 1
 					if retry == 0:
 						return None
@@ -233,6 +238,8 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			result = int(re.search(r'\d+', __cur_tool__).group(0))
 		except ValueError:
 			self._logger.info("Can't parse tool number: [" + __cur_tool__ +"]")
+		except:
+    		self._logger.info("Can't parse tool number: [Unexpected error:", sys.exc_info()[0] +"]")
 		return result
 
 
