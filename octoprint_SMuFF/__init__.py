@@ -43,7 +43,6 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		__no_log__		= False
 
 
-
 	##~~ StartupPlugin mixin
 
 	def on_timer_event(self):
@@ -264,17 +263,17 @@ def __plugin_load__():
 	__ser_drvr__ = "ttyS0"
 
 	try:
-	__ser0__ = serial.Serial("/dev/"+__ser_drvr__, __ser_baud__, timeout=5)
-	# after connecting, read the response from the SMuFF
-	resp = __ser0__.readline()
-	# which is supposed to be 'start'
-	if resp.startswith('start'):
-		self._logger.info("SMuFF has sent \"start\" response")
-	self._logger.info("__plugin_load__ done!")
+		__ser0__ = serial.Serial("/dev/"+__ser_drvr__, __ser_baud__, timeout=5)
+		# after connecting, read the response from the SMuFF
+		resp = __ser0__.readline()
+		# which is supposed to be 'start'
+		if resp.startswith('start'):
+			self._logger.info("SMuFF has sent \"start\" response")
+		self._logger.info("__plugin_load__ done!")
 
-except (OSError, serial.SerialException):
-	self._logger.info("Serial port not found!")
-	#pass
+	except (OSError, serial.SerialException):
+		self._logger.info("Serial port not found!")
+		#pass
 
 
 def __plugin_unload__():
