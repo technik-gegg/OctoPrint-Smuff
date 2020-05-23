@@ -43,6 +43,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		__pre_tool__ 	= "?"
 		__tool_no__ 	= -1
 		__toolchange__ 	= False
+		__endstops__	= "?"
 		__selector__ 	= False
 		__revolver__ 	= False
 		__feeder__ 		= False
@@ -56,6 +57,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			# which is supposed to be 'start'
 			if resp.startswith('start'):
 				self._logger.info("SMuFF has sent \"start\" response")
+			self._logger.info("__init__ done!")
 
 		except (OSError, serial.SerialException):
 			self._logger.info("Serial port not found!")
@@ -85,14 +87,14 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		self._logger.info("SMuFF plugin loaded, getting defaults")
 
 		params = dict(
-			firmware_info="No data. Please check connection!",
-			baudrate=__ser_baud__,
-			tty="Not found. Please enable the UART on your Raspi!",
-			tool=__cur_tool__,
-			selector_end="?",
-			revolver_end="?",
-			feeder_end="?",
-			feeder2_end="?"
+			firmware_info	="No data. Please check connection!",
+			baudrate		=__ser_baud__,
+			tty 			="Not found. Please enable the UART on your Raspi!",
+			tool			=__cur_tool__,
+			selector_end	="?",
+			revolver_end	="?",
+			feeder_end		="?",
+			feeder2_end		="?"
 		)
 
 		__ser0__.timeout = 1
@@ -239,11 +241,14 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		except ValueError:
 			self._logger.into("Can't parse tool number: [" + __cur_tool__ + "]")
 		except:
-			self._logger.info("Can't parse tool number: [Unexpected error]")
+			self._logger.info("Can't parse tool number: [Unexpected error:" + sys.exc_info()[0] + "]")
 		return result
 
 
 	def parse_endstop_states(self, states):
+		self._logger.into("Endstop states: [" + states + "]")
+		if len(states == 0)
+			return False
 		m = re.search(r'^(\w+:.)(\w+).(\w+:.)(\w+).(\w+:.)(\w+)', states)
 		if m:
 			__selector__ = m.group(2).strip() == "triggered"
