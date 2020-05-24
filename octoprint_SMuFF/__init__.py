@@ -194,7 +194,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 				if self._printer.set_job_on_hold(True):
 					try:
 						__pending_tool__ = cmd[7:]
-						# check if there's filament loaded
+						# check if there's some filament loaded
 						if __feeder__:
 							# send the "Before Tool Change" script to the printer
 							self._printer.script("beforeToolChange")

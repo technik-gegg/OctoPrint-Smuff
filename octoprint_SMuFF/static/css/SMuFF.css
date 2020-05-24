@@ -31,7 +31,15 @@
     background-color: #F9FBE7;
     border: 3px solid #CDDC39;
     border-radius: 6px;
-    padding: 4px;
+    padding: 0.8em;
+    line-height: 1.5em;
+}
+
+.fa-warning {
+    float: left;
+    margin-right: .5em;
+    padding-top: .2em;
+    color: #C0CA33;
 }
 
 .aligned {
