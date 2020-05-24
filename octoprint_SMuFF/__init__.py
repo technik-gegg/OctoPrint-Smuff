@@ -170,31 +170,40 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 
 		# is this the replaced tool change command?
 		if cmd and cmd.startswith('@SMuFF '):
-			if self._printer.set_job_on_hold(True):
-				try:
-					# send the "Before Tool Change" script to the printer
-					self._printer.script("SMuFF_beforeToolChange")
-					
-					# wait for the printer to be ready
-					while not self._printer.is_ready():
-						time.sleep(1)
-
-					# send a tool change command to SMuFF
-					__toolchange__ = True
-					stat = self.send_and_wait(cmd[7:])
-					__toolchange__ = False
-
-					if stat != None:
-						__pre_tool__ = __cur_tool__
-						__cur_tool__ = cmd[7:]
-						__tool_no__ = self.parse_tool_number(__cur_tool__)
+			if cmd[7:] == "LOAD":
+				if self._printer.set_job_on_hold(True):
+					try:
 						# send the "After Tool Change" script to the printer
-						self._printer.script("SMuFF_afterToolChange")
-				
-				except UnknownScriptException:
-					self._logger.info("Script not found!")
-				finally:
-					self._printer.set_job_on_hold(False)
+						self._printer.script("afterToolChange")
+					except UnknownScriptException:
+						self._logger.info("Script 'afterToolChange' not found!")
+					finally:
+						self._printer.set_job_on_hold(False)
+			
+			else:
+				if self._printer.set_job_on_hold(True):
+					try:
+						# send the "Before Tool Change" script to the printer
+						self._printer.script("beforeToolChange")
+						
+						# wait for the printer to be ready
+						while not self._printer.is_ready():
+							time.sleep(1)
+
+						# send a tool change command to SMuFF
+						__toolchange__ = True
+						stat = self.send_and_wait(cmd[7:])
+						__toolchange__ = False
+
+						if stat != None:
+							__pre_tool__ = __cur_tool__
+							__cur_tool__ = cmd[7:]
+							__tool_no__ = self.parse_tool_number(__cur_tool__)
+					
+					except UnknownScriptException:
+						self._logger.info("Script 'beforeToolChange' not found!")
+					finally:
+						self._printer.set_job_on_hold(False)
 			
 			return None
 
