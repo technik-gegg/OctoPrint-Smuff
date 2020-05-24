@@ -149,13 +149,14 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 	def extend_tool_queuing(self, comm_instance, phase, cmd, cmd_type, gcode, subcode, tags, *args, **kwargs):
 		
 		if gcode and gcode.startswith('T'):
-			self._logger.info("Processing queuing: [" + cmd + "," + str(cmd_type)+ "," + str(tags) + "]")
-			#if the tool is addresses that's already loaded, ignore the filament change
+			#self._logger.info("Processing queuing: [" + cmd + "," + str(cmd_type)+ "," + str(tags) + "]")
+
+			# if the tool that's already loaded is addressed, ignore the filament change
 			if cmd == __cur_tool__:
 				self._logger.info(cmd + " equals " + __cur_tool__ + "aborting tool change")
 				return None
 			# replace the tool change command
-			return "@SMuFF " + cmd
+			return [ "@SMuFF " + cmd ]
 
 
 	def extend_tool_sending(self, comm_instance, phase, cmd, cmd_type, gcode, subcode, tags, *args, **kwargs):
@@ -164,6 +165,10 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		global __pre_tool__
 		global __tool_no__
 
+		if gcode and gcode.startswith('T'):
+			return ""
+
+		# is this the replaced tool change command?
 		if cmd and cmd.startswith('@SMuFF '):
 			if self._printer.set_job_on_hold(True):
 				try:
@@ -177,7 +182,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 
 					if stat != None:
 						__pre_tool__ = __cur_tool__
-						__cur_tool__ = cmd
+						__cur_tool__ = cmd[7:]
 						__tool_no__ = self.parse_tool_number(__cur_tool__)
 						# send the "After Tool Change" script to the printer
 						self._printer.script("SMuFF_afterToolChange")
