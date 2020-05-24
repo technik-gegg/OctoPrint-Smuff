@@ -194,8 +194,12 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 				if self._printer.set_job_on_hold(True):
 					try:
 						__pending_tool__ = cmd[7:]
-						# send the "Before Tool Change" script to the printer
-						self._printer.script("beforeToolChange")
+						# check if there's filament loaded
+						if __feeder__:
+							# send the "Before Tool Change" script to the printer
+							self._printer.script("beforeToolChange")
+						else:
+							self._printer.commands("@SMuFF LOAD")
 						
 					except UnknownScriptException:
 						self._logger.info("Script 'beforeToolChange' not found!")
@@ -205,12 +209,6 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			return None
 
 	
-	def extend_tool_sent(self, comm_instance, phase, cmd, cmd_type, gcode, subcode, tags, *args, **kwargs):
-
-		#if cmd and cmd.startswith('@SMuFF '):
-
-		return None
-
 	##~~ helper functions
 
 	def send_and_wait(self, data):
@@ -312,7 +310,6 @@ def __plugin_load__():
 	global __plugin_hooks__
 	
 	__plugin_hooks__ = {
-    	"octoprint.comm.protocol.gcode.sent": __plugin_implementation__.extend_tool_sent,
     	"octoprint.comm.protocol.gcode.sending": __plugin_implementation__.extend_tool_sending,
     	"octoprint.comm.protocol.gcode.queuing": __plugin_implementation__.extend_tool_queuing,
 		"octoprint.plugin.softwareupdate.check_config": __plugin_implementation__.get_update_information
