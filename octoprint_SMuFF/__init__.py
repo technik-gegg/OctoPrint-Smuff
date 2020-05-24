@@ -172,9 +172,9 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		global __tool_no__
 
 		if gcode and gcode.startswith('T'):
-			if printer.set_job_on_hold(True):
+			if self._printer.set_job_on_hold(True):
 				try:
-					printer.script("/home/pi/.octoprint/scripts/gcode/SMuFF_beforeToolChange")
+					self._printer.script("/home/pi/.octoprint/scripts/gcode/SMuFF_beforeToolChange")
 					__toolchange__ = True
 					stat = self.send_and_wait(cmd)
 					__toolchange__ = False
@@ -183,9 +183,9 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 						__pre_tool__ = __cur_tool__
 						__cur_tool__ = cmd
 						__tool_no__ = self.parse_tool_number(__cur_tool__)
-						
+
 				finally:
-					printer.set_job_on_hold(False)
+					self._printer.set_job_on_hold(False)
 			
 			return None
 
