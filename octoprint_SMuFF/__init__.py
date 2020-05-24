@@ -175,6 +175,10 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 					# send the "Before Tool Change" script to the printer
 					self._printer.script("SMuFF_beforeToolChange")
 					
+					# wait for the printer to be ready
+					while !self._printer.is_ready():
+						time.sleep(1)
+
 					# send a tool change command to SMuFF
 					__toolchange__ = True
 					stat = self.send_and_wait(cmd[7:])
