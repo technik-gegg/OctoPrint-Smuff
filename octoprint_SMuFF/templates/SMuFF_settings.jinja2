@@ -41,22 +41,22 @@
         <div class="aligned">
             <label class="label-aligned">{{ _('Before Tool Change:') }}</label>
             <div class="ml-1">
-                <textarea id="SMuFF_setting_before" class="patch block" rows="5" data-bind="value: _settings.before_script(), valueUpdate: 'input'"></textarea>
+                <textarea id="SMuFF_setting_before" class="patch block" rows="5" cols="60" data-bind="value: _settings.before_script(), valueUpdate: 'input'"></textarea>
             </div>
-        <div>
+        </div>
 
         <div class="aligned">
             <label class="label-aligned">{{ _('After Tool Change:') }}</label>
             <div class="ml-1">
-                <textarea id="SMuFF_setting_after" class="patch block" rows="5" data-bind="value: _settings.after_script(), valueUpdate: 'input'"></textarea>
+                <textarea id="SMuFF_setting_after" class="patch block" rows="5" cols="60" data-bind="value: _settings.after_script(), valueUpdate: 'input'"></textarea>
             </div>
-        <div>
+        </div>
         
-        <div>
+        <div style="width: 100%">
             <p>&nbsp;</p>
-            <p>
+            <!-- p>
                 <div class="info">Don't forget to add / modify the GCode-Scripts <b>Before Tool Change</b> and <b>After Tool Change</b> according to your printers environment.</div>
-            </p>
+            </p -->
         </div>
 
     </form>
