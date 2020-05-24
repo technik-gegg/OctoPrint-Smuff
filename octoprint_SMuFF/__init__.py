@@ -148,7 +148,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 
 	def extend_tool_queuing(self, comm_instance, phase, cmd, cmd_type, gcode, subcode, tags, *args, **kwargs):
 		
-		if gcode and gcode.startswith('T'):
+		if gcode and gcode.startswith('__T'):
 			self._logger.info("Processing queuing: [" + cmd + "," + str(cmd_type)+ "," + str(tags) + "]")
 			#if the tool is addresses that's already loaded, ignore the filament change
 			if cmd == __cur_tool__:
@@ -170,6 +170,24 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		global __cur_tool__
 		global __pre_tool__
 		global __tool_no__
+
+		if gcode and gcode.startswith('T'):
+			if printer.set_job_on_hold(True):
+				try:
+					printer.script("/home/pi/.octoprint/scripts/gcode/SMuFF_beforeToolChange")
+					__toolchange__ = True
+					stat = self.send_and_wait(cmd)
+					__toolchange__ = False
+
+					if stat != None:
+						__pre_tool__ = __cur_tool__
+						__cur_tool__ = cmd
+						__tool_no__ = self.parse_tool_number(__cur_tool__)
+						
+				finally:
+					printer.set_job_on_hold(False)
+			
+			return None
 
 		if cmd and cmd.startswith('@SMuFF '):
 			self._logger.info("Sending to SMuFF: [" + cmd[7:] + "]")
