@@ -174,7 +174,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		if gcode and gcode.startswith('T'):
 			if self._printer.set_job_on_hold(True):
 				try:
-					self._printer.script("/home/pi/.octoprint/scripts/gcode/SMuFF_beforeToolChange")
+					self._printer.script("SMuFF_beforeToolChange")
 					__toolchange__ = True
 					stat = self.send_and_wait(cmd)
 					__toolchange__ = False
@@ -183,7 +183,9 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 						__pre_tool__ = __cur_tool__
 						__cur_tool__ = cmd
 						__tool_no__ = self.parse_tool_number(__cur_tool__)
-
+				
+				except UnknownScriptException:
+					self._logger.info("Script not found!")
 				finally:
 					self._printer.set_job_on_hold(False)
 			
