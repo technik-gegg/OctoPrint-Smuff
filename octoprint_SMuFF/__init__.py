@@ -148,21 +148,14 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 
 	def extend_tool_queuing(self, comm_instance, phase, cmd, cmd_type, gcode, subcode, tags, *args, **kwargs):
 		
-		if gcode and gcode.startswith('__T'):
+		if gcode and gcode.startswith('T'):
 			self._logger.info("Processing queuing: [" + cmd + "," + str(cmd_type)+ "," + str(tags) + "]")
 			#if the tool is addresses that's already loaded, ignore the filament change
 			if cmd == __cur_tool__:
 				self._logger.info(cmd + " equals " + __cur_tool__ + "aborting tool change")
 				return None
-
-			# take "Before Tool Change" script and "After Tool Change" script, split them in lines and return this
-			btc = __before_script__.splitlines()
-			atc = __after_script__.splitlines()
-
-			btc.append("@SMuFF " + cmd)
-			btc.append(atc)
-
-			return btc
+			# replace the tool change command
+			return "@SMuFF " + cmd
 
 
 	def extend_tool_sending(self, comm_instance, phase, cmd, cmd_type, gcode, subcode, tags, *args, **kwargs):
@@ -171,18 +164,23 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		global __pre_tool__
 		global __tool_no__
 
-		if gcode and gcode.startswith('T'):
+		if cmd and cmd.startswith('@SMuFF '):
 			if self._printer.set_job_on_hold(True):
 				try:
+					# send the "Before Tool Change" script to the printer
 					self._printer.script("SMuFF_beforeToolChange")
+					
+					# send a tool change command to SMuFF
 					__toolchange__ = True
-					stat = self.send_and_wait(cmd)
+					stat = self.send_and_wait(cmd[7:])
 					__toolchange__ = False
 
 					if stat != None:
 						__pre_tool__ = __cur_tool__
 						__cur_tool__ = cmd
 						__tool_no__ = self.parse_tool_number(__cur_tool__)
+						# send the "After Tool Change" script to the printer
+						self._printer.script("SMuFF_afterToolChange")
 				
 				except UnknownScriptException:
 					self._logger.info("Script not found!")
@@ -191,17 +189,6 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			
 			return None
 
-		if cmd and cmd.startswith('@SMuFF '):
-			self._logger.info("Sending to SMuFF: [" + cmd[7:] + "]")
-			__toolchange__ = True
-			stat = self.send_and_wait(cmd[7:])
-			__toolchange__ = False
-
-			if stat != None:
-				__pre_tool__ = __cur_tool__
-				__cur_tool__ = cmd
-				__tool_no__ = self.parse_tool_number(__cur_tool__)
-		return None
 	
 	def extend_tool_sent(self, comm_instance, phase, cmd, cmd_type, gcode, subcode, tags, *args, **kwargs):
 
