@@ -209,6 +209,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			return None
 
 	def extend_script_variables(comm, script_type, script_name, *args, **kwargs):
+		self._logger.info("Var requested from: " + script_name)
     	if not script_type == "gcode":
         	return None
 
