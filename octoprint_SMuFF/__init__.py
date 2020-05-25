@@ -177,8 +177,8 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			if cmd[7:] == "CHECK":		# @SMuFF CHECK
 				if self._printer.job_on_hold():
 					try:
-						v1 = 10
-						v2 = 50
+						v1 = -10
+						v2 = -50
 						m = re.search(r'^@\w+.\w+.(\d+).(\d+)', cmd)
 						if m:
 							v1 = int(m.group(1))
