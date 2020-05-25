@@ -71,10 +71,10 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			baudrate		= __ser_baud__,
 			tty 			= "Not found. Please enable the UART on your Raspi!",
 			tool			= __cur_tool__,
-			selector_end	= "?",
-			revolver_end	= "?",
-			feeder_end		= "?",
-			feeder2_end		= "?",
+			selector_end	= __selector__,
+			revolver_end	= __revolver__,
+			feeder_end		= __feeder__,
+			feeder2_end		= __feeder__,
 			before_script	= __before_script__,
 			after_script	= __after_script__
 		)
@@ -89,13 +89,13 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		# request the currently active tool
 		if self.get_tool() == True:
 			params['tool'] = __cur_tool__
-			self._logger.info("Current tool on SMuFF [" + __cur_tool__ + "]")
 
 		# request the endstop states
 		if self.get_endstops() == True:
-			self._logger.info("Endstops: [" + __endstops__ +"]")
-			params['feeder_end']   = __feeder__ == "triggered"
-			params['feeder2_end']  = __feeder2__ == "triggered"
+			params['selector_end'] = __selector__
+			params['revolver_end'] = __revolver__
+			params['feeder_end']   = __feeder__
+			params['feeder2_end']  = __feeder2__
 
 		# look up the serial port driver
 		drvr = self.find_file(__ser_drvr__, "/dev")
@@ -196,8 +196,8 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 				if self._printer.set_job_on_hold(True):
 					try:
 						__pending_tool__ = cmd[7:]
-						# check if there's some filament loaded
 						self._logger.info("Feeder is: " + str(__feeder__))
+						# check if there's some filament loaded
 						if __feeder__:
 							# send the "Before Tool Change" script to the printer
 							self._printer.script("beforeToolChange")
