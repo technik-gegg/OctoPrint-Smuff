@@ -157,7 +157,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 	def extend_tool_queuing(self, comm_instance, phase, cmd, cmd_type, gcode, subcode, tags, *args, **kwargs):
 		
 		global __is_aligned__
-		
+
 		self._logger.info("Processing queuing: [" + cmd + "," + str(cmd_type)+ "," + str(tags) + "]")
 		
 		if gcode and gcode.startswith(TOOL):
@@ -166,6 +166,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			if cmd == __cur_tool__:
 				self._logger.info(cmd + " equals " + __cur_tool__ + " -- aborting tool change")
 				return None
+			__is_aligned__ = False
 			# replace the tool change command
 			return [ AT_SMUFF + " " + cmd ]
 
@@ -190,10 +191,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 				self._logger.info(action + " Feeder is: " + str(__feeder__) + " Cmd is:" + G1_E + str(v1))
 				if __feeder__:
 					__is_aligned__ = False
-					return [ 
-						( G1_E + str(v1) ), 
-						( AT_SMUFF + " " + REPEAT + " " + str(v1) + " " + str(v2) ) 
-						]
+					return [ ( G1_E + str(v1) ) ]
 				else:
 					if __is_aligned__:
 						return None
