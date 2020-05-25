@@ -10,12 +10,14 @@ import octoprint.plugin
 import time
 import sys
 
+AT_SMUFF = "@SMuFF"
+M115	 = "M115"
+
 class SmuffPlugin(octoprint.plugin.SettingsPlugin,
                   octoprint.plugin.AssetPlugin,
                   octoprint.plugin.TemplatePlugin,
 				  octoprint.plugin.StartupPlugin):
 
-	atSmuff = "@SMuFF"
 
 	def __init__(self):
 		global __fw_info__
@@ -81,7 +83,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		__ser0__.timeout = 1
 
 		# request firmware info from SMuFF 
-		__fw_info__ = self.send_and_wait("M115")
+		__fw_info__ = self.send_and_wait(M115)
 		if __fw_info__:
 			params['firmware_info'] = __fw_info__
 		
@@ -155,9 +157,9 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 				self._logger.info(cmd + " equals " + __cur_tool__ + "aborting tool change")
 				return None
 			# replace the tool change command
-			return [ atSmuff + " " + cmd ]
+			return [ AT_SMUFF + " " + cmd ]
 
-		if cmd and cmd.startswith(atSmuff):
+		if cmd and cmd.startswith(AT_SMUFF):
 			v1 = -1
 			v2 = -5
 			action = None
@@ -179,7 +181,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 				if __feeder__:
 					return [ 
 						( "G1 E" + str(v1)), 
-						( atSmuff +" REPEAT " + str(v1) +" " + str(v2)) 
+						( AT_SMUFF +" REPEAT " + str(v1) +" " + str(v2)) 
 						]
 				else:
 					self._logger.info("Cmd is: G1 E" + str(v2))
@@ -199,7 +201,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			return ""
 
 		# is this the replaced tool change command?
-		if cmd and cmd.startswith(atSmuff):
+		if cmd and cmd.startswith(AT_SMUFF):
 			v1 = -1
 			v2 = -5
 			action = None
@@ -223,7 +225,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 							# send the "Before Tool Change" script to the printer
 							self._printer.script("beforeToolChange")
 						else:
-							self._printer.commands(atSmuff +" LOAD")
+							self._printer.commands(AT_SMUFF +" LOAD")
 						
 					except UnknownScriptException:
 						self._logger.info("Script 'beforeToolChange' not found!")
