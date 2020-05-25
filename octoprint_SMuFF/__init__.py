@@ -176,8 +176,17 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			if cmd[7:] == "LOAD":
 				if self._printer.set_job_on_hold(True):
 					try:
-						# send a tool change command to SMuFF
 						__toolchange__ = True
+						# check the feeder and keep retracting 10mm as long as 
+						# the feeder endstop is on
+						while __feeder__:
+							self._printer.commands("G1 E-10")
+							self.get_endstops()
+							self._logger.info("Feeder is: " + str(__feeder__))
+						self._printer.commands("G1 E-50")
+						time.sleep(3)
+
+						# send a tool change command to SMuFF
 						stat = self.send_and_wait(__pending_tool__)
 						__toolchange__ = False
 
