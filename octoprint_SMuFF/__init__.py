@@ -208,6 +208,16 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			
 			return None
 
+	def extend_script_variables(comm, script_type, script_name, *args, **kwargs):
+    	if not script_type == "gcode":
+        	return None
+
+		variables = dict(
+			feeder	= __feeder__,
+			feeder2	= __feeder2__,
+			tool	= __cur_tool__
+		)
+    	return None, None, variables
 	
 	##~~ helper functions
 
@@ -310,8 +320,9 @@ def __plugin_load__():
 	global __plugin_hooks__
 	
 	__plugin_hooks__ = {
-    	"octoprint.comm.protocol.gcode.sending": __plugin_implementation__.extend_tool_sending,
-    	"octoprint.comm.protocol.gcode.queuing": __plugin_implementation__.extend_tool_queuing,
+		"octoprint.comm.protocol.scripts": 				__plugin_implementation__.extend_script_variables,
+    	"octoprint.comm.protocol.gcode.sending": 		__plugin_implementation__.extend_tool_sending,
+    	"octoprint.comm.protocol.gcode.queuing": 		__plugin_implementation__.extend_tool_queuing,
 		"octoprint.plugin.softwareupdate.check_config": __plugin_implementation__.get_update_information
 	}
 	global __before_script__
