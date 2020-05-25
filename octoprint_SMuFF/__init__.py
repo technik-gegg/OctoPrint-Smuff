@@ -208,15 +208,13 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			
 			return None
 
-	def extend_script_variables(self, comm_instance, script_type, script_name, *args, **kwargs):
-		#self._logger.info("Var requested from: " + str(script_name))
+	def extend_script_variables(comm_instance, script_type, script_name, *args, **kwargs):
 		if script_type and script_type == "gcode":
 			variables = dict(
 				feeder	= __feeder__,
 				feeder2	= __feeder2__,
 				tool	= __cur_tool__
 			)
-			self._logger.info("Vars : " + variables)
 			return None, None, variables
 		return None
 	
