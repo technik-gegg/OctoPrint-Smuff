@@ -218,6 +218,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			feeder2	= __feeder2__,
 			tool	= __cur_tool__
 		)
+		self._logger.info("Vars : " + variables)
     	return None, None, variables
 	
 	##~~ helper functions
