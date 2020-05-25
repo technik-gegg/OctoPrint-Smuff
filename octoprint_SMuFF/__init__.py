@@ -237,7 +237,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 					prev_resp = response.rstrip("\n")
 					if prev_resp:
 						if __no_log__ == False:
-							self._logger.info("SMuFF says: [" + prev_resp +"]")
+							self._logger.info("SMuFF says [" + prev_resp + "] to [" + data +"]")
 					retry -= 1
 					if retry == 0:
 						return None
@@ -299,12 +299,13 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		#self._logger.info("Endstop states: [" + states + "]")
 		if len(states) == 0:
 			return False
+		trg = "triggered"
 		m = re.search(r'^(\w+:.)(\w+).(\w+:.)(\w+).(\w+:.)(\w+)', states)
 		if m:
-			__selector__ = m.group(2).strip() == "triggered"
-			__revolver__ = m.group(4).strip() == "triggered"
-			__feeder__ 	 = m.group(6).strip() == "triggered"
-			__feeder2__  = False # m.group(8).strip() == "triggered"
+			__selector__ = m.group(2).strip() == trg
+			__revolver__ = m.group(4).strip() == trg
+			__feeder__ 	 = m.group(6).strip() == trg
+			__feeder2__  = False # m.group(8).strip() == trg
 			#self._logger.info("SELECTOR: [" + str(__selector__) + "] REVOLVER: [" + str(__revolver__) + "] FEEDER: [" + str(__feeder__) +"]")
 			return True
 		return False
