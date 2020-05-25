@@ -234,8 +234,8 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 				else:
 					prev_resp = response.rstrip("\n")
 					if prev_resp:
-						if __no_log__ == False:
-							self._logger.info("SMuFF says: [" + prev_resp +"]")
+						#if __no_log__ == False:
+						self._logger.info("SMuFF says: [" + prev_resp +"]")
 					retry -= 1
 					if retry == 0:
 						return None
