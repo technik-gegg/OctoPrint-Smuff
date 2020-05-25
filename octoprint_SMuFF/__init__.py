@@ -180,8 +180,8 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 						v2 = 50
 						m = re.search(r'^@\w+.\w+.(\d+).(\d+)', cmd)
 						if m:
-							v1 = m.group(1).strip()
-							v2 = m.group(2).strip()
+							v1 = int(m.group(1))
+							v2 = int(m.group(2))
 
 						__toolchange__ = True
 						# check the feeder and keep retracting 10mm as long as 
@@ -191,8 +191,9 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 							time.sleep(.75)
 							self.get_endstops()
 							self._logger.info("Feeder is: " + str(__feeder__))
+						#finally retract from selector
 						self._printer.commands("G1 E-" + str(v2))
-						time.sleep(3)
+						time.sleep(2)
 
 						# send a tool change command to SMuFF
 						stat = self.send_and_wait(__pending_tool__)
