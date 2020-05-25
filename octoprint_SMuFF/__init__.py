@@ -10,8 +10,14 @@ import octoprint.plugin
 import time
 import sys
 
-AT_SMUFF = "@SMuFF"
-M115	 = "M115"
+AT_SMUFF 	= "@SMuFF"
+M115	 	= "M115"
+M119	 	= "M119"
+TOOL 		= "T"
+G1_E	 	= "G1 E"
+ALIGN 	 	= "ALIGN"
+REPEAT 		= "REPEAT"
+LOAD 		= "LOAD"
 
 class SmuffPlugin(octoprint.plugin.SettingsPlugin,
                   octoprint.plugin.AssetPlugin,
@@ -149,12 +155,13 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 
 	def extend_tool_queuing(self, comm_instance, phase, cmd, cmd_type, gcode, subcode, tags, *args, **kwargs):
 		
-		if gcode and gcode.startswith('T'):
-			#self._logger.info("Processing queuing: [" + cmd + "," + str(cmd_type)+ "," + str(tags) + "]")
+		self._logger.info("Processing queuing: [" + cmd + "," + str(cmd_type)+ "," + str(tags) + "]")
+		
+		if gcode and gcode.startswith(TOOL):
 
 			# if the tool that's already loaded is addressed, ignore the filament change
 			if cmd == __cur_tool__:
-				self._logger.info(cmd + " equals " + __cur_tool__ + "aborting tool change")
+				self._logger.info(cmd + " equals " + __cur_tool__ + " -- aborting tool change")
 				return None
 			# replace the tool change command
 			return [ AT_SMUFF + " " + cmd ]
@@ -173,20 +180,20 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			self._logger.info(">> " + cmd + "  action: " + str(action) + "  v1,v2: " + str(v1) + ", " + str(v2))
 
 			# @SMuFF ALIGN | REPEAT
-			if action and action == "ALIGN" or action == "REPEAT":
+			if action and action == ALIGN or action == REPEAT:
 				# check the feeder and keep retracting v1 as long as 
 				# the feeder endstop is on
 				self.get_endstops()
-				self._logger.info("ALIGN Feeder is: " + str(__feeder__) + " Cmd is: G1 E" + str(v1))
+				self._logger.info("ALIGN Feeder is: " + str(__feeder__) + " Cmd is:" + G1_E + str(v1))
 				if __feeder__:
 					return [ 
-						( "G1 E" + str(v1)), 
-						( AT_SMUFF +" REPEAT " + str(v1) +" " + str(v2)) 
+						( G1_E + str(v1) ), 
+						( AT_SMUFF + " " + REPEAT + " " + str(v1) + " " + str(v2) ) 
 						]
 				else:
-					self._logger.info("Cmd is: G1 E" + str(v2))
+					self._logger.info("Cmd is: " + G1_E + str(v2))
 					# finally retract from selector (distance = v2)
-					return [ ("G1 E" + str(v2)) ]
+					return [ ( G1_E + str(v2) ) ]
 
 
 	def extend_tool_sending(self, comm_instance, phase, cmd, cmd_type, gcode, subcode, tags, *args, **kwargs):
@@ -215,7 +222,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			self._logger.info(">>> " + cmd + "  action: " + str(action) + "  v1,v2: " + str(v1) + ", " + str(v2))
 
 			# @SMuFF T0...9
-			if action and action.startswith("T"):
+			if action and action.startswith(TOOL):
 				if self._printer.set_job_on_hold(True):
 					try:
 						__pending_tool__ = action
@@ -225,14 +232,14 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 							# send the "Before Tool Change" script to the printer
 							self._printer.script("beforeToolChange")
 						else:
-							self._printer.commands(AT_SMUFF +" LOAD")
+							self._printer.commands(AT_SMUFF + " " + LOAD)
 						
 					except UnknownScriptException:
 						self._logger.info("Script 'beforeToolChange' not found!")
 						self._printer.set_job_on_hold(False)
 		
 			# @SMuFF LOAD
-			if action and action == "LOAD":
+			if action and action == LOAD:
 				try:
 					__toolchange__ = True
 					# send a tool change command to SMuFF
@@ -297,7 +304,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 
 	def get_tool(self):
 		global __cur_tool__
-		__cur_tool__ = self.send_and_wait("T")
+		__cur_tool__ = self.send_and_wait(TOOL)
 		#self._logger.info("SMuFF says Tool is: [" + __cur_tool__ +"]")
 		if __cur_tool__:
 			return True
@@ -306,7 +313,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 
 	def get_endstops(self):
 		global __endstops__
-		__endstops__ = self.send_and_wait("M119")
+		__endstops__ = self.send_and_wait(M119)
 		if __endstops__:
 			self.parse_endstop_states(__endstops__)
 			return True
