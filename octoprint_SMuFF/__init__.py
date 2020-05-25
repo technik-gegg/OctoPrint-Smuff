@@ -15,7 +15,8 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
                   octoprint.plugin.TemplatePlugin,
 				  octoprint.plugin.StartupPlugin):
 
-	
+	atSmuff = "@SMuFF"
+
 	def __init__(self):
 		global __fw_info__
 		global __cur_tool__
@@ -154,9 +155,9 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 				self._logger.info(cmd + " equals " + __cur_tool__ + "aborting tool change")
 				return None
 			# replace the tool change command
-			return [ "@SMuFF " + cmd ]
+			return [ atSmuff + " " + cmd ]
 
-		if cmd and cmd.startswith('@SMUFF'):
+		if cmd and cmd.startswith(atSmuff):
 			v1 = -1
 			v2 = -5
 			action = None
@@ -177,8 +178,8 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 				self._logger.info("ALIGN Feeder is: " + str(__feeder__) + " Cmd is: G1 E" + str(v1))
 				if __feeder__:
 					return [ 
-						("G1 E" + str(v1)), 
-						("@SMuFF REPEAT " + str(v1) +" " + str(v2)) 
+						( "G1 E" + str(v1)), 
+						( atSmuff +" REPEAT " + str(v1) +" " + str(v2)) 
 						]
 				else:
 					self._logger.info("Cmd is: G1 E" + str(v2))
@@ -198,7 +199,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			return ""
 
 		# is this the replaced tool change command?
-		if cmd and cmd.startswith('@SMuFF '):
+		if cmd and cmd.startswith(atSmuff):
 			v1 = -1
 			v2 = -5
 			action = None
@@ -222,7 +223,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 							# send the "Before Tool Change" script to the printer
 							self._printer.script("beforeToolChange")
 						else:
-							self._printer.commands("@SMuFF LOAD")
+							self._printer.commands(atSmuff +" LOAD")
 						
 					except UnknownScriptException:
 						self._logger.info("Script 'beforeToolChange' not found!")
