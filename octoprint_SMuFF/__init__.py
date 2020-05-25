@@ -165,6 +165,8 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		global __pre_tool__
 		global __tool_no__
 		global __pending_tool__
+		global __feeder__
+		global __feeder2__
 
 		if gcode and gcode.startswith('T'):
 			return ""
@@ -195,7 +197,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 					try:
 						__pending_tool__ = cmd[7:]
 						# check if there's some filament loaded
-						self._logger.info("Feeder is: " + str(__feeder2__))
+						self._logger.info("Feeder is: " + str(__feeder__))
 						if __feeder__:
 							# send the "Before Tool Change" script to the printer
 							self._printer.script("beforeToolChange")
@@ -303,7 +305,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			__revolver__ = m.group(4).strip() == "triggered"
 			__feeder__ 	 = m.group(6).strip() == "triggered"
 			__feeder2__  = False # m.group(8).strip() == "triggered"
-			self._logger.info("SELECTOR: [" + str(__selector__) + "] REVOLVER: [" + str(__revolver__) + "] FEEDER: [" + str(__feeder__) +"]")
+			#self._logger.info("SELECTOR: [" + str(__selector__) + "] REVOLVER: [" + str(__revolver__) + "] FEEDER: [" + str(__feeder__) +"]")
 			return True
 		return False
 		
