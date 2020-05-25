@@ -18,6 +18,7 @@ G1_E	 	= "G1 E"
 ALIGN 	 	= "ALIGN"
 REPEAT 		= "REPEAT"
 LOAD 		= "LOAD"
+ALIGN_SPEED	= " F"
 
 class SmuffPlugin(octoprint.plugin.SettingsPlugin,
                   octoprint.plugin.AssetPlugin,
@@ -173,32 +174,36 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		if cmd and cmd.startswith(AT_SMUFF):
 			v1 = -1
 			v2 = -5
+			spd = 300
 			action = None
-			m = re.search(r'^(@\w+)\s(\w+)(\s(-?\d+)?.(-?\d+))?', cmd)
+			m = re.search(r'^(@\w+)\s(\w+)(\s(-?\d+)?.(-?\d+))?.(-?\d+))?', cmd)
 			if m:
 				action = m.group(2)
 				if len(m.groups()) > 3:
 					v1 = m.group(4)
 					v2 = m.group(5)
 
+				if len(m.groups()) > 5:
+					spd = m.group(6)
+
 			self._logger.info(">> " + cmd + "  action: " + str(action) + "  v1,v2: " + str(v1) + ", " + str(v2))
 
 			# @SMuFF ALIGN | REPEAT
 			if action and action == ALIGN or action == REPEAT:
+				if __is_aligned__:
+					return ""
 				# check the feeder and keep retracting v1 as long as 
 				# the feeder endstop is on
 				self.get_endstops()
 				self._logger.info(action + " Feeder is: " + str(__feeder__) + " Cmd is:" + G1_E + str(v1))
 				if __feeder__:
 					__is_aligned__ = False
-					return [ ( G1_E + str(v1) ) ]
+					return [ ( G1_E + str(v1) + ALIGN_SPEED + str(spd) ) ]
 				else:
-					if __is_aligned__:
-						return None
 					__is_aligned__ = True
-					self._logger.info("Cmd is: " + G1_E + str(v2))
+					self._logger.info("Now aligned, cmd is: " + G1_E + str(v2))
 					# finally retract from selector (distance = v2)
-					return [ ( G1_E + str(v2) ) ]
+					return [ ( G1_E + str(v2) + ALIGN_SPEED + str(spd) ) ]
 
 
 	def extend_tool_sending(self, comm_instance, phase, cmd, cmd_type, gcode, subcode, tags, *args, **kwargs):
