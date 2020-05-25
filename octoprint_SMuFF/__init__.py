@@ -167,16 +167,14 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 
 			# check the feeder and keep retracting v1 as long as 
 			# the feeder endstop is on
-			if __feeder__:
+			while __feeder__:
 				self._logger.info("Feeder is: " + str(__feeder__) + " Cmd is: G1 E" + str(v1))
-				return [ 
-					"G1 E" + str(v1),
-					cmd 
-					]
-			else:
-				self._logger.info("Feeder is: " + str(__feeder__))
-				# finally retract from selector (distance = v2)
-				self._printer.commands("G1 E" + str(v2))
+				self._printer.commands("G1 E" + str(v1))
+				time.sleep(.5)
+
+			self._logger.info("Feeder is: " + str(__feeder__))
+			# finally retract from selector (distance = v2)
+			self._printer.commands("G1 E" + str(v2))
 
 
 
