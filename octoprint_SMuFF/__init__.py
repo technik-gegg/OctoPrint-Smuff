@@ -20,7 +20,6 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		global __fw_info__
 		global __cur_tool__
 		global __pre_tool__
-		global __tool_no__
 		global __toolchange__
 		global __endstops__
 		global __selector__
@@ -33,7 +32,6 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		__fw_info__ 	= "?"
 		__cur_tool__ 	= "?"
 		__pre_tool__ 	= "?"
-		__tool_no__ 	= -1
 		__toolchange__ 	= False
 		__endstops__	= "?"
 		__selector__ 	= False
@@ -170,8 +168,11 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			# check the feeder and keep retracting v1 as long as 
 			# the feeder endstop is on
 			if __feeder__:
-				self._printer.commands("G1 E" + str(v1))
-				return cmd
+				self._logger.info("Feeder is: " + str(__feeder__) + " Cmd is: G1 E" + str(v1))
+				return [ 
+					"G1 E" + str(v1),
+					cmd 
+					]
 			else:
 				self._logger.info("Feeder is: " + str(__feeder__))
 				# finally retract from selector (distance = v2)
@@ -183,7 +184,6 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		global __toolchange__
 		global __cur_tool__
 		global __pre_tool__
-		global __tool_no__
 		global __pending_tool__
 		global __feeder__
 		global __feeder2__
@@ -224,7 +224,6 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 					if stat != None:
 						__pre_tool__ = __cur_tool__
 						__cur_tool__ = __pending_tool__
-						__tool_no__ = self.parse_tool_number(__cur_tool__)
 					# send the "After Tool Change" script to the printer
 					self._printer.script("afterToolChange")
 				except UnknownScriptException:
@@ -280,12 +279,9 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 
 	def get_tool(self):
 		global __cur_tool__
-		global __tool_no__
 		__cur_tool__ = self.send_and_wait("T")
 		#self._logger.info("SMuFF says Tool is: [" + __cur_tool__ +"]")
 		if __cur_tool__:
-			__tool_no__ = self.parse_tool_number(__cur_tool__)
-			#self._logger.info("Plugin says Tool is: [" + str(__tool_no__) +"]")
 			return True
 		return False
 
