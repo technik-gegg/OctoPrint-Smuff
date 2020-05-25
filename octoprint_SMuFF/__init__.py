@@ -172,7 +172,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		if cmd and cmd.startswith('@SMuFF '):
 			v1 = -1
 			v2 = -5
-			action = ""
+			action = None
 			m = re.search(r'^(@\w+)\s(\w+)(\s(-?\d+)?.(-?\d+))?', cmd)
 			if m:
 				action = m.group(2)
@@ -180,10 +180,10 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 					v1 = m.group(4)
 					v2 = m.group(5)
 
-			self._logger.info(">> " + cmd + "  action: " + action + "  v1,v2; " + v1 + ", " + v2)
-			
+			self._logger.info(">> " + cmd + "  action: " + str(action) + "  v1,v2: " + str(v1) + ", " + str(v2))
+
 			# @SMuFF T0...9
-			if action.startswith("T"):
+			if action and action.startswith("T"):
 				if self._printer.set_job_on_hold(True):
 					try:
 						__pending_tool__ = action
@@ -199,24 +199,22 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 						self._logger.info("Script 'beforeToolChange' not found!")
 						self._printer.set_job_on_hold(False)
 		
-		# @SMuFF ALIGN
-		if action == "ALIGN":
-			# check the feeder and keep retracting v1 as long as 
-			# the feeder endstop is on
-			while __feeder__:
-				self._logger.info("Feeder is: " + str(__feeder__) + " Cmd is: G1 E" + str(v1))
-				self._printer.commands("G1 E" + str(v1))
-				time.sleep(.5)
-				self.get_endstops()
+			# @SMuFF ALIGN
+			if action and action == "ALIGN":
+				# check the feeder and keep retracting v1 as long as 
+				# the feeder endstop is on
+				while __feeder__:
+					self._logger.info("Feeder is: " + str(__feeder__) + " Cmd is: G1 E" + str(v1))
+					self._printer.commands("G1 E" + str(v1))
+					time.sleep(.5)
+					self.get_endstops()
 
-			self._logger.info("Feeder is: " + str(__feeder__))
-			# finally retract from selector (distance = v2)
-			self._printer.commands("G1 E" + str(v2))
-
-
+				self._logger.info("Feeder is: " + str(__feeder__))
+				# finally retract from selector (distance = v2)
+				self._printer.commands("G1 E" + str(v2))
 
 			# @SMuFF LOAD
-			if action == "LOAD":
+			if action and action == "LOAD":
 				try:
 					__toolchange__ = True
 					# send a tool change command to SMuFF
