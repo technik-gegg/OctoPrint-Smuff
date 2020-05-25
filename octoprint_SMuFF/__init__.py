@@ -176,7 +176,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			v2 = -5
 			spd = 300
 			action = None
-			m = re.search(r'^(@\w+)\s(\w+)(\s(-?\d+)?.(-?\d+))?.(-?\d+))?', cmd)
+			m = re.search(r'^(@\w+)\s(\w+)(\s(-?\d+)?.(-?\d+)?.(-?\d+))?', cmd)
 			if m:
 				action = m.group(2)
 				if len(m.groups()) > 3:
