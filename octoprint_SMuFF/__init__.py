@@ -184,21 +184,18 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 							v1 = int(m.group(1))
 							v2 = int(m.group(2))
 
-						__toolchange__ = True
 						# check the feeder and keep retracting 10mm as long as 
 						# the feeder endstop is on
 						while __feeder__:
 							self._printer.commands("G1 E" + str(v1))
 							time.sleep(.75)
 							self.get_endstops()
-							# self._logger.info("Feeder is: " + str(__feeder__))
+						
+						self._logger.info("Feeder is: " + str(__feeder__))
 						
 						#finally retract from selector
 						self._printer.commands("G1 E" + str(v2))
 						time.sleep(2)
-						__toolchange__ = False
-					finally:
-						self._printer.set_job_on_hold(False)
 
 			elif cmd[7:] == "LOAD":		# @SMuFF LOAD
 				if self._printer.job_on_hold():
@@ -216,9 +213,10 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 						self._printer.script("afterToolChange")
 					except UnknownScriptException:
 						self._logger.info("Script 'afterToolChange' not found!")
+					finally:
 						self._printer.set_job_on_hold(False)
 			
-			else:		# SMuFF Tx
+			else:		# @SMuFF Tx
 				if self._printer.set_job_on_hold(True):
 					try:
 						__pending_tool__ = cmd[7:]
