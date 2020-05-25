@@ -173,8 +173,27 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 
 		# is this the replaced tool change command?
 		if cmd and cmd.startswith('@SMuFF '):
-			self._logger.info(">> " + cmd);
-			if cmd[7:] == "CHECK":		# @SMuFF CHECK
+			self._logger.info(">> " + cmd)
+			
+			# @SMuFF T0...9
+			if cmd[7:8] == "T":		
+				if self._printer.set_job_on_hold(True):
+					try:
+						__pending_tool__ = cmd[7:]
+						self._logger.info("Feeder is: " + str(__feeder__))
+						# check if there's some filament loaded
+						if __feeder__:
+							# send the "Before Tool Change" script to the printer
+							self._printer.script("beforeToolChange")
+						else:
+							self._printer.commands("@SMuFF LOAD")
+						
+					except UnknownScriptException:
+						self._logger.info("Script 'beforeToolChange' not found!")
+						self._printer.set_job_on_hold(False)
+
+			# @SMuFF CHECK
+			if cmd[7:] == "ALIGN":
 				if self._printer.job_on_hold():
 					try:
 						v1 = -10
@@ -197,7 +216,8 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 						self._printer.commands("G1 E" + str(v2))
 						time.sleep(2)
 
-			elif cmd[7:] == "LOAD":		# @SMuFF LOAD
+			# @SMuFF LOAD
+			if cmd[7:] == "LOAD":		
 				if self._printer.job_on_hold():
 					try:
 						__toolchange__ = True
@@ -214,22 +234,6 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 					except UnknownScriptException:
 						self._logger.info("Script 'afterToolChange' not found!")
 					finally:
-						self._printer.set_job_on_hold(False)
-			
-			else:		# @SMuFF Tx
-				if self._printer.set_job_on_hold(True):
-					try:
-						__pending_tool__ = cmd[7:]
-						self._logger.info("Feeder is: " + str(__feeder__))
-						# check if there's some filament loaded
-						if __feeder__:
-							# send the "Before Tool Change" script to the printer
-							self._printer.script("beforeToolChange")
-						else:
-							self._printer.commands("@SMuFF LOAD")
-						
-					except UnknownScriptException:
-						self._logger.info("Script 'beforeToolChange' not found!")
 						self._printer.set_job_on_hold(False)
 			
 			return None
