@@ -156,6 +156,32 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			# replace the tool change command
 			return [ "@SMuFF " + cmd ]
 
+		if cmd and cmd.startswith('@SMUFF'):
+			v1 = -1
+			v2 = -5
+			action = None
+			m = re.search(r'^(@\w+)\s(\w+)(\s(-?\d+)?.(-?\d+))?', cmd)
+			if m:
+				action = m.group(2)
+				if len(m.groups()) > 3:
+					v1 = m.group(4)
+					v2 = m.group(5)
+
+			self._logger.info(">> " + cmd + "  action: " + str(action) + "  v1,v2: " + str(v1) + ", " + str(v2))
+
+			# @SMuFF ALIGN | REPEAT
+			if action and action == "ALIGN" or action == "REPEAT":
+				# check the feeder and keep retracting v1 as long as 
+				# the feeder endstop is on
+				self.get_endstops()
+				if __feeder__:
+					self._logger.info("Feeder is: " + str(__feeder__) + " Cmd is: G1 E" + str(v1))
+					return [ "G1 E" + str(v1), "@SMuFF REPEAT " + str(v1) +" " + str(v2) ]
+				else:
+					self._logger.info("Feeder is: " + str(__feeder__) + " Cmd is: G1 E" + str(v2))
+					# finally retract from selector (distance = v2)
+					return [ "G1 E" + str(v2) ]
+
 
 	def extend_tool_sending(self, comm_instance, phase, cmd, cmd_type, gcode, subcode, tags, *args, **kwargs):
 		global __toolchange__
@@ -199,20 +225,6 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 						self._logger.info("Script 'beforeToolChange' not found!")
 						self._printer.set_job_on_hold(False)
 		
-			# @SMuFF ALIGN
-			if action and action == "ALIGN":
-				# check the feeder and keep retracting v1 as long as 
-				# the feeder endstop is on
-				while __feeder__:
-					self._logger.info("Feeder is: " + str(__feeder__) + " Cmd is: G1 E" + str(v1))
-					self._printer.commands("G1 E" + str(v1))
-					time.sleep(.5)
-					self.get_endstops()
-
-				self._logger.info("Feeder is: " + str(__feeder__))
-				# finally retract from selector (distance = v2)
-				self._printer.commands("G1 E" + str(v2))
-
 			# @SMuFF LOAD
 			if action and action == "LOAD":
 				try:
