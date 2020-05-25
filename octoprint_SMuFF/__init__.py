@@ -176,7 +176,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			self._logger.info(">> " + cmd)
 			
 			# @SMuFF T0...9
-			if cmd[7:8] == "T":		
+			if cmd[7:8] == "T":
 				if self._printer.set_job_on_hold(True):
 					try:
 						__pending_tool__ = cmd[7:]
@@ -195,29 +195,28 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			# @SMuFF CHECK
 			if cmd[7:] == "ALIGN":
 				if self._printer.job_on_hold():
-					try:
-						v1 = -10
-						v2 = -50
-						m = re.search(r'^@\w+.\w+.(\d+).(\d+)', cmd)
-						if m:
-							v1 = int(m.group(1))
-							v2 = int(m.group(2))
+					v1 = -10
+					v2 = -50
+					m = re.search(r'^@\w+.\w+.(\d+).(\d+)', cmd)
+					if m:
+						v1 = int(m.group(1))
+						v2 = int(m.group(2))
 
-						# check the feeder and keep retracting 10mm as long as 
-						# the feeder endstop is on
-						while __feeder__:
-							self._printer.commands("G1 E" + str(v1))
-							time.sleep(.75)
-							self.get_endstops()
-						
-						self._logger.info("Feeder is: " + str(__feeder__))
-						
-						#finally retract from selector
-						self._printer.commands("G1 E" + str(v2))
-						time.sleep(2)
+					# check the feeder and keep retracting 10mm as long as 
+					# the feeder endstop is on
+					while __feeder__:
+						self._printer.commands("G1 E" + str(v1))
+						time.sleep(.75)
+						self.get_endstops()
+					
+					self._logger.info("Feeder is: " + str(__feeder__))
+					
+					#finally retract from selector
+					self._printer.commands("G1 E" + str(v2))
+					time.sleep(2)
 
 			# @SMuFF LOAD
-			if cmd[7:] == "LOAD":		
+			if cmd[7:] == "LOAD":
 				if self._printer.job_on_hold():
 					try:
 						__toolchange__ = True
