@@ -170,14 +170,24 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 
 		# is this the replaced tool change command?
 		if cmd and cmd.startswith('@SMuFF '):
-			self._logger.info(">> " + cmd)
+			v1 = -1
+			v2 = -5
+			action = ""
+			m = re.search(r'^(@\w+)\s(\w+)(\s(-?\d+)?.(-?\d+))?', cmd)
+			if m:
+				action = m.group(2)
+				if len(m.groups) > 3:
+					v1 = m.group(4)
+					v2 = m.group(5)
+
+			self._logger.info(">> " + cmd + "  action: " + action + "  v1,v2; " + v1 + ", " + v2)
 			
 			# @SMuFF T0...9
-			if cmd[7:8] == "T":
+			if action.startswith("T"):
 				if self._printer.set_job_on_hold(True):
 					try:
-						__pending_tool__ = cmd[7:]
-						self._logger.info("Feeder is: " + str(__feeder__))
+						__pending_tool__ = action
+						# self._logger.info("Feeder is: " + str(__feeder__))
 						# check if there's some filament loaded
 						if __feeder__:
 							# send the "Before Tool Change" script to the printer
@@ -190,14 +200,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 						self._printer.set_job_on_hold(False)
 		
 		# @SMuFF ALIGN
-		if cmd and cmd.startswith("@SMuFF") and cmd[7:] == "ALIGN":
-			v1 = -10
-			v2 = -50
-			m = re.search(r'^@\w+.\w+.(\d+).(\d+)', cmd)
-			if m:
-				v1 = int(m.group(1))
-				v2 = int(m.group(2))
-
+		if action == "ALIGN":
 			# check the feeder and keep retracting v1 as long as 
 			# the feeder endstop is on
 			while __feeder__:
@@ -213,7 +216,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 
 
 			# @SMuFF LOAD
-			if cmd[7:] == "LOAD":
+			if action == "LOAD":
 				try:
 					__toolchange__ = True
 					# send a tool change command to SMuFF
