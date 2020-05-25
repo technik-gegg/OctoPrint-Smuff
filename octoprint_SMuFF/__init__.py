@@ -173,6 +173,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 
 		# is this the replaced tool change command?
 		if cmd and cmd.startswith('@SMuFF '):
+			self._logger.info(">> " + cmd);
 			if cmd[7:] == "CHECK":		# @SMuFF CHECK
 				if self._printer.job_on_hold():
 					try:
@@ -190,7 +191,8 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 							self._printer.commands("G1 E" + str(v1))
 							time.sleep(.75)
 							self.get_endstops()
-							self._logger.info("Feeder is: " + str(__feeder__))
+							# self._logger.info("Feeder is: " + str(__feeder__))
+						
 						#finally retract from selector
 						self._printer.commands("G1 E" + str(v2))
 						time.sleep(2)
@@ -198,7 +200,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 					finally:
 						self._printer.set_job_on_hold(False)
 
-			else if cmd[7:] == "LOAD":		# @SMuFF LOAD
+			elif cmd[7:] == "LOAD":		# @SMuFF LOAD
 				if self._printer.job_on_hold():
 					try:
 						__toolchange__ = True
