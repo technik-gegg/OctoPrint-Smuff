@@ -309,6 +309,15 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			return True
 		return False
 		
+	def _feeder(self):
+		return __feeder__
+
+	def _feeder2(self):
+		return __feeder2__
+
+	def _tool(self):
+		return __cur_tool__
+	
 
 
 __plugin_name__ = "Smuff Plugin"
