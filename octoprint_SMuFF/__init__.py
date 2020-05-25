@@ -173,8 +173,8 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 
 		# is this the replaced tool change command?
 		if cmd and cmd.startswith('@SMuFF '):
-			if cmd[7:] == "LOAD":
-				if self._printer.set_job_on_hold(True):
+			if cmd[7:] == "CHECK":		# @SMuFF CHECK
+				if self._printer.job_on_hold():
 					try:
 						v1 = 10
 						v2 = 50
@@ -187,14 +187,21 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 						# check the feeder and keep retracting 10mm as long as 
 						# the feeder endstop is on
 						while __feeder__:
-							self._printer.commands("G1 E-" + str(v1))
+							self._printer.commands("G1 E" + str(v1))
 							time.sleep(.75)
 							self.get_endstops()
 							self._logger.info("Feeder is: " + str(__feeder__))
 						#finally retract from selector
-						self._printer.commands("G1 E-" + str(v2))
+						self._printer.commands("G1 E" + str(v2))
 						time.sleep(2)
+						__toolchange__ = False
+					finally:
+						self._printer.set_job_on_hold(False)
 
+			else if cmd[7:] == "LOAD":		# @SMuFF LOAD
+				if self._printer.job_on_hold():
+					try:
+						__toolchange__ = True
 						# send a tool change command to SMuFF
 						stat = self.send_and_wait(__pending_tool__)
 						__toolchange__ = False
@@ -207,10 +214,9 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 						self._printer.script("afterToolChange")
 					except UnknownScriptException:
 						self._logger.info("Script 'afterToolChange' not found!")
-					finally:
 						self._printer.set_job_on_hold(False)
 			
-			else:
+			else:		# SMuFF Tx
 				if self._printer.set_job_on_hold(True):
 					try:
 						__pending_tool__ = cmd[7:]
@@ -224,7 +230,6 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 						
 					except UnknownScriptException:
 						self._logger.info("Script 'beforeToolChange' not found!")
-					finally:
 						self._printer.set_job_on_hold(False)
 			
 			return None
