@@ -37,6 +37,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		global __feeder2__
 		global __timer__
 		global __no_log__
+		global __is_aligned__
 
 		__fw_info__ 	= "?"
 		__cur_tool__ 	= "?"
@@ -48,7 +49,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		__feeder__ 		= False
 		__feeder2__		= False
 		__no_log__		= False
-
+		__is_aligned__ 	= False
 
 	##~~ StartupPlugin mixin
 
@@ -155,6 +156,8 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 
 	def extend_tool_queuing(self, comm_instance, phase, cmd, cmd_type, gcode, subcode, tags, *args, **kwargs):
 		
+		global __is_aligned__
+		
 		self._logger.info("Processing queuing: [" + cmd + "," + str(cmd_type)+ "," + str(tags) + "]")
 		
 		if gcode and gcode.startswith(TOOL):
@@ -184,13 +187,17 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 				# check the feeder and keep retracting v1 as long as 
 				# the feeder endstop is on
 				self.get_endstops()
-				self._logger.info("ALIGN Feeder is: " + str(__feeder__) + " Cmd is:" + G1_E + str(v1))
+				self._logger.info(action + " Feeder is: " + str(__feeder__) + " Cmd is:" + G1_E + str(v1))
 				if __feeder__:
+					__is_aligned__ = False
 					return [ 
 						( G1_E + str(v1) ), 
 						( AT_SMUFF + " " + REPEAT + " " + str(v1) + " " + str(v2) ) 
 						]
 				else:
+					if __is_aligned__:
+						return None
+					__is_aligned__ = True
 					self._logger.info("Cmd is: " + G1_E + str(v2))
 					# finally retract from selector (distance = v2)
 					return [ ( G1_E + str(v2) ) ]
