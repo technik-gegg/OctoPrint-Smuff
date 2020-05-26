@@ -162,19 +162,19 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			return [ AT_SMUFF + " " + cmd ]
 
 		if cmd and cmd.startswith(AT_SMUFF):
-			v1 = -1
-			v2 = -5
+			v1 = None
+			v2 = None
 			spd = 300
 			action = None
-			m = re.search(r'^(@\w+)\s(\w+)(\s(-?\d+)?.(-?\d+)?.(-?\d+))?', cmd)
-			if m:
-				action = m.group(2)
-				if len(m.groups()) > 3:
-					v1 = m.group(4)
-					v2 = m.group(5)
-
-				if len(m.groups()) > 5:
-					spd = m.group(6)
+			tmp = cmd.split()
+			if len(tmp):
+				action = tmp[1]
+				if len(tmp) >= 2:
+					v1 = int(tmp[2])
+				if len(tmp) >= 3:
+					v2 = int(tmp[3])
+				if len(tmp) >= 4:
+					spd = int(tmp[4])
 
 			self._logger.info(">> " + cmd + "  action: " + str(action) + "  v1,v2: " + str(v1) + ", " + str(v2))
 			
@@ -184,7 +184,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 				# send a servo command to SMuFF
 				self.send_and_wait(M280 + str(v1) + " S" + str(v2))
 				self._skip_timer = False
-				return None
+				return ""
 
 			# @SMuFF MOTORS
 			if action and action == MOTORS:
@@ -192,7 +192,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 				# send a servo command to SMuFF
 				self.send_and_wait(M18)
 				self._skip_timer = False
-				return None
+				return ""
 
 			# @SMuFF ALIGN | REPEAT
 			if action and action == ALIGN or action == REPEAT:
@@ -219,15 +219,16 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 
 		# is this the replaced tool change command?
 		if cmd and cmd.startswith(AT_SMUFF):
-			v1 = -1
-			v2 = -5
+			v1 = None
+			v2 = None
 			action = None
-			m = re.search(r'^(@\w+)\s(\w+)(\s(-?\d+)?.(-?\d+))?', cmd)
-			if m:
-				action = m.group(2)
-				if len(m.groups()) > 3:
-					v1 = m.group(4)
-					v2 = m.group(5)
+			tmp = cmd.split()
+			if len(tmp):
+				action = tmp[1]
+				if len(tmp) >= 2:
+					v1 = int(tmp[2])
+				if len(tmp) >= 3:
+					v2 = int(tmp[3])
 
 			self._logger.info(">>> " + cmd + "  action: " + str(action) + "  v1,v2: " + str(v1) + ", " + str(v2))
 
