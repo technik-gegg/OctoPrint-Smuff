@@ -294,7 +294,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 				response = __ser0__.readline()
 				if response.startswith('echo:'):
 					continue
-				if response.startswith('ok\n'):
+				elif response.startswith('ok\n'):
 					return prev_resp
 				else:
 					prev_resp = response.rstrip("\n")
