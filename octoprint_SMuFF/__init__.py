@@ -293,13 +293,13 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		if __ser0__.is_open:
 			__ser0__.write("{}\n".format(data))
 			__ser0__.flush()
-			self.logger.debug(">>> " + data)
+			self._logger.debug(">>> " + data)
 			prev_resp = ""
 			retry = 15 	# wait max. 15 seconds for response
 			while True:
 				try:
 					response = __ser0__.readline()
-					self.logger.debug("<<< [" + response +"]")
+					self._logger.debug("<<< [" + response +"]")
 
 					if response.startswith('echo:'):
 						continue
