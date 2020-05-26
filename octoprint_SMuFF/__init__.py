@@ -62,7 +62,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 
 	def get_settings_defaults(self):
 		self._logger.info("SMuFF plugin loaded, getting defaults")
-
+		global __cur_tool__
 		params = dict(
 			firmware_info	= "No data. Please check connection!",
 			baudrate		= __ser_baud__,
