@@ -385,7 +385,6 @@ def __plugin_load__():
 	global __ser0__
 	global __ser_drvr__
 	global __ser_baud__
-	global __log
 
 	__plugin_implementation__ = SmuffPlugin()
 
@@ -411,7 +410,6 @@ def __plugin_load__():
 
 	except (OSError, serial.SerialException):
 		self._logger.info("Serial port not found!")
-		#pass
 
 
 
