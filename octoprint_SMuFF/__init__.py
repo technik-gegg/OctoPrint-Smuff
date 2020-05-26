@@ -39,7 +39,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		self._cur_tool 	= "?"
 		self._pre_tool 	= "?"
 		self._endstops	= "?"
-		self._skiptimer = True
+		self._skiptimer = False
 		self._selector 	= False
 		self._revolver 	= False
 		self._feeder 	= False
