@@ -31,23 +31,24 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 	__fw_info__ 	= "?"
 	__cur_tool__ 	= "?"
 	__pre_tool__ 	= "?"
-	__toolchange__ 	= False
 	__endstops__	= "?"
+	__skiptimer__ 	= True
 	__selector__ 	= False
 	__revolver__ 	= False
 	__feeder__ 		= False
 	__feeder2__		= False
 	__no_log__		= False
 	__is_aligned__ 	= False
-	__timer__
+	__timer__		= None
 
 	def __init__(self):
+		_logger.info("SMuFF plugin init")
 
 	##~~ StartupPlugin mixin
 
 	def on_timer_event(self):
 		# poll tool active and endstop states periodically
-		if __toolchange__ == False:
+		if __skiptimer__ == False:
 			__no_log__ = True
 			self.get_tool()
 			self.get_endstops()
@@ -231,18 +232,20 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			# @SMuFF LOAD
 			if action and action == LOAD:
 				try:
-					__toolchange__ = True
+					__skiptimer__ = True
 					# send a tool change command to SMuFF
 					stat = self.send_and_wait(__pending_tool__)
-					__toolchange__ = False
+					__skiptimer__ = False
 
 					if stat != None:
 						__pre_tool__ = __cur_tool__
 						__cur_tool__ = __pending_tool__
 					# send the "After Tool Change" script to the printer
 					self._printer.script("afterToolChange")
+				
 				except UnknownScriptException:
 					self._logger.info("Script 'afterToolChange' not found!")
+				
 				finally:
 					self._printer.set_job_on_hold(False)
 			
