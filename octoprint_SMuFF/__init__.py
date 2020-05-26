@@ -41,7 +41,6 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 	global __is_aligned__
 
 	def __init__(self):
-		self._logger.info("SMuFF plugin init")
 		__fw_info__ 	= "?"
 		__cur_tool__ 	= "?"
 		__pre_tool__ 	= "?"
