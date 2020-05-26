@@ -15,12 +15,16 @@ import sys
 AT_SMUFF 	= "@SMuFF"
 M115	 	= "M115"
 M119	 	= "M119"
+M280	 	= "M280 P"
+M18			= "M18"
 TOOL 		= "T"
 NOTOOL		= "T255"
 G1_E	 	= "G1 E"
 ALIGN 	 	= "ALIGN"
 REPEAT 		= "REPEAT"
 LOAD 		= "LOAD"
+SERVO		= "SERVO"
+MOTORS		= "MOTORS"
 ALIGN_SPEED	= " F"
 ESTOP_TRG 	= "triggered"
 
@@ -42,8 +46,6 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		self._feeder2	= False
 		self._no_log	= False
 		self._is_aligned = False
-
-	
 
 	##~~ StartupPlugin mixin
 
@@ -175,6 +177,22 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 					spd = m.group(6)
 
 			self._logger.info(">> " + cmd + "  action: " + str(action) + "  v1,v2: " + str(v1) + ", " + str(v2))
+			
+			# @SMuFF SERVO
+			if action and action == SERVO:
+				self._skip_timer = True
+				# send a servo command to SMuFF
+				self.send_and_wait(M280 + str(v1) + " S" + str(v2))
+				self._skip_timer = False
+				return None
+
+			# @SMuFF MOTORS
+			if action and action == MOTORS:
+				self._skip_timer = True
+				# send a servo command to SMuFF
+				self.send_and_wait(M18)
+				self._skip_timer = False
+				return None
 
 			# @SMuFF ALIGN | REPEAT
 			if action and action == ALIGN or action == REPEAT:
@@ -225,8 +243,8 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 							self._printer.script("beforeToolChange")
 						else:
 							self._printer.commands(AT_SMUFF + " " + LOAD)
-						
-					except UnknownScriptException:
+
+					except UnknownScript:
 						self._logger.info("Script 'beforeToolChange' not found!")
 						self._printer.set_job_on_hold(False)
 		
@@ -243,8 +261,8 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 						self._cur_tool = self._pending_tool
 					# send the "After Tool Change" script to the printer
 					self._printer.script("afterToolChange")
-				
-				except UnknownScriptException:
+
+				except UnknownScript:
 					self._logger.info("Script 'afterToolChange' not found!")
 				
 				finally:
