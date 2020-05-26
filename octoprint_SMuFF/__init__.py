@@ -48,7 +48,6 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		self._feeder2		= False
 		self._no_log		= False
 		self._is_aligned 	= False
-		self.__log 			= logging.getLogger("octoprint.plugins.SMuFF")
 
 	##~~ StartupPlugin mixin
 
@@ -294,13 +293,13 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		if __ser0__.is_open:
 			__ser0__.write("{}\n".format(data))
 			__ser0__.flush()
-			__log.debug(">>> " + data)
+			self.logger.debug(">>> " + data)
 			prev_resp = ""
 			retry = 15 	# wait max. 15 seconds for response
 			while True:
 				try:
 					response = __ser0__.readline()
-					__log.debug("<<< " + response)
+					self.logger.debug(("<<< " + response)
 
 					if response.startswith('echo:'):
 						continue
