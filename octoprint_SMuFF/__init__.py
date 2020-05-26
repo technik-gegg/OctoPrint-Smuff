@@ -3,6 +3,8 @@
 from __future__ import absolute_import
 
 from octoprint.util import RepeatedTimer
+from octoprint.printer import UnknownScript
+
 import serial			# we need this for the serial communcation with the SMuFF
 import os, fnmatch
 import re
