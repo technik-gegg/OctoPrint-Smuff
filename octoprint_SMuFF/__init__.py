@@ -154,7 +154,6 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		# self._logger.info("Processing queuing: [" + cmd + "," + str(cmd_type)+ "," + str(tags) + "]")
 		
 		if gcode and gcode.startswith(TOOL):
-
 			# if the tool that's already loaded is addressed, ignore the filament change
 			if cmd == self._cur_tool:
 				self._logger.info(cmd + " equals " + self._cur_tool + " -- aborting tool change")
@@ -180,29 +179,6 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 
 			self._logger.info("1>> " + cmd + "  action: " + str(action) + "  v1,v2: " + str(v1) + ", " + str(v2))
 
-			# @SMuFF LOAD
-			if action and action == LOAD:
-				try:
-					self._logger.info("1>> LOAD: Feeder: " + str(self._feeder) + ", Pending: " + str(self._pending_tool) + ", Current: " + str(self._cur_tool))
-					self._skip_timer = True
-					# send a tool change command to SMuFF
-					stat = self.send_and_wait(self._pending_tool)
-					self._skip_timer = False
-
-					if stat != None:
-						self._pre_tool = self._cur_tool
-						self._cur_tool = self._pending_tool
-						# send the "After Tool Change" script to the printer
-						self._printer.script("afterToolChange")
-
-				except UnknownScript:
-					self._logger.info("Script 'afterToolChange' not found!")
-				
-				finally:
-					self._printer.set_job_on_hold(False)
-			
-				return ""
-			
 			# @SMuFF SERVO
 			if action and action == SERVO:
 				self._skip_timer = True
@@ -274,7 +250,31 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 
 					except UnknownScript:
 						self._logger.info("Script 'beforeToolChange' not found!")
+					finally:
 						self._printer.set_job_on_hold(False)
+			
+			# @SMuFF LOAD
+			if action and action == LOAD:
+				if self._printer.set_job_on_hold(True):
+					try:
+						self._logger.info("1>> LOAD: Feeder: " + str(self._feeder) + ", Pending: " + str(self._pending_tool) + ", Current: " + str(self._cur_tool))
+						self._skip_timer = True
+						# send a tool change command to SMuFF
+						stat = self.send_and_wait(self._pending_tool)
+						self._skip_timer = False
+
+						if stat != None:
+							self._pre_tool = self._cur_tool
+							self._cur_tool = self._pending_tool
+							# send the "After Tool Change" script to the printer
+							self._printer.script("afterToolChange")
+
+					except UnknownScript:
+						self._logger.info("Script 'afterToolChange' not found!")
+					
+					finally:
+						self._printer.set_job_on_hold(False)
+			
 		
 
 	def extend_script_variables(comm_instance, script_type, script_name, *args, **kwargs):
