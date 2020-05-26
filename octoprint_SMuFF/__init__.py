@@ -48,6 +48,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		self._feeder2		= False
 		self._no_log		= False
 		self._is_aligned 	= False
+		self.__log 			= logging.getLogger("octoprint.plugins.SMuFF")
 
 	##~~ StartupPlugin mixin
 
@@ -412,7 +413,6 @@ def __plugin_load__():
 		self._logger.info("Serial port not found!")
 		#pass
 
-	__log = logging.getLogger('octoprint.plugins.SMuFF')
 
 
 
