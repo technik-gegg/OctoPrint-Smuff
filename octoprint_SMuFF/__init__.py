@@ -350,20 +350,31 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 __plugin_name__ = "SMuFF Plugin"
 
 def __plugin_load__():
+	global __fw_info__
+	global __cur_tool__
+	global __pre_tool__
+	global __endstops__
+	global __skiptimer__
+	global __selector__
+	global __revolver__
+	global __feeder__
+	global __feeder2__
+	global __no_log__
+	global __is_aligned__
 	global __plugin_implementation__
+	global __plugin_hooks__
+	global __ser0__
+	global __ser_drvr__
+	global __ser_baud__
+
 	__plugin_implementation__ = SmuffPlugin()
 
-	global __plugin_hooks__
-	
 	__plugin_hooks__ = {
 		"octoprint.comm.protocol.scripts": 				__plugin_implementation__.extend_script_variables,
     	"octoprint.comm.protocol.gcode.sending": 		__plugin_implementation__.extend_tool_sending,
     	"octoprint.comm.protocol.gcode.queuing": 		__plugin_implementation__.extend_tool_queuing,
 		"octoprint.plugin.softwareupdate.check_config": __plugin_implementation__.get_update_information
 	}
-	global __ser0__
-	global __ser_drvr__
-	global __ser_baud__
 
 	# change the baudrate here if you have to
 	__ser_baud__ = 115200
@@ -382,17 +393,6 @@ def __plugin_load__():
 		self._logger.info("Serial port not found!")
 		#pass
 
-	global __fw_info__
-	global __cur_tool__
-	global __pre_tool__
-	global __endstops__
-	global __skiptimer__
-	global __selector__
-	global __revolver__
-	global __feeder__
-	global __feeder2__
-	global __no_log__
-	global __is_aligned__
 
 
 
