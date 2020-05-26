@@ -28,21 +28,31 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
                   octoprint.plugin.TemplatePlugin,
 				  octoprint.plugin.StartupPlugin):
 
-	__fw_info__ 	= "?"
-	__cur_tool__ 	= "?"
-	__pre_tool__ 	= "?"
-	__endstops__	= "?"
-	__skiptimer__ 	= True
-	__selector__ 	= False
-	__revolver__ 	= False
-	__feeder__ 		= False
-	__feeder2__		= False
-	__no_log__		= False
-	__is_aligned__ 	= False
-	__timer__		= None
+	global __fw_info__
+	global __cur_tool__
+	global __pre_tool__
+	global __endstops__
+	global __skiptimer__
+	global __selector__
+	global __revolver__
+	global __feeder__
+	global __feeder2__
+	global __no_log__
+	global __is_aligned__
 
-	#def __init__(self):
-	#	self._logger.info("SMuFF plugin init")
+	def __init__(self):
+		self._logger.info("SMuFF plugin init")
+		__fw_info__ 	= "?"
+		__cur_tool__ 	= "?"
+		__pre_tool__ 	= "?"
+		__endstops__	= "?"
+		__skiptimer__ 	= True
+		__selector__ 	= False
+		__revolver__ 	= False
+		__feeder__ 		= False
+		__feeder2__		= False
+		__no_log__		= False
+		__is_aligned__ 	= False
 
 	##~~ StartupPlugin mixin
 
