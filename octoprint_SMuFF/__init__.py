@@ -42,7 +42,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 	__timer__		= None
 
 	def __init__(self):
-		_logger.info("SMuFF plugin init")
+		self._logger.info("SMuFF plugin init")
 
 	##~~ StartupPlugin mixin
 
