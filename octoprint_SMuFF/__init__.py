@@ -191,8 +191,8 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 					if stat != None:
 						self._pre_tool = self._cur_tool
 						self._cur_tool = self._pending_tool
-					# send the "After Tool Change" script to the printer
-					self._printer.script("afterToolChange")
+						# send the "After Tool Change" script to the printer
+						self._printer.script("afterToolChange")
 
 				except UnknownScript:
 					self._logger.info("Script 'afterToolChange' not found!")
@@ -260,8 +260,8 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			if action and action.startswith(TOOL):
 				if self._printer.set_job_on_hold(True):
 					try:
-						self._logger.info("2>> TN: Feeder: " + str(self._feeder) + ", Pending: " + str(self._pending_tool) + ", Current: " + str(self._cur_tool))
 						self._pending_tool = action
+						self._logger.info("2>> TN: Feeder: " + str(self._feeder) + ", Pending: " + str(self._pending_tool) + ", Current: " + str(self._cur_tool))
 						# check if there's some filament loaded
 						if self._feeder:
 							# send the "Before Tool Change" script to the printer
@@ -292,11 +292,14 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		if __ser0__.is_open:
 			__ser0__.write("{}\n".format(data))
 			__ser0__.flush()
+			__log.debug(">>> " + data)
 			prev_resp = ""
 			retry = 15 	# wait max. 15 seconds for response
 			while True:
 				try:
 					response = __ser0__.readline()
+					__log.debug("<<< " + response)
+
 					if response.startswith('echo:'):
 						continue
 					elif response.startswith('ok\n'):
@@ -380,6 +383,7 @@ def __plugin_load__():
 	global __ser0__
 	global __ser_drvr__
 	global __ser_baud__
+	global __log
 
 	__plugin_implementation__ = SmuffPlugin()
 
@@ -406,6 +410,8 @@ def __plugin_load__():
 	except (OSError, serial.SerialException):
 		self._logger.info("Serial port not found!")
 		#pass
+
+	__log = logging.getLogger('octoprint.plugins.SMuFF')
 
 
 
