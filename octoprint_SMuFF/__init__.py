@@ -181,7 +181,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			# @SMuFF LOAD
 			if action and action == LOAD:
 				try:
-					self._logger.info("LOAD: Feeder: " + str(self._feeder) + ", Pending: " + str(self._pending_tool) + ", Current: " + str(self._cur_tool)
+					self._logger.info("LOAD: Feeder: " + str(self._feeder) + ", Pending: " + str(self._pending_tool) + ", Current: " + str(self._cur_tool))
 					self._skip_timer = True
 					# send a tool change command to SMuFF
 					stat = self.send_and_wait(self._pending_tool)
