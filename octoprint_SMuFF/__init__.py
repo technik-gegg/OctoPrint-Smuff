@@ -29,17 +29,17 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 				  octoprint.plugin.StartupPlugin):
 
 	def __init__(self):
-		self.__fw_info__ 	= "?"
-		self.__cur_tool__ 	= "?"
-		self.__pre_tool__ 	= "?"
-		self.__endstops__	= "?"
-		self.__skiptimer__ 	= True
-		self.__selector__ 	= False
-		self.__revolver__ 	= False
-		self.__feeder__ 	= False
-		self.__feeder2__	= False
-		self.__no_log__		= False
-		self.__is_aligned__ = False
+		self._fw_info 	= "?"
+		self._cur_tool 	= "?"
+		self._pre_tool 	= "?"
+		self._endstops	= "?"
+		self._skiptimer = True
+		self._selector 	= False
+		self._revolver 	= False
+		self._feeder 	= False
+		self._feeder2	= False
+		self._no_log	= False
+		self._is_aligned = False
 
 	
 
@@ -47,18 +47,18 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 
 	def on_timer_event(self):
 		# poll tool active and endstop states periodically
-		if __skiptimer__ == False:
-			__no_log__ = True
+		if self._skiptimer == False:
+			self._no_log = True
 			self.get_tool()
 			self.get_endstops()
-			__no_log__ = False
+			self._no_log = False
 		
-		self._plugin_manager.send_plugin_message(self._identifier, {'type': 'status', 'tool': __cur_tool__, 'feeder': __feeder__, 'feeder2': __feeder2__ })
+		self._plugin_manager.send_plugin_message(self._identifier, {'type': 'status', 'tool': self._cur_tool, 'feeder': self._feeder, 'feeder2': self._feeder2 })
 
 	def on_after_startup(self):
 		# set up a timer to poll the SMuFF
-		__timer__ = RepeatedTimer(1.0, self.on_timer_event)
-		__timer__.start()
+		self._timer = RepeatedTimer(1.0, self.on_timer_event)
+		self._timer.start()
 
 	##~~ SettingsPlugin mixin
 
@@ -69,30 +69,30 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			firmware_info	= "No data. Please check connection!",
 			baudrate		= __ser_baud__,
 			tty 			= "Not found. Please enable the UART on your Raspi!",
-			tool			= self.__cur_tool__,
-			selector_end	= self.__selector__,
-			revolver_end	= self.__revolver__,
-			feeder_end		= self.__feeder__,
-			feeder2_end		= self.__feeder__
+			tool			= self._cur_tool,
+			selector_end	= self._selector,
+			revolver_end	= self._revolver,
+			feeder_end		= self._feeder,
+			feeder2_end		= self._feeder
 		)
 
 		__ser0__.timeout = 1
 
 		# request firmware info from SMuFF 
-		__fw_info__ = self.send_and_wait(M115)
-		if __fw_info__:
-			params['firmware_info'] = __fw_info__
+		self._fw_info = self.send_and_wait(M115)
+		if self._fw_info:
+			params['firmware_info'] = self._fw_info
 		
 		# request the currently active tool
 		if self.get_tool() == True:
-			params['tool'] = __cur_tool__
+			params['tool'] = self._cur_tool
 
 		# request the endstop states
 		if self.get_endstops() == True:
-			params['selector_end'] = __selector__
-			params['revolver_end'] = __revolver__
-			params['feeder_end']   = __feeder__
-			params['feeder2_end']  = __feeder2__
+			params['selector_end'] = self._selector
+			params['revolver_end'] = self._revolver
+			params['feeder_end']   = self._feeder
+			params['feeder2_end']  = self._feeder2
 
 		# look up the serial port driver
 		drvr = self.find_file(__ser_drvr__, "/dev")
@@ -150,10 +150,10 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		if gcode and gcode.startswith(TOOL):
 
 			# if the tool that's already loaded is addressed, ignore the filament change
-			if cmd == __cur_tool__:
-				self._logger.info(cmd + " equals " + __cur_tool__ + " -- aborting tool change")
+			if cmd == self._cur_tool:
+				self._logger.info(cmd + " equals " + self._cur_tool + " -- aborting tool change")
 				return None
-			__is_aligned__ = False
+			self._is_aligned = False
 			# replace the tool change command
 			return [ AT_SMUFF + " " + cmd ]
 
@@ -176,17 +176,17 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 
 			# @SMuFF ALIGN | REPEAT
 			if action and action == ALIGN or action == REPEAT:
-				if __is_aligned__:
+				if self._is_aligned:
 					return ""
 				# check the feeder and keep retracting v1 as long as 
 				# the feeder endstop is on
 				self.get_endstops()
-				self._logger.info(action + " Feeder is: " + str(__feeder__) + " Cmd is:" + G1_E + str(v1))
-				if __feeder__:
-					__is_aligned__ = False
+				self._logger.info(action + " Feeder is: " + str(self._feeder) + " Cmd is:" + G1_E + str(v1))
+				if self._feeder:
+					self._is_aligned = False
 					return [ ( G1_E + str(v1) + ALIGN_SPEED + str(spd) ) ]
 				else:
-					__is_aligned__ = True
+					self._is_aligned = True
 					self._logger.info("Now aligned, cmd is: " + G1_E + str(v2))
 					# finally retract from selector (distance = v2)
 					return [ ( G1_E + str(v2) + ALIGN_SPEED + str(spd) ) ]
@@ -215,10 +215,10 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			if action and action.startswith(TOOL):
 				if self._printer.set_job_on_hold(True):
 					try:
-						__pending_tool__ = action
-						# self._logger.info("Feeder is: " + str(__feeder__))
+						self._pending_tool = action
+						# self._logger.info("Feeder is: " + str(self._feeder))
 						# check if there's some filament loaded
-						if __feeder__ and not __cur_tool__ == NOTOOL:
+						if self._feeder and not self._cur_tool == NOTOOL:
 							# send the "Before Tool Change" script to the printer
 							self._printer.script("beforeToolChange")
 						else:
@@ -231,14 +231,14 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			# @SMuFF LOAD
 			if action and action == LOAD:
 				try:
-					__skiptimer__ = True
+					self._skip_timer = True
 					# send a tool change command to SMuFF
-					stat = self.send_and_wait(__pending_tool__)
-					__skiptimer__ = False
+					stat = self.send_and_wait(self._pending_tool)
+					self._skip_timer = False
 
 					if stat != None:
-						__pre_tool__ = __cur_tool__
-						__cur_tool__ = __pending_tool__
+						self._pre_tool = self._cur_tool
+						self._cur_tool = self._pending_tool
 					# send the "After Tool Change" script to the printer
 					self._printer.script("afterToolChange")
 				
@@ -253,9 +253,9 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 	def extend_script_variables(comm_instance, script_type, script_name, *args, **kwargs):
 		if script_type and script_type == "gcode":
 			variables = dict(
-				feeder	= __feeder__,
-				feeder2	= __feeder2__,
-				tool	= __cur_tool__
+				feeder	= self._feeder,
+				feeder2	= self._feeder2,
+				tool	= self._cur_tool
 			)
 			return None, None, variables
 		return None
@@ -275,7 +275,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 				else:
 					prev_resp = response.rstrip("\n")
 					if prev_resp:
-						if __no_log__ == False:
+						if self._no_log == False:
 							self._logger.info("SMuFF says [" + prev_resp + "] to [" + data +"]")
 					retry -= 1
 					if retry == 0:
@@ -295,16 +295,16 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 
 
 	def get_tool(self):
-		__cur_tool__ = self.send_and_wait(TOOL)
-		if __cur_tool__:
+		self._cur_tool = self.send_and_wait(TOOL)
+		if self._cur_tool:
 			return True
 		return False
 
 
 	def get_endstops(self):
-		__endstops__ = self.send_and_wait(M119)
-		if __endstops__:
-			self.parse_endstop_states(__endstops__)
+		self._endstops = self.send_and_wait(M119)
+		if self._endstops:
+			self.parse_endstop_states(self._endstops)
 			return True
 		return False
 
@@ -330,39 +330,18 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			return False
 		m = re.search(r'^(\w+:.)(\w+).(\w+:.)(\w+).(\w+:.)(\w+)', states)
 		if m:
-			__selector__ = m.group(2).strip() == ESTOP_TRG
-			__revolver__ = m.group(4).strip() == ESTOP_TRG
-			__feeder__ 	 = m.group(6).strip() == ESTOP_TRG
-			__feeder2__  = False # m.group(8).strip() == ESTOP_TRG
-			#self._logger.info("SELECTOR: [" + str(__selector__) + "] REVOLVER: [" + str(__revolver__) + "] FEEDER: [" + str(__feeder__) +"]")
+			self._selector = m.group(2).strip() == ESTOP_TRG
+			self._revolver = m.group(4).strip() == ESTOP_TRG
+			self._feeder 	 = m.group(6).strip() == ESTOP_TRG
+			self._feeder2  = False # m.group(8).strip() == ESTOP_TRG
+			#self._logger.info("SELECTOR: [" + str(self._selector) + "] REVOLVER: [" + str(self._revolver) + "] FEEDER: [" + str(self._feeder) +"]")
 			return True
 		return False
 		
-	def _feeder(self):
-		return __feeder__
-
-	def _feeder2(self):
-		return __feeder2__
-
-	def _tool(self):
-		return __cur_tool__
-	
-
 
 __plugin_name__ = "SMuFF Plugin"
 
 def __plugin_load__():
-	global __fw_info__
-	global __cur_tool__
-	global __pre_tool__
-	global __endstops__
-	global __skiptimer__
-	global __selector__
-	global __revolver__
-	global __feeder__
-	global __feeder2__
-	global __no_log__
-	global __is_aligned__
 	global __plugin_implementation__
 	global __plugin_hooks__
 	global __ser0__
