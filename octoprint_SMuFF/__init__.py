@@ -299,7 +299,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			while True:
 				try:
 					response = __ser0__.readline()
-					self.logger.debug(("<<< [" + response +"]")
+					self.logger.debug("<<< [" + response +"]")
 
 					if response.startswith('echo:'):
 						continue
