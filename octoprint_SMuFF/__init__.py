@@ -35,18 +35,18 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 				  octoprint.plugin.StartupPlugin):
 
 	def __init__(self):
-		self._fw_info 	= "?"
-		self._cur_tool 	= "?"
-		self._pre_tool 	= "?"
-		self._pending_tool = "?"
-		self._endstops	= "?"
-		self._skip_timer= False
-		self._selector 	= False
-		self._revolver 	= False
-		self._feeder 	= False
-		self._feeder2	= False
-		self._no_log	= False
-		self._is_aligned = False
+		self._fw_info 		= "?"
+		self._cur_tool 		= "?"
+		self._pre_tool 		= "?"
+		self._pending_tool 	= "?"
+		self._endstops		= "?"
+		self._skip_timer	= False
+		self._selector 		= False
+		self._revolver 		= False
+		self._feeder 		= False
+		self._feeder2		= False
+		self._no_log		= False
+		self._is_aligned 	= False
 
 	##~~ StartupPlugin mixin
 
@@ -182,7 +182,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			# @SMuFF LOAD
 			if action and action == LOAD:
 				try:
-					self._logger.info("LOAD: Feeder: " + str(self._feeder) + ", Pending: " + str(self._pending_tool) + ", Current: " + str(self._cur_tool))
+					self._logger.info("1>> LOAD: Feeder: " + str(self._feeder) + ", Pending: " + str(self._pending_tool) + ", Current: " + str(self._cur_tool))
 					self._skip_timer = True
 					# send a tool change command to SMuFF
 					stat = self.send_and_wait(self._pending_tool)
@@ -260,15 +260,15 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			if action and action.startswith(TOOL):
 				if self._printer.set_job_on_hold(True):
 					try:
-						self._logger.info("Tx: Feeder: " + str(self._feeder) + ", Pending: " + str(self._pending_tool) + ", Current: " + str(self._cur_tool))
+						self._logger.info("2>> TN: Feeder: " + str(self._feeder) + ", Pending: " + str(self._pending_tool) + ", Current: " + str(self._cur_tool))
 						self._pending_tool = action
 						# check if there's some filament loaded
-						if self._feeder and not self._cur_tool == NOTOOL:
+						if self._feeder:
 							# send the "Before Tool Change" script to the printer
-							self._logger.info("calling script")
+							self._logger.info("2>> calling script")
 							self._printer.script("beforeToolChange")
 						else:
-							self._logger.info("calling SMuFF LOAD")
+							self._logger.info("2>> calling SMuFF LOAD")
 							self._printer.commands(AT_SMUFF + " " + LOAD)
 
 					except UnknownScript:
