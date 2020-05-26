@@ -29,17 +29,19 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 				  octoprint.plugin.StartupPlugin):
 
 	def __init__(self):
-		__fw_info__ 	= "?"
-		__cur_tool__ 	= "?"
-		__pre_tool__ 	= "?"
-		__endstops__	= "?"
-		__skiptimer__ 	= True
-		__selector__ 	= False
-		__revolver__ 	= False
-		__feeder__ 		= False
-		__feeder2__		= False
-		__no_log__		= False
-		__is_aligned__ 	= False
+		self.__fw_info__ 	= "?"
+		self.__cur_tool__ 	= "?"
+		self.__pre_tool__ 	= "?"
+		self.__endstops__	= "?"
+		self.__skiptimer__ 	= True
+		self.__selector__ 	= False
+		self.__revolver__ 	= False
+		self.__feeder__ 	= False
+		self.__feeder2__	= False
+		self.__no_log__		= False
+		self.__is_aligned__ = False
+
+	
 
 	##~~ StartupPlugin mixin
 
@@ -62,16 +64,16 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 
 	def get_settings_defaults(self):
 		self._logger.info("SMuFF plugin loaded, getting defaults")
-		global __cur_tool__
+
 		params = dict(
 			firmware_info	= "No data. Please check connection!",
 			baudrate		= __ser_baud__,
 			tty 			= "Not found. Please enable the UART on your Raspi!",
-			#tool			= __cur_tool__,
-			selector_end	= __selector__,
-			revolver_end	= __revolver__,
-			feeder_end		= __feeder__,
-			feeder2_end		= __feeder__
+			tool			= self.__cur_tool__,
+			selector_end	= self.__selector__,
+			revolver_end	= self.__revolver__,
+			feeder_end		= self.__feeder__,
+			feeder2_end		= self.__feeder__
 		)
 
 		__ser0__.timeout = 1
