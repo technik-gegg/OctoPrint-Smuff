@@ -291,6 +291,8 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			retry = 15 	# wait max. 15 seconds for response
 			while True:
 				response = __ser0__.readline()
+				if response.startswith('echo:'):
+					continue
 				if response.startswith('ok\n'):
 					return prev_resp
 				else:
@@ -355,7 +357,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			self._revolver = m.group(4).strip() == ESTOP_TRG
 			self._feeder 	 = m.group(6).strip() == ESTOP_TRG
 			self._feeder2  = False # m.group(8).strip() == ESTOP_TRG
-			#self._logger.info("SELECTOR: [" + str(self._selector) + "] REVOLVER: [" + str(self._revolver) + "] FEEDER: [" + str(self._feeder) +"]")
+			self._logger.info("FEEDER: [" + str(self._feeder) +"]")
 			return True
 		return False
 		
