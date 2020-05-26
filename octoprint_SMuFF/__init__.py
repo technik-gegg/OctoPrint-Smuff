@@ -39,7 +39,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		self._cur_tool 	= "?"
 		self._pre_tool 	= "?"
 		self._endstops	= "?"
-		self._skiptimer = False
+		self._skip_timer= False
 		self._selector 	= False
 		self._revolver 	= False
 		self._feeder 	= False
@@ -51,7 +51,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 
 	def on_timer_event(self):
 		# poll tool active and endstop states periodically
-		if self._skiptimer == False:
+		if self._skip_timer == False:
 			self._no_log = True
 			self.get_tool()
 			self.get_endstops()
@@ -305,7 +305,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 						retry -= 1
 						if retry == 0:
 							return None
-							
+
 				except (OSError, serial.SerialException):
 					self._logger.info("Serial Exception!")
 					continue
