@@ -176,26 +176,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 				if len(tmp) > 4:
 					spd = int(tmp[4])
 
-			self._logger.info(">> " + cmd + "  action: " + str(action) + "  v1,v2: " + str(v1) + ", " + str(v2))
-
-			# @SMuFF T0...99
-			if action and action.startswith(TOOL):
-				if self._printer.set_job_on_hold(True):
-					try:
-						self._logger.info("Tx: Feeder: " + str(self._feeder) + ", Pending: " + str(self._pending_tool) + ", Current: " + str(self._cur_tool))
-						self._pending_tool = action
-						# check if there's some filament loaded
-						if self._feeder and not self._cur_tool == NOTOOL:
-							# send the "Before Tool Change" script to the printer
-							self._logger.info("calling script")
-							self._printer.script("beforeToolChange")
-						else:
-							self._logger.info("calling SMuFF LOAD")
-							self._printer.commands(AT_SMUFF + " " + LOAD)
-
-					except UnknownScript:
-						self._logger.info("Script 'beforeToolChange' not found!")
-						self._printer.set_job_on_hold(False)
+			self._logger.info("1>> " + cmd + "  action: " + str(action) + "  v1,v2: " + str(v1) + ", " + str(v2))
 
 			# @SMuFF LOAD
 			if action and action == LOAD:
@@ -272,8 +253,26 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 				if len(tmp) > 3:
 					v2 = int(tmp[3])
 
-			self._logger.info(">>> " + cmd + "  action: " + str(action) + "  v1,v2: " + str(v1) + ", " + str(v2))
+			self._logger.info("2>> " + cmd + "  action: " + str(action) + "  v1,v2: " + str(v1) + ", " + str(v2))
+			
+			# @SMuFF T0...99
+			if action and action.startswith(TOOL):
+				if self._printer.set_job_on_hold(True):
+					try:
+						self._logger.info("Tx: Feeder: " + str(self._feeder) + ", Pending: " + str(self._pending_tool) + ", Current: " + str(self._cur_tool))
+						self._pending_tool = action
+						# check if there's some filament loaded
+						if self._feeder and not self._cur_tool == NOTOOL:
+							# send the "Before Tool Change" script to the printer
+							self._logger.info("calling script")
+							self._printer.script("beforeToolChange")
+						else:
+							self._logger.info("calling SMuFF LOAD")
+							self._printer.commands(AT_SMUFF + " " + LOAD)
 
+					except UnknownScript:
+						self._logger.info("Script 'beforeToolChange' not found!")
+						self._printer.set_job_on_hold(False)
 		
 
 	def extend_script_variables(comm_instance, script_type, script_name, *args, **kwargs):
