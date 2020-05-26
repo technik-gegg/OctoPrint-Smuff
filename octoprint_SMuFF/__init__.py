@@ -291,19 +291,24 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			prev_resp = ""
 			retry = 15 	# wait max. 15 seconds for response
 			while True:
-				response = __ser0__.readline()
-				if response.startswith('echo:'):
+				try:
+					response = __ser0__.readline()
+					if response.startswith('echo:'):
+						continue
+					elif response.startswith('ok\n'):
+						return prev_resp
+					else:
+						prev_resp = response.rstrip("\n")
+						if prev_resp:
+							if self._no_log == False:
+								self._logger.info("SMuFF says [" + prev_resp + "] to [" + data +"]")
+						retry -= 1
+						if retry == 0:
+							return None
+							
+				except (OSError, serial.SerialException):
+					self._logger.info("Serial Exception!")
 					continue
-				elif response.startswith('ok\n'):
-					return prev_resp
-				else:
-					prev_resp = response.rstrip("\n")
-					if prev_resp:
-						if self._no_log == False:
-							self._logger.info("SMuFF says [" + prev_resp + "] to [" + data +"]")
-					retry -= 1
-					if retry == 0:
-						return None
 		else:
 			self._logger.info("Serial not open")
 			return None
