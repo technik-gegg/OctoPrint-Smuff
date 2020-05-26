@@ -14,48 +14,38 @@ AT_SMUFF 	= "@SMuFF"
 M115	 	= "M115"
 M119	 	= "M119"
 TOOL 		= "T"
+NOTOOL		= "T255"
 G1_E	 	= "G1 E"
 ALIGN 	 	= "ALIGN"
 REPEAT 		= "REPEAT"
 LOAD 		= "LOAD"
 ALIGN_SPEED	= " F"
+ESTOP_TRG 	= "triggered"
+
 
 class SmuffPlugin(octoprint.plugin.SettingsPlugin,
                   octoprint.plugin.AssetPlugin,
                   octoprint.plugin.TemplatePlugin,
 				  octoprint.plugin.StartupPlugin):
 
+	__fw_info__ 	= "?"
+	__cur_tool__ 	= "?"
+	__pre_tool__ 	= "?"
+	__toolchange__ 	= False
+	__endstops__	= "?"
+	__selector__ 	= False
+	__revolver__ 	= False
+	__feeder__ 		= False
+	__feeder2__		= False
+	__no_log__		= False
+	__is_aligned__ 	= False
+	__timer__
 
 	def __init__(self):
-		global __fw_info__
-		global __cur_tool__
-		global __pre_tool__
-		global __toolchange__
-		global __endstops__
-		global __selector__
-		global __revolver__
-		global __feeder__
-		global __feeder2__
-		global __timer__
-		global __no_log__
-		global __is_aligned__
-
-		__fw_info__ 	= "?"
-		__cur_tool__ 	= "?"
-		__pre_tool__ 	= "?"
-		__toolchange__ 	= False
-		__endstops__	= "?"
-		__selector__ 	= False
-		__revolver__ 	= False
-		__feeder__ 		= False
-		__feeder2__		= False
-		__no_log__		= False
-		__is_aligned__ 	= False
 
 	##~~ StartupPlugin mixin
 
 	def on_timer_event(self):
-		global __no_log__
 		# poll tool active and endstop states periodically
 		if __toolchange__ == False:
 			__no_log__ = True
@@ -83,9 +73,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			selector_end	= __selector__,
 			revolver_end	= __revolver__,
 			feeder_end		= __feeder__,
-			feeder2_end		= __feeder__,
-			before_script	= __before_script__,
-			after_script	= __after_script__
+			feeder2_end		= __feeder__
 		)
 
 		__ser0__.timeout = 1
@@ -157,9 +145,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 
 	def extend_tool_queuing(self, comm_instance, phase, cmd, cmd_type, gcode, subcode, tags, *args, **kwargs):
 		
-		global __is_aligned__
-
-		self._logger.info("Processing queuing: [" + cmd + "," + str(cmd_type)+ "," + str(tags) + "]")
+		# self._logger.info("Processing queuing: [" + cmd + "," + str(cmd_type)+ "," + str(tags) + "]")
 		
 		if gcode and gcode.startswith(TOOL):
 
@@ -207,14 +193,8 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 
 
 	def extend_tool_sending(self, comm_instance, phase, cmd, cmd_type, gcode, subcode, tags, *args, **kwargs):
-		global __toolchange__
-		global __cur_tool__
-		global __pre_tool__
-		global __pending_tool__
-		global __feeder__
-		global __feeder2__
 
-		if gcode and gcode.startswith('T'):
+		if gcode and gcode.startswith(TOOL):
 			return ""
 
 		# is this the replaced tool change command?
@@ -238,7 +218,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 						__pending_tool__ = action
 						# self._logger.info("Feeder is: " + str(__feeder__))
 						# check if there's some filament loaded
-						if __feeder__:
+						if __feeder__ and not __cur_tool__ == NOTOOL:
 							# send the "Before Tool Change" script to the printer
 							self._printer.script("beforeToolChange")
 						else:
@@ -313,16 +293,13 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 
 
 	def get_tool(self):
-		global __cur_tool__
 		__cur_tool__ = self.send_and_wait(TOOL)
-		#self._logger.info("SMuFF says Tool is: [" + __cur_tool__ +"]")
 		if __cur_tool__:
 			return True
 		return False
 
 
 	def get_endstops(self):
-		global __endstops__
 		__endstops__ = self.send_and_wait(M119)
 		if __endstops__:
 			self.parse_endstop_states(__endstops__)
@@ -346,20 +323,15 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 
 
 	def parse_endstop_states(self, states):
-		global __selector__
-		global __revolver__
-		global __feeder__
-		global __feeder2__
 		#self._logger.info("Endstop states: [" + states + "]")
 		if len(states) == 0:
 			return False
-		trg = "triggered"
 		m = re.search(r'^(\w+:.)(\w+).(\w+:.)(\w+).(\w+:.)(\w+)', states)
 		if m:
-			__selector__ = m.group(2).strip() == trg
-			__revolver__ = m.group(4).strip() == trg
-			__feeder__ 	 = m.group(6).strip() == trg
-			__feeder2__  = False # m.group(8).strip() == trg
+			__selector__ = m.group(2).strip() == ESTOP_TRG
+			__revolver__ = m.group(4).strip() == ESTOP_TRG
+			__feeder__ 	 = m.group(6).strip() == ESTOP_TRG
+			__feeder2__  = False # m.group(8).strip() == ESTOP_TRG
 			#self._logger.info("SELECTOR: [" + str(__selector__) + "] REVOLVER: [" + str(__revolver__) + "] FEEDER: [" + str(__feeder__) +"]")
 			return True
 		return False
@@ -375,7 +347,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 	
 
 
-__plugin_name__ = "Smuff Plugin"
+__plugin_name__ = "SMuFF Plugin"
 
 def __plugin_load__():
 	global __plugin_implementation__
@@ -389,8 +361,6 @@ def __plugin_load__():
     	"octoprint.comm.protocol.gcode.queuing": 		__plugin_implementation__.extend_tool_queuing,
 		"octoprint.plugin.softwareupdate.check_config": __plugin_implementation__.get_update_information
 	}
-	global __before_script__
-	global __after_script__
 	global __ser0__
 	global __ser_drvr__
 	global __ser_baud__
@@ -411,15 +381,6 @@ def __plugin_load__():
 	except (OSError, serial.SerialException):
 		self._logger.info("Serial port not found!")
 		#pass
-
-	# read before and after ToolChange scripts from the default OctoPrint folder
-	file = open("/home/pi/.octoprint/scripts/gcode/SMuFF_beforeToolChange", "r") 
-	__before_script__ = file.read();
-	file.close();
-
-	file = open("/home/pi/.octoprint/scripts/gcode/SMuFF_afterToolChange", "r") 
-	__after_script__ = file.read();
-	file.close();
 
 
 def __plugin_unload__():
