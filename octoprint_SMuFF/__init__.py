@@ -11,6 +11,7 @@ import re
 import octoprint.plugin
 import time
 import sys
+import logging
 
 AT_SMUFF 	= "@SMuFF"
 M115	 	= "M115"
