@@ -38,6 +38,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		self._fw_info 	= "?"
 		self._cur_tool 	= "?"
 		self._pre_tool 	= "?"
+		self._pending_tool = "?"
 		self._endstops	= "?"
 		self._skip_timer= False
 		self._selector 	= False
