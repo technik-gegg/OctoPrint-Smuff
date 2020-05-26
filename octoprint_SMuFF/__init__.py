@@ -33,7 +33,6 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 	global __pre_tool__
 	global __endstops__
 	global __skiptimer__
-	global __selector__
 	global __revolver__
 	global __feeder__
 	global __feeder2__
@@ -79,7 +78,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			firmware_info	= "No data. Please check connection!",
 			baudrate		= __ser_baud__,
 			tty 			= "Not found. Please enable the UART on your Raspi!",
-			tool			= __cur_tool__,
+			tool			= self.__cur_tool__,
 			selector_end	= __selector__,
 			revolver_end	= __revolver__,
 			feeder_end		= __feeder__,
@@ -393,6 +392,9 @@ def __plugin_load__():
 	except (OSError, serial.SerialException):
 		self._logger.info("Serial port not found!")
 		#pass
+
+	global __selector__
+
 
 
 def __plugin_unload__():
