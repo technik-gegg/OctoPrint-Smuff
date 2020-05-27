@@ -348,10 +348,10 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			or line.startswith("\n") \
 			or line.startswith("start") \
 			or line.startswith("echo:") \
-			or line.startswith("FIRMWARE"): \
-			or line.startswith("Cap:"): \
-			or line.startswith("Begin file list"): \
-			or line.startswith("End file list"): \
+			or line.startswith("FIRMWARE") \
+			or line.startswith("Cap:") \
+			or line.startswith("Begin file list") \
+			or line.startswith("End file list") \
 			or line.startswith(" T:"):
 			# not interessed in those
 			if line.startswith("Begin file list"):
