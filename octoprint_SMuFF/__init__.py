@@ -344,7 +344,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		return None
 
 	def extend_gcode_received(self, comm_instance, line, *args, **kwargs):
-		if line.startswith("start") or line.startswith("echo:") or line.startswith("T:")
+		if line.startswith("start") or line.startswith("echo:") or line.startswith("T:"):
 			self._got_response = None
 			return None
 
@@ -399,12 +399,9 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 				response = self._got_response
 				self._got_response = None
 
-				if response.startswith('T:'):
-					continue
-				elif response.startswith('ok\n'):
-					return response
+				if response.startswith('ok\n'):
+					return response.rstrip("\n")
 				else:
-					self._logger.debug("<<< [" + response +"]")
 					retry -= 1
 					if retry == 0:
 						return None
