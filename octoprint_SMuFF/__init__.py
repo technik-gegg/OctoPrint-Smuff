@@ -349,6 +349,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		
 
 	def extend_script_variables(self, comm_instance, script_type, script_name, *args, **kwargs):
+		self._logger.info("Script called: [" + str(script_type) + "," + str(script_name) + "]")
 		if script_type and script_type == "gcode":
 			self._skip_timer = True
 			self.get_tool()
