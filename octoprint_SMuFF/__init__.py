@@ -409,12 +409,11 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			# self._logger.debug(">>> " + data)
 			retry = 15 	# wait max. 15 seconds for response
 			while True:
-				response = self._got_response
-				self._got_response = None
-
-				if response and response.startswith('ok\n'):
-					return response.rstrip("\n")
+				if self._got_response and self._got_response.startswith('ok\n'):
+					return self._got_response.rstrip("\n")
 				else:
+					self._got_response = None
+					time.sleep(.1)
 					retry -= 1
 					if retry == 0:
 						return None
