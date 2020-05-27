@@ -205,7 +205,9 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 				self._logger.info(action + " Feeder is: " + str(self._feeder) + " Cmd is:" + G1_E + str(v1))
 				if self._feeder:
 					self._is_aligned = False
-					return [ ( G1_E + str(v1) + ALIGN_SPEED + str(spd) ) ]
+					return [ ( G1_E + str(v1) + ALIGN_SPEED + str(spd) ), 
+							 ( AT_SMUFF + " " + REPEAT + " " + str(v1) + " " + str(v2) + " " + ALIGN_SPEED + " " + str(spd) ) 
+						]
 				else:
 					self._is_aligned = True
 					self._logger.info("Now aligned, cmd is: " + G1_E + str(v2))
