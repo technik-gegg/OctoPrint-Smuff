@@ -344,12 +344,16 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		return None
 
 	def extend_gcode_received(self, comm_instance, line, *args, **kwargs):
-		if line.startswith("\n") or line.startswith("start") or line.startswith("echo:") or line.startswith("T:"):
+		if 	line == "" or 
+			line.startswith("\n") or 
+			line.startswith("start") or 
+			line.startswith("echo:") or 
+			line.startswith("T:"):
 			self._got_response = None
 		else:
 			self._got_response = line
 			self._logger.info("<<< [" + line.rstrip("\n") +"]")
-		return None
+		return line
 	
 	##~~ helper functions
 
