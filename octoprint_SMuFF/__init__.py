@@ -256,25 +256,6 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 				self.send_printer_and_wait("M20")
 				return ""
 
-			# @SMuFF ALIGN
-			if action and action == ALIGN:
-				if self._is_aligned:
-					return ""
-				# check the feeder and keep retracting v1 as long as 
-				# the feeder endstop is on
-				self.get_endstops()
-				if self._feeder:
-					self._logger.info(action + " Feeder is: " + str(self._feeder) + " Cmd is:" + G1_E + str(v1))
-					return G1_E + str(v1) + ALIGN_SPEED + str(spd)
-					# self.send_printer_and_wait(G1_E + str(v1) + ALIGN_SPEED + str(spd))
-				else:
-					self._is_aligned = True
-					self._logger.info("Aligned now, cmd is: " + G1_E + str(v2))
-					# finally retract from selector (distance = v2)
-					return G1_E + str(v2) + ALIGN_SPEED + str(spd)
-					#self.send_printer_and_wait(G1_E + str(v2) + ALIGN_SPEED + str(spd))
-				return ""
-
 
 	def extend_tool_sending(self, comm_instance, phase, cmd, cmd_type, gcode, subcode, tags, *args, **kwargs):
 
@@ -315,7 +296,26 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 						self._logger.info("Script 'beforeToolChange' not found!")
 					finally:
 						self._printer.set_job_on_hold(False)
-			
+
+			# @SMuFF ALIGN
+			if action and action == ALIGN:
+				if self._is_aligned:
+					return ""
+				# check the feeder and keep retracting v1 as long as 
+				# the feeder endstop is on
+				self.get_endstops()
+				if self._feeder:
+					self._logger.info(action + " Feeder is: " + str(self._feeder) + " Cmd is:" + G1_E + str(v1))
+					self._printer.commands(G1_E + str(v1) + ALIGN_SPEED + str(spd))
+					# self.send_printer_and_wait(G1_E + str(v1) + ALIGN_SPEED + str(spd))
+				else:
+					self._is_aligned = True
+					self._logger.info("Aligned now, cmd is: " + G1_E + str(v2))
+					# finally retract from selector (distance = v2)
+					self._printer.commands(G1_E + str(v2) + ALIGN_SPEED + str(spd))
+					#self.send_printer_and_wait(G1_E + str(v2) + ALIGN_SPEED + str(spd))
+				return ""
+
 			# @SMuFF LOAD
 			if action and action == LOAD:
 				if self._printer.set_job_on_hold(True):
