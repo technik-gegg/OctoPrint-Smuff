@@ -99,8 +99,8 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			try:
 				if self._ser1 and self._ser1.is_open:
 					self._ser1.close()
-				except (OSError, serial.SerialException):
-					pass
+			except (OSError, serial.SerialException):
+				pass
 			self._ser1 = None
 			self._ser1_init = False
 			self._ser1_state = event
