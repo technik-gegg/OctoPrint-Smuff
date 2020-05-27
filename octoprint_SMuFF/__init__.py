@@ -266,6 +266,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		if cmd and cmd.startswith(AT_SMUFF):
 			v1 = None
 			v2 = None
+			spd = 300
 			action = None
 			tmp = cmd.split()
 			if len(tmp):
@@ -274,6 +275,8 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 					v1 = int(tmp[2])
 				if len(tmp) > 3:
 					v2 = int(tmp[3])
+				if len(tmp) > 4:
+					spd = int(tmp[4])
 
 			self._logger.info("2>> " + cmd + "  action: " + str(action) + "  v1,v2: " + str(v1) + ", " + str(v2))
 			
