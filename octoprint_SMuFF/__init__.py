@@ -333,7 +333,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			
 		
 
-	def extend_script_variables(comm_instance, script_type, script_name, *args, **kwargs):
+	def extend_script_variables(self, comm_instance, script_type, script_name, *args, **kwargs):
 		if script_type and script_type == "gcode":
 			variables = dict(
 				feeder	= self._feeder,
@@ -343,7 +343,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			return None, None, variables
 		return None
 
-	def extend_gcode_received(comm_instance, line, *args, **kwargs):
+	def extend_gcode_received(self, comm_instance, line, *args, **kwargs):
 		self._got_response = line
 		self._logger.debug("<<< " + line)
 		return None
