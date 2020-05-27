@@ -265,13 +265,13 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 				self.get_endstops()
 				if self._feeder:
 					self._logger.info(action + " Feeder is: " + str(self._feeder) + " Cmd is:" + G1_E + str(v1))
-					self._printer.commands(G1_E + str(v1) + ALIGN_SPEED + str(spd))
+					return G1_E + str(v1) + ALIGN_SPEED + str(spd)
 					# self.send_printer_and_wait(G1_E + str(v1) + ALIGN_SPEED + str(spd))
 				else:
 					self._is_aligned = True
-					self._logger.info("Now aligned, cmd is: " + G1_E + str(v2))
+					self._logger.info("Aligned now, cmd is: " + G1_E + str(v2))
 					# finally retract from selector (distance = v2)
-					self._printer.commands(G1_E + str(v2) + ALIGN_SPEED + str(spd))
+					return G1_E + str(v2) + ALIGN_SPEED + str(spd)
 					#self.send_printer_and_wait(G1_E + str(v2) + ALIGN_SPEED + str(spd))
 				return ""
 
