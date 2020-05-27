@@ -345,7 +345,8 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			variables = dict(
 				feeder	= self._feeder,
 				feeder2	= self._feeder2,
-				tool	= self._cur_tool
+				tool	= self._cur_tool,
+				aligned = self._is_aligned
 			)
 			return None, None, variables
 		return None
@@ -456,7 +457,6 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 
 	def parse_tool_number(self, tool):
 		result = -1
-		
 		if len(tool) == 0:
 			return result
 
