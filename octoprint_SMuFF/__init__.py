@@ -157,7 +157,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			params['feeder2_end']  = self._feeder2
 
 		self._skip_timer = False
-		
+
 		# look up the serial port driver
 		drvr = self.find_file(__ser_drvr__, "/dev")
 		if len(drvr) > 0:
@@ -350,6 +350,10 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 
 	def extend_script_variables(self, comm_instance, script_type, script_name, *args, **kwargs):
 		if script_type and script_type == "gcode":
+			self._skip_timer = True
+			self.get_tool()
+			self.get_endstops()
+			self._skip_timer = False
 			variables = dict(
 				feeder	= self._feeder,
 				feeder2	= self._feeder2,
