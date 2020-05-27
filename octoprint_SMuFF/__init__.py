@@ -413,7 +413,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 					return self._got_response.rstrip("\n")
 				else:
 					self._got_response = None
-					time.sleep(.1)
+					time.sleep(.5)
 					retry -= 1
 					if retry == 0:
 						return None
