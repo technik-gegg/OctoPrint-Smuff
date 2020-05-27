@@ -382,7 +382,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		else:
 			if self._in_file_list == False:
 				self._got_response = line
-				self._logger.info("<<< [" + line.rstrip("\n") +"]")
+				#self._logger.info("<<< [" + line.rstrip("\n") +"]")
 		return line
 	
 	##~~ helper functions
