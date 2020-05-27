@@ -27,6 +27,7 @@ REPEAT 		= "REPEAT"
 LOAD 		= "LOAD"
 SERVO		= "SERVO"
 MOTORS		= "MOTORS"
+PRINTER		= "PRINTER"
 ALIGN_SPEED	= " F"
 ESTOP_TRG 	= "triggered"
 
@@ -248,6 +249,11 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 				# send a servo command to SMuFF
 				self.send_SMuFF_and_wait(M18)
 				self._skip_timer = False
+				return ""
+
+			# @SMuFF PRINTER
+			if action and action == PRINTER:
+				self.send_printer_and_wait("M20")
 				return ""
 
 			# @SMuFF ALIGN
