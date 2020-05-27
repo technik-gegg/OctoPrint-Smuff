@@ -139,6 +139,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 
 		__ser0__.timeout = 1
 
+		self._skip_timer = True
 		# request firmware info from SMuFF 
 		self._fw_info = self.send_SMuFF_and_wait(M115)
 		if self._fw_info:
@@ -155,6 +156,8 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			params['feeder_end']   = self._feeder
 			params['feeder2_end']  = self._feeder2
 
+		self._skip_timer = False
+		
 		# look up the serial port driver
 		drvr = self.find_file(__ser_drvr__, "/dev")
 		if len(drvr) > 0:
@@ -306,7 +309,9 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 					return ""
 				# check the feeder and keep retracting v1 as long as 
 				# the feeder endstop is on
+				self._skip_timer = True
 				self.get_endstops()
+				self._skip_timer = False
 				if self._feeder:
 					self._logger.info(action + " Feeder is: " + str(self._feeder) + " Cmd is:" + G1_E + str(v1))
 					self._printer.commands(G1_E + str(v1) + ALIGN_SPEED + str(spd))
