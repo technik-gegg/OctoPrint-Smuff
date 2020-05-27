@@ -80,8 +80,8 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 	
 	def on_event(self, event, payload):
 		
-		self._logger.info("Event: [" + event + "]")
 		if event == Events.CONNECTED:
+			self._logger.info("Event: [" + event + "]")
 			# request the printers serial connection
 			state, self._ser1_port, self._ser1_baud, profile = self._printer.get_current_connection()
 			self._ser1_state = event
@@ -90,12 +90,13 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 				try:
 					self._ser1 = serial.Serial(self._ser1_port, self._ser1_baud, timeout=1)
 					self._ser1_init = True
-					self._logger.info("Printers serial port open")
+					self._logger.info("Printers serial port has been opened")
 				except (OSError, serial.SerialException):
 					self._ser1_init = False
 					self._logger.info("Can't open printers serial port")
 
 		if event == Events.DISCONNECTED:
+			self._logger.info("Event: [" + event + "]")
 			try:
 				if self._ser1 and self._ser1.is_open:
 					self._ser1.close()
@@ -104,8 +105,13 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			self._ser1 = None
 			self._ser1_init = False
 			self._ser1_state = event
-			self._logger.info("Printers serial port closed")
+			self._logger.info("Printers serial port has been closed")
 
+		if event == Events.PRINT_PAUSED:
+			self._logger.info("Event: [" + event + "]")
+
+		if event == Events.PRINT_RESUMED:
+			self._logger.info("Event: [" + event + "]")
 
 	##~~ SettingsPlugin mixin
 
@@ -126,7 +132,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		__ser0__.timeout = 1
 
 		# request firmware info from SMuFF 
-		self._fw_info = self.send_and_wait(M115)
+		self._fw_info = self.send_SMuFF_and_wait(M115)
 		if self._fw_info:
 			params['firmware_info'] = self._fw_info
 		
@@ -224,7 +230,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			if action and action == SERVO:
 				self._skip_timer = True
 				# send a servo command to SMuFF
-				self.send_and_wait(M280 + str(v1) + " S" + str(v2))
+				self.send_SMuFF_and_wait(M280 + str(v1) + " S" + str(v2))
 				self._skip_timer = False
 				return ""
 
@@ -232,28 +238,28 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			if action and action == MOTORS:
 				self._skip_timer = True
 				# send a servo command to SMuFF
-				self.send_and_wait(M18)
+				self.send_SMuFF_and_wait(M18)
 				self._skip_timer = False
 				return ""
 
-			# @SMuFF ALIGN | REPEAT
-			if action and action == ALIGN or action == REPEAT:
+			# @SMuFF ALIGN
+			if action and action == ALIGN:
 				if self._is_aligned:
 					return ""
 				# check the feeder and keep retracting v1 as long as 
 				# the feeder endstop is on
 				self.get_endstops()
-				self._logger.info(action + " Feeder is: " + str(self._feeder) + " Cmd is:" + G1_E + str(v1))
-				if self._feeder:
-					self._is_aligned = False
-					return [ ( G1_E + str(v1) + ALIGN_SPEED + str(spd) ), 
-							 ( AT_SMUFF + " " + REPEAT + " " + str(v1) + " " + str(v2) + " " + ALIGN_SPEED + " " + str(spd) ) 
-						]
+				while self._feeder:
+					self._logger.info(action + " Feeder is: " + str(self._feeder) + " Cmd is:" + G1_E + str(v1))
+					self.send_printer_and_wait(G1_E + str(v1) + ALIGN_SPEED + str(spd))
+					self.get_endstops()
 				else:
 					self._is_aligned = True
 					self._logger.info("Now aligned, cmd is: " + G1_E + str(v2))
 					# finally retract from selector (distance = v2)
-					return [ ( G1_E + str(v2) + ALIGN_SPEED + str(spd) ) ]
+					self.send_printer_and_wait(G1_E + str(v2) + ALIGN_SPEED + str(spd))
+						
+				return ""
 
 
 	def extend_tool_sending(self, comm_instance, phase, cmd, cmd_type, gcode, subcode, tags, *args, **kwargs):
@@ -303,7 +309,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 						self._logger.info("1>> LOAD: Feeder: " + str(self._feeder) + ", Pending: " + str(self._pending_tool) + ", Current: " + str(self._cur_tool))
 						self._skip_timer = True
 						# send a tool change command to SMuFF
-						stat = self.send_and_wait(self._pending_tool)
+						stat = self.send_SMuFF_and_wait(self._pending_tool)
 						self._skip_timer = False
 
 						if stat != None:
@@ -332,7 +338,8 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 	
 	##~~ helper functions
 
-	def send_and_wait(self, data):
+	# sending data to SMuFF
+	def send_SMuFF_and_wait(self, data):
 		if __ser0__.is_open:
 			__ser0__.write("{}\n".format(data))
 			__ser0__.flush()
@@ -364,6 +371,35 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			self._logger.info("Serial not open")
 			return None
 
+	# sending data directly to printer
+	def send_printer_and_wait(self, data):
+		if self._ser1 and self._ser1.is_open:
+			self._ser1.write("{}\n".format(data))
+			self._ser1.flush()
+			# self._logger.debug(">>> " + data)
+			retry = 15 	# wait max. 15 seconds for response
+			while True:
+				try:
+					response = self._ser1.readline()
+					# self._logger.debug("<<< [" + response +"]")
+
+					if response.startswith('T:'):
+						continue
+					elif response.startswith('ok\n'):
+						return response
+					else:
+						self._logger.debug("<<< [" + response +"]")
+						retry -= 1
+						if retry == 0:
+							return None
+
+				except (OSError, serial.SerialException):
+					self._logger.info("Printer Serial Exception!")
+					continue
+		else:
+			self._logger.info("Printer serial not open")
+			return None
+
 
 	def find_file(self, pattern, path):
 		result = []
@@ -375,14 +411,14 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 
 
 	def get_tool(self):
-		self._cur_tool = self.send_and_wait(TOOL)
+		self._cur_tool = self.send_SMuFF_and_wait(TOOL)
 		if self._cur_tool:
 			return True
 		return False
 
 
 	def get_endstops(self):
-		self._endstops = self.send_and_wait(M119)
+		self._endstops = self.send_SMuFF_and_wait(M119)
 		if self._endstops:
 			self.parse_endstop_states(self._endstops)
 			return True
