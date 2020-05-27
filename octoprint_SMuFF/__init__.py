@@ -412,7 +412,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 				response = self._got_response
 				self._got_response = None
 
-				if response.startswith('ok\n'):
+				if response and response.startswith('ok\n'):
 					return response.rstrip("\n")
 				else:
 					retry -= 1
