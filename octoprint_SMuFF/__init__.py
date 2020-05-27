@@ -48,6 +48,11 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		self._feeder2		= False
 		self._no_log		= False
 		self._is_aligned 	= False
+		self._ser1			= None
+		self._ser1_port 	= None
+		self._ser1_baud		= None
+		self._ser1_state	= None
+		self._ser1_init		= False
 
 	##~~ StartupPlugin mixin
 
@@ -60,6 +65,26 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			self._no_log = False
 		
 		self._plugin_manager.send_plugin_message(self._identifier, {'type': 'status', 'tool': self._cur_tool, 'feeder': self._feeder, 'feeder2': self._feeder2 })
+		
+		# request the printers serial connection
+		state, port, baudrate, profile = self._printer.get_current_connection()
+		if not state == "Closed" and not port == None and self._ser1_init == False:
+			self._ser1_port = port
+			self._ser1_baud = baudrate
+			self._ser1_state = state
+		else:
+			self._ser1_state = state
+			self.ser1 = None
+			self._ser1_init = False
+
+		if self._ser1_init == False and not self._ser1_state == "Closed":
+			try:
+				self._ser1 = serial.Serial(self._ser1_port, self._ser1_baud, timeout=1)
+				self._ser1_init = True
+				self._logger.info("Printers serial port open")
+			except (OSError, serial.SerialException):
+				self._ser1_init = False
+				self._logger.info("Can't open printers serial port")
 
 	def on_after_startup(self):
 		# set up a timer to poll the SMuFF
@@ -295,13 +320,13 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		if __ser0__.is_open:
 			__ser0__.write("{}\n".format(data))
 			__ser0__.flush()
-			self._logger.debug(">>> " + data)
+			# self._logger.debug(">>> " + data)
 			prev_resp = ""
 			retry = 15 	# wait max. 15 seconds for response
 			while True:
 				try:
 					response = __ser0__.readline()
-					self._logger.debug("<<< [" + response +"]")
+					# self._logger.debug("<<< [" + response +"]")
 
 					if response.startswith('echo:'):
 						continue
@@ -309,9 +334,9 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 						return prev_resp
 					else:
 						prev_resp = response.rstrip("\n")
-						#if prev_resp:
-						#	if self._no_log == False:
-						#		self._logger.info("SMuFF says [" + prev_resp + "] to [" + data +"]")
+						if prev_resp:
+							if self._no_log == False:
+								self._logger.info("SMuFF says [" + prev_resp + "] to [" + data +"]")
 						retry -= 1
 						if retry == 0:
 							return None
