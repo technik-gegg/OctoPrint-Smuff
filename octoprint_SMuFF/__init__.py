@@ -82,7 +82,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 	
 	def on_event(self, event, payload):
 		
-		if event == Events.CONNECTED:
+		if event == "XXX_XXX": #Events.CONNECTED:
 			self._logger.info("Event: [" + event + "]")
 			# request the printers serial connection
 			state, self._ser1_port, self._ser1_baud, profile = self._printer.get_current_connection()
