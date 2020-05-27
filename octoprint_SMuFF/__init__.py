@@ -4,6 +4,7 @@ from __future__ import absolute_import
 
 from octoprint.util import RepeatedTimer
 from octoprint.printer import UnknownScript
+from octoprint.events import Events
 
 import serial			# we need this for the serial communcation with the SMuFF
 import os, fnmatch
@@ -33,7 +34,8 @@ ESTOP_TRG 	= "triggered"
 class SmuffPlugin(octoprint.plugin.SettingsPlugin,
                   octoprint.plugin.AssetPlugin,
                   octoprint.plugin.TemplatePlugin,
-				  octoprint.plugin.StartupPlugin):
+				  octoprint.plugin.StartupPlugin,
+				  octoprint.plugin.EventHandlerPlugin):
 
 	def __init__(self):
 		self._fw_info 		= "?"
@@ -54,6 +56,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		self._ser1_state	= None
 		self._ser1_init		= False
 
+	
 	##~~ StartupPlugin mixin
 
 	def on_timer_event(self):
@@ -66,30 +69,43 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		
 		self._plugin_manager.send_plugin_message(self._identifier, {'type': 'status', 'tool': self._cur_tool, 'feeder': self._feeder, 'feeder2': self._feeder2 })
 		
-		# request the printers serial connection
-		state, port, baudrate, profile = self._printer.get_current_connection()
-		if not state == "Closed" and not port == None and self._ser1_init == False:
-			self._ser1_port = port
-			self._ser1_baud = baudrate
-			self._ser1_state = state
-		else:
-			self._ser1_state = state
-			self.ser1 = None
-			self._ser1_init = False
-
-		if self._ser1_init == False and not self._ser1_state == "Closed":
-			try:
-				self._ser1 = serial.Serial(self._ser1_port, self._ser1_baud, timeout=1)
-				self._ser1_init = True
-				self._logger.info("Printers serial port open")
-			except (OSError, serial.SerialException):
-				self._ser1_init = False
-				self._logger.info("Can't open printers serial port")
 
 	def on_after_startup(self):
 		# set up a timer to poll the SMuFF
 		self._timer = RepeatedTimer(1.0, self.on_timer_event)
 		self._timer.start()
+
+
+	##~~ EventHandler mixin
+	
+	def on_event(self, event, payload):
+		
+		self._logger.info("Event: [" + event + "]")
+		if event == Events.CONNECTED:
+			# request the printers serial connection
+			state, self._ser1_port, self._ser1_baud, profile = self._printer.get_current_connection()
+			self._ser1_state = event
+
+			if self._ser1_init == False:
+				try:
+					self._ser1 = serial.Serial(self._ser1_port, self._ser1_baud, timeout=1)
+					self._ser1_init = True
+					self._logger.info("Printers serial port open")
+				except (OSError, serial.SerialException):
+					self._ser1_init = False
+					self._logger.info("Can't open printers serial port")
+
+		if event == Events.DISCONNECTED:
+			try:
+				if self._ser1 and self._ser1.is_open:
+					self._ser1.close()
+				except (OSError, serial.SerialException):
+					pass
+			self._ser1 = None
+			self._ser1_init = False
+			self._ser1_state = event
+			self._logger.info("Printers serial port closed")
+
 
 	##~~ SettingsPlugin mixin
 
