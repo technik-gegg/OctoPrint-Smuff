@@ -55,6 +55,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		self._ser1_baud		= None
 		self._ser1_state	= None
 		self._ser1_init		= False
+		self._got_response	= None
 
 	
 	##~~ StartupPlugin mixin
@@ -111,6 +112,12 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			self._logger.info("Event: [" + event + "]")
 
 		if event == Events.PRINT_RESUMED:
+			self._logger.info("Event: [" + event + "]")
+		
+		if event == Events.TOOL_CHANGE:
+			self._logger.info("Event: [" + event + "," + payload + "]")
+
+		if event == Events.WAITING:
 			self._logger.info("Event: [" + event + "]")
 
 	##~~ SettingsPlugin mixin
@@ -335,6 +342,11 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			)
 			return None, None, variables
 		return None
+
+	def extend_gcode_received(comm_instance, line, *args, **kwargs):
+		self._got_response = line
+		self._logger.debug("<<< " + line)
+		return None
 	
 	##~~ helper functions
 
@@ -374,28 +386,25 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 	# sending data directly to printer
 	def send_printer_and_wait(self, data):
 		if self._ser1 and self._ser1.is_open:
+			self._got_response = None
 			self._ser1.write("{}\n".format(data))
 			self._ser1.flush()
 			# self._logger.debug(">>> " + data)
 			retry = 15 	# wait max. 15 seconds for response
 			while True:
-				try:
-					response = self._ser1.readline()
-					# self._logger.debug("<<< [" + response +"]")
+				response = self._got_response
+				self._got_response = None
 
-					if response.startswith('T:'):
-						continue
-					elif response.startswith('ok\n'):
-						return response
-					else:
-						self._logger.debug("<<< [" + response +"]")
-						retry -= 1
-						if retry == 0:
-							return None
-
-				except (OSError, serial.SerialException):
-					self._logger.info("Printer Serial Exception!")
+				if response.startswith('T:'):
 					continue
+				elif response.startswith('ok\n'):
+					return response
+				else:
+					self._logger.debug("<<< [" + response +"]")
+					retry -= 1
+					if retry == 0:
+						return None
+
 		else:
 			self._logger.info("Printer serial not open")
 			return None
@@ -467,6 +476,7 @@ def __plugin_load__():
 	__plugin_implementation__ = SmuffPlugin()
 
 	__plugin_hooks__ = {
+		"octoprint.comm.protocol.gcode.received":		__plugin_implementation__.extend_gcode_received,
 		"octoprint.comm.protocol.scripts": 				__plugin_implementation__.extend_script_variables,
     	"octoprint.comm.protocol.gcode.sending": 		__plugin_implementation__.extend_tool_sending,
     	"octoprint.comm.protocol.gcode.queuing": 		__plugin_implementation__.extend_tool_queuing,
