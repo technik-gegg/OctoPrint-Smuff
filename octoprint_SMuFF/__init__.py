@@ -56,7 +56,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		self._ser1_state	= None
 		self._ser1_init		= False
 		self._got_response	= None
-
+		self._in_file_list	= False
 	
 	##~~ StartupPlugin mixin
 
@@ -344,17 +344,25 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		return None
 
 	def extend_gcode_received(self, comm_instance, line, *args, **kwargs):
-		if 	line == "" \	
+		if 	line == "" \
 			or line.startswith("\n") \
 			or line.startswith("start") \
 			or line.startswith("echo:") \
+			or line.startswith("FIRMWARE"): \
 			or line.startswith("Cap:"): \
+			or line.startswith("Begin file list"): \
+			or line.startswith("End file list"): \
 			or line.startswith(" T:"):
 			# not interessed in those
+			if line.startswith("Begin file list"):
+				self._in_file_list = True
+			if line.startswith("End file list"):
+				self._in_file_list = False
 			self._got_response = None
 		else:
-			self._got_response = line
-			self._logger.info("<<< [" + line.rstrip("\n") +"]")
+			if self._in_file_list == False:
+				self._got_response = line
+				self._logger.info("<<< [" + line.rstrip("\n") +"]")
 		return line
 	
 	##~~ helper functions
