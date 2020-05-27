@@ -47,6 +47,6 @@ $(function() {
         // ViewModels your plugin depends on, e.g. loginStateViewModel, settingsViewModel, ...
         dependencies: [ "settingsViewModel" ],
         // Elements to bind to, e.g. #settings_plugin_SMuFF, #tab_plugin_SMuFF, ...
-        elements: [ "#settings_plugin_SMuFF" ]
+        elements: [ "#settings_plugin_SMuFF", "#navbar_plugin_SMuFF" ]
     });
 });

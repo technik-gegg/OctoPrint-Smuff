@@ -266,6 +266,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 				while self._feeder:
 					self._logger.info(action + " Feeder is: " + str(self._feeder) + " Cmd is:" + G1_E + str(v1))
 					self.send_printer_and_wait(G1_E + str(v1) + ALIGN_SPEED + str(spd))
+					time.sleep(.5)
 					self.get_endstops()
 				else:
 					self._is_aligned = True

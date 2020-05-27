@@ -35,6 +35,16 @@
     line-height: 1.5em;
 }
 
+.navbar-item {
+    background-color: #607d8b00;
+    padding: 2px;
+    margin-right: 1em;
+    margin-left: 1em;
+    border: 1px solid #c0c0c0;
+    border-radius: 5px;
+    min-width: 20px;
+}
+
 .fa-warning {
     float: left;
     margin-right: .5em;
