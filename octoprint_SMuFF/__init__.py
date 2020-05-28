@@ -365,17 +365,18 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			# self._logger.debug(">>> " + data)
 			self._is_busy = False
 			retry = 15 	# wait max. 15 seconds for response
+			start = time.time()
 			while True:
 				if self._got_response == False:
-					time.sleep(1)
-					if self._is_busy == False:
-						retry -= 1
-					if retry == 0:
+					if time.time() - start >= retry:
 						return None
+					if self._is_busy == True:
+						start = time.time()
 				elif self._response.startswith('echo:'):
 					continue
 				else:
 					self._logger.info("{" + str(data) +"} SMuFF says [" + str(self._response))
+					self._got_response = False
 					return self._response
 
 		else:
@@ -507,7 +508,6 @@ def serial_reader(comm_instance, _logger):
 		if __ser0__ and __ser0__.is_open:
 			if __ser0__.in_waiting > 0:
 				data = __ser0__.read_until()	# read to EOL
-				comm_instance.set_response(None)
 				
 				if data.startswith("echo: states:"):
 					comm_instance.parse_states(data)
