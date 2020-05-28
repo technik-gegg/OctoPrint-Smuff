@@ -589,6 +589,9 @@ def serial_reader(comm_instance):
 				if data.startswith("ok\n"):
 					comm_instance.set_response(last_response)
 				last_response = data
+			else:
+				self._logger.info("no data")
+				time.sleep(.3)
 		else:
 			self._logger.info("Serial is closed")
 
