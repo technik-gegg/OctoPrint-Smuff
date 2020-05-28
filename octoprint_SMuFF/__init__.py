@@ -102,7 +102,8 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		#self._timer = RepeatedTimer(5.0, self.on_timer_event)
 		#self._timer.start()
 		try:
-			thread.start_new_thread(serial_reader)
+			th_serial = threading.Thread(target = serial_reader, args = (self))
+			th_serial.start()
 		except:
 			exc_type, exc_value, exc_traceback = sys.exc_info()
 			tb = traceback.format_exception(exc_type, exc_value, exc_traceback)
