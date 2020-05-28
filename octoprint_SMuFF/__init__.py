@@ -13,6 +13,7 @@ import octoprint.plugin
 import thread
 import time
 import sys
+import traceback
 import logging
 
 AT_SMUFF 	= "@SMuFF"
@@ -104,7 +105,8 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			thread.start_new_thread(serial_reader)
 		except:
 			exc_type, exc_value, exc_traceback = sys.exc_info()
-			self._logger.info("Unable to start serial reader thread: " + traceback.format_exception(exc_type, exc_value, exc_traceback))
+			tb = traceback.format_exception(exc_type, exc_value, exc_traceback)
+			self._logger.info("Unable to start serial reader thread: " + tb)
 
 
 	##~~ EventHandler mixin
