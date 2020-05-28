@@ -70,7 +70,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 
 	def on_after_startup(self):
 		# set up a timer to poll the SMuFF
-		self._timer = RepeatedTimer(5.0, self.on_timer_event)
+		self._timer = RepeatedTimer(2.5, self.on_timer_event)
 		self._timer.start()
 
 
@@ -413,7 +413,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 							if self._no_log == False:
 								self._logger.info("SMuFF says [" + str(response) + "] to [" + str(data) +"]")
 						return response
-						
+
 				except (OSError, serial.SerialException):
 					self._logger.info("Serial Exception!")
 					continue
