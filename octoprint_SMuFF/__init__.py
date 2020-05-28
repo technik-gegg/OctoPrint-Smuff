@@ -325,7 +325,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 				tool	= self._cur_tool,
 				aligned = self._is_aligned
 			)
-			self._logger.info(" >> Script vars query: [" + str(script_type) + "," + str(script_name) + "]".format(variables))
+			self._logger.info(" >> Script vars query: [" + str(script_type) + "," + str(script_name) + "] {0}".format(variables))
 			return None, None, variables
 		return None
 
@@ -446,6 +446,15 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		else:
 			self._logger.info("No match in parse_states")
 		return False
+	
+	def get_feeder(self):
+		return self._feeder
+
+	def get_feeder2(self):
+		return self._feeder2
+
+	def get_tool(self):
+		return self._cur_tool
 		
 
 __plugin_name__ = "SMuFF Plugin"
