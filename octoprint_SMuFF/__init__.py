@@ -426,7 +426,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			self._got_response = False
 
 	def parse_states(self, states):
-		#self._logger.info("Endstop states: [" + states + "]")
+		self._logger.info("Endstop states: [" + states + "]")
 		if len(states) == 0:
 			return False
 		# SMuFF sends: echo: states: T: T4     S: off  R: off  F: off  F2: off
