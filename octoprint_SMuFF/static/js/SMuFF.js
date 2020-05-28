@@ -26,14 +26,18 @@ $(function() {
             if(message.tool != null) {
                 // console.log(" tool: " + message.tool);
                 $('#SMuFF_setting_tool').val(message.tool);
+                $('#SMuFF_navbar_tool').val(message.tool);
             }
             if(message.feeder != null) {
                 // console.log(" feeder: " + message.feeder);
-                $('#SMuFF_setting_feeder').prop('class', message.feeder ? "fa fa-check-circle" : "fa fa-times-circle");
+                var state = message.feeder ? "fa fa-check-circle" : "fa fa-times-circle";
+                $('#SMuFF_setting_feeder').prop('class', state);
+                $('#SMuFF_navbar_feeder').prop('class', state);
             }
             if(message.feeder2 != null) {
                 //console.log(" feeder2: " + message.feeder2);
-                $('#SMuFF_setting_feeder2').prop('class', message.feeder2  ? "fa fa-check-circle" : "fa fa-times-circle");
+                var state = message.feeder ? "fa fa-check-circle" : "fa fa-times-circle";
+                $('#SMuFF_setting_feeder2').prop('class', state);
             }
         };
     }
