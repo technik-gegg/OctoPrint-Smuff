@@ -58,7 +58,8 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		self._ser1_baud		= None
 		self._ser1_state	= None
 		self._ser1_init		= False
-		self._got_response	= None
+		self._got_response	= False
+		self._response		= None
 		self._in_file_list	= False
 	
 	##~~ StartupPlugin mixin
@@ -133,27 +134,11 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			feeder2_end		= self._feeder
 		)
 
-		__ser0__.timeout = 1
-
-		#self._skip_timer = True
 		# request firmware info from SMuFF 
 		self._fw_info = self.send_SMuFF_and_wait(M115)
 		if self._fw_info:
 			params['firmware_info'] = self._fw_info
 		
-		# request the currently active tool
-		#if self.get_tool() == True:
-		#params['tool'] = self._cur_tool
-
-		# request the endstop states
-		#if self.get_endstops() == True:
-		#params['selector_end'] = self._selector
-		#params['revolver_end'] = self._revolver
-		#params['feeder_end']   = self._feeder
-		#params['feeder2_end']  = self._feeder2
-
-		#self._skip_timer = False
-
 		# look up the serial port driver
 		drvr = self.find_file(__ser_drvr__, "/dev")
 		if len(drvr) > 0:
@@ -305,9 +290,6 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 					return ""
 				# check the feeder and keep retracting v1 as long as 
 				# the feeder endstop is on
-				self._skip_timer = True
-				self.get_endstops()
-				self._skip_timer = False
 				if self._feeder:
 					self._logger.info(action + " Feeder is: " + str(self._feeder) + " Cmd is:" + G1_E + str(v1))
 					self._printer.commands(G1_E + str(v1) + ALIGN_SPEED + str(spd))
@@ -347,10 +329,6 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 	def extend_script_variables(self, comm_instance, script_type, script_name, *args, **kwargs):
 		self._logger.info("Script called: [" + str(script_type) + "," + str(script_name) + "]")
 		if script_type and script_type == "gcode":
-			self._skip_timer = True
-			self.get_tool()
-			self.get_endstops()
-			self._skip_timer = False
 			variables = dict(
 				feeder	= self._feeder,
 				feeder2	= self._feeder2,
@@ -375,10 +353,8 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 				self._in_file_list = True
 			if line.startswith("End file list"):
 				self._in_file_list = False
-			self._got_response = None
 		else:
 			if self._in_file_list == False:
-				self._got_response = line
 				#self._logger.info("<<< [" + line.rstrip("\n") +"]")
 		return line
 	
@@ -395,24 +371,19 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			retry = 15 	# wait max. 15 seconds for response
 			while True:
 				try:
-					response = self._got_response
-					# self._logger.debug("<<< [" + response +"]")
-
-					if response == None:
+					if _got_response == False:
 						time.sleep(1)
 						if self._is_busy == False:
 							retry -= 1
 						if retry == 0:
 							return None
 						continue
-					elif response.startswith('echo:'):
+					elif _response.startswith('echo:'):
 						continue
 					else:
-						response = response.rstrip("\n")
-						if response:
-							if self._no_log == False:
-								self._logger.info("SMuFF says [" + str(response) + "] to [" + str(data) +"]")
-						return response
+						if self._no_log == False:
+							self._logger.info("SMuFF says [" + str(response) + "] to [" + str(data) +"]")
+						return _response
 
 				except (OSError, serial.SerialException):
 					self._logger.info("Serial Exception!")
@@ -424,14 +395,14 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 	# sending data directly to printer
 	def send_printer_and_wait(self, data):
 		if self._ser1 and self._ser1.is_open:
-			self._got_response = None
+			self._response = None
 			self._ser1.write("{}\n".format(data))
 			self._ser1.flush()
 			# self._logger.debug(">>> " + data)
 			retry = 15 	# wait max. 15 seconds for response
 			while True:
-				if self._got_response and self._got_response.startswith('ok\n'):
-					return self._got_response.rstrip("\n")
+				if self._got_response and self._response.startswith('ok\n'):
+					return self._response.rstrip("\n")
 				else:
 					self._got_response = None
 					time.sleep(.5)
@@ -452,63 +423,22 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 					result.append(os.path.join(root, name))
 		return result
 
-
-	def get_tool(self):
-		self._cur_tool = self.send_SMuFF_and_wait(TOOL)
-		if self._cur_tool:
-			return True
-		return False
-
-
-	def get_endstops(self):
-		self._endstops = self.send_SMuFF_and_wait(M119)
-		if self._endstops:
-			self.parse_endstop_states(self._endstops)
-			return True
-		return False
-
-
-	def parse_tool_number(self, tool):
-		result = -1
-		if len(tool) == 0:
-			return result
-
-		try:
-			result = int(re.search(r'\d+', tool).group(0))
-		except ValueError:
-			self._logger.into("Can't parse tool number: [" + tool + "]")
-		except:
-			self._logger.info("Can't parse tool number: [Unexpected error]")
-		return result
-
-
-	def parse_endstop_states(self, states):
-		#self._logger.info("Endstop states: [" + states + "]")
-		if len(states) == 0:
-			return False
-		m = re.search(r'^(\w+:.)(\w+).(\w+:.)(\w+).(\w+:.)(\w+)', states)
-		if m:
-			self._selector = m.group(2).strip() == ESTOP_TRG
-			self._revolver = m.group(4).strip() == ESTOP_TRG
-			self._feeder 	 = m.group(6).strip() == ESTOP_TRG
-			self._feeder2  = False # m.group(8).strip() == ESTOP_TRG
-			# self._logger.info("FEEDER: [" + str(self._feeder) +"]")
-			return True
-		return False
-
 	def set_busy(self, busy):
 		self._is_busy = busy
 
 	def set_response(self, response):
-		self._got_response = response
 		if not response == None:
+			self._got_response = True
+			self._response = response
 			self._logger.info("Got response [" + response + "]")
-
+		else:
+			self._got_response = False
 
 	def parse_states(self, states):
 		#self._logger.info("Endstop states: [" + states + "]")
 		if len(states) == 0:
 			return False
+		# SMuFF sends: echo: states: T: T4     S: off  R: off  F: off  F2: off
 		m = re.search(r'^((\w+:.)(\w+:))\s([T]:\s)(\w+)\s([S]:\s)(\w+)\s([R]:\s)(\w+)\s([F]:\s)(\w+)\s([F,2]+:\s)(\w+)', states)
 		if m:
 			if m.group(3).strip() == "states:":
@@ -530,7 +460,7 @@ def __plugin_load__():
 	global __ser_drvr__
 	global __ser_baud__
 
-	_logger = logging.getLogger("octoprint.plugins.octoprint")
+	_logger = logging.getLogger("octoprint.plugins.SMuFF")
 
 	__plugin_implementation__ = SmuffPlugin()
 
@@ -586,23 +516,28 @@ def __plugin_disabled():
 def serial_reader(comm_instance, _logger):
 	while 1:
 		if __ser0__ and __ser0__.is_open:
-			bytes = __ser0__.in_waiting
-			if bytes > 0:
+			if __ser0__.in_waiting > 0:
 				data = __ser0__.read_until()	# read to EOL
-				_logger.info("Got data: [" + data + "]")
+				comm_instance.set_response(None)
+				
 				if data.startswith("echo: states:"):
-					comm_instance.set_response(None)
 					comm_instance.parse_states(data)
 					continue
+
 				if data.startswith("echo: busy"):
-					comm_instance.set_response(None)
 					comm_instance.set_busy(True)
 					continue
+
 				if data.startswith("error:"):
 					comm_instance.set_response(last_response)
+					continue
+
 				if data.startswith("ok\n"):
 					comm_instance.set_response(last_response)
-				last_response = data
+					continue
+
+				last_response = data.rstrip("\n")
+				_logger.info("Got data: [" + data.rstrip("\n") + "]")
 		else:
 			_logger.info("Serial is closed")
 
