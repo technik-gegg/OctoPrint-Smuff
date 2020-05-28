@@ -31,7 +31,6 @@ SERVO		= "SERVO"
 MOTORS		= "MOTORS"
 PRINTER		= "PRINTER"
 ALIGN_SPEED	= " F"
-ESTOP_TRG 	= "triggered"
 ESTOP_ON	= "on"
 
 class SmuffPlugin(octoprint.plugin.SettingsPlugin,
@@ -46,20 +45,18 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		self._pre_tool 		= "?"
 		self._pending_tool 	= "?"
 		self._endstops		= "?"
-		self._skip_timer	= False
 		self._selector 		= False
 		self._revolver 		= False
 		self._feeder 		= False
 		self._feeder2		= False
-		self._no_log		= False
 		self._is_aligned 	= False
+		self._got_response	= False
+		self._response		= None
 		self._ser1			= None
 		self._ser1_port 	= None
 		self._ser1_baud		= None
 		self._ser1_state	= None
 		self._ser1_init		= False
-		self._got_response	= False
-		self._response		= None
 		self._in_file_list	= False
 	
 	##~~ StartupPlugin mixin
@@ -221,18 +218,14 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 
 			# @SMuFF SERVO
 			if action and action == SERVO:
-				self._skip_timer = True
 				# send a servo command to SMuFF
-				self.send_SMuFF_and_wait(M280 + str(v1) + " S" + str(v2))
-				self._skip_timer = False
+				self.send_SMuFF_and_wait(M280 + str(v1) + " R" + str(v2))
 				return ""
 
 			# @SMuFF MOTORS
 			if action and action == MOTORS:
-				self._skip_timer = True
 				# send a servo command to SMuFF
 				self.send_SMuFF_and_wait(M18)
-				self._skip_timer = False
 				return ""
 
 			# @SMuFF PRINTER
@@ -307,10 +300,8 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 				if self._printer.set_job_on_hold(True):
 					try:
 						self._logger.info("1>> LOAD: Feeder: " + str(self._feeder) + ", Pending: " + str(self._pending_tool) + ", Current: " + str(self._cur_tool))
-						self._skip_timer = True
 						# send a tool change command to SMuFF
 						stat = self.send_SMuFF_and_wait(self._pending_tool)
-						self._skip_timer = False
 
 						if stat != None:
 							self._pre_tool = self._cur_tool
@@ -373,21 +364,19 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			
 			# self._logger.debug(">>> " + data)
 			self._is_busy = False
-			prev_resp = ""
 			retry = 15 	# wait max. 15 seconds for response
 			while True:
-				if _got_response == False:
+				if self._got_response == False:
 					time.sleep(1)
 					if self._is_busy == False:
 						retry -= 1
 					if retry == 0:
 						return None
-				elif _response.startswith('echo:'):
+				elif self._response.startswith('echo:'):
 					continue
 				else:
-					if self._no_log == False:
-						self._logger.info("SMuFF says [" + str(response) + "] to [" + str(data) +"]")
-					return _response
+					self._logger.info("{" + str(data) +"} SMuFF says [" + str(self._response))
+					return self._response
 
 		else:
 			self._logger.info("Serial not open")
