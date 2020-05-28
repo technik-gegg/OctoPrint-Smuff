@@ -431,13 +431,12 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		# SMuFF sends: echo: states: T: T4     S: off  R: off  F: off  F2: off
 		m = re.search(r'^((\w+:.)(\w+:))\s([T]:\s)(\w+)\s([S]:\s)(\w+)\s([R]:\s)(\w+)\s([F]:\s)(\w+)\s([F,2]+:\s)(\w+)', states)
 		if m:
-			if m.group(3).strip() == "states:":
-				self._cur_tool 	= m.group(5).strip()
-				self._selector 	= m.group(7).strip() == ESTOP_ON
-				self._revolver 	= m.group(9).strip() == ESTOP_ON
-				self._feeder 	= m.group(11).strip() == ESTOP_ON
-				self._feeder2  	= m.group(13).strip() == ESTOP_ON
-				return True
+			self._cur_tool 	= m.group(5).strip()
+			self._selector 	= m.group(7).strip() == ESTOP_ON
+			self._revolver 	= m.group(9).strip() == ESTOP_ON
+			self._feeder 	= m.group(11).strip() == ESTOP_ON
+			self._feeder2  	= m.group(13).strip() == ESTOP_ON
+			return True
 		return False
 		
 
@@ -518,9 +517,8 @@ def serial_reader(comm_instance, _logger):
 					comm_instance.set_busy(True)
 					continue
 
-				if data.startswith("error:"):
-					comm_instance.set_response(last_response)
-					continue
+				# if data.startswith("error:"):
+				# 	continue
 
 				if data.startswith("ok\n"):
 					comm_instance.set_response(last_response)
