@@ -460,7 +460,7 @@ def __plugin_load__():
 	global __ser_drvr__
 	global __ser_baud__
 
-	_logger = logging.getLogger("octoprint.plugins.SMuFF")
+	_logger = logging.getLogger("octoprint.plugins.octoprint")
 
 	__plugin_implementation__ = SmuffPlugin()
 
