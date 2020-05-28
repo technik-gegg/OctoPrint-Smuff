@@ -457,6 +457,7 @@ def __plugin_load__():
 	global __ser0__
 	global __ser_drvr__
 	global __ser_baud__
+	global __t_serial__
 
 	_logger = logging.getLogger("octoprint.plugins.SMuFF")
 
@@ -484,8 +485,8 @@ def __plugin_load__():
 			_logger.info("SMuFF has sent \"start\" response")
 
 		try:
-			th_serial = threading.Thread(target = serial_reader, args = (__plugin_implementation__, _logger))
-			th_serial.start()
+			__t_serial__ = threading.Thread(target = serial_reader, args = (__plugin_implementation__, _logger))
+			__t_serial__.start()
 		except:
 			exc_type, exc_value, exc_traceback = sys.exc_info()
 			tb = traceback.format_exception(exc_type, exc_value, exc_traceback)
@@ -497,6 +498,8 @@ def __plugin_load__():
 
 
 def __plugin_unload__():
+	if 	not __t_serial__ == None:
+		__t_serial__.join()
 	try:
 		if __ser0__.is_open:
 			__ser0__.close()
@@ -505,6 +508,8 @@ def __plugin_unload__():
 
 
 def __plugin_disabled():
+	if 	not __t_serial__ == None:
+		__t_serial__.join()
 	try:
 		if __ser0__.is_open:
 			__ser0__.close()
