@@ -62,7 +62,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 	##~~ StartupPlugin mixin
 
 	def on_timer_event(self):
-		self._logger.info("Tool [" + self._cur_tool +"]")
+		# self._logger.info("Tool [" + self._cur_tool +"]")
 		# send SMuFF status updates periodically
 		self._plugin_manager.send_plugin_message(self._identifier, {'type': 'status', 'tool': self._cur_tool, 'feeder': self._feeder, 'feeder2': self._feeder2 })
 		

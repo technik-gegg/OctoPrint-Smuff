@@ -24,9 +24,9 @@ $(function() {
                 return;
             }
             if(message.tool != null) {
-                // console.log(" tool: " + message.tool);
-                $('#SMuFF_setting_tool').val(message.tool);
-                $('#SMuFF_navbar_tool').val(message.tool);
+                console.log(" tool: " + message.tool);
+                $('#SMuFF_setting_tool').text(message.tool);
+                $('#SMuFF_navbar_tool').text(message.tool);
             }
             if(message.feeder != null) {
                 // console.log(" feeder: " + message.feeder);
