@@ -390,26 +390,30 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			__ser0__.write("{}\n".format(data))
 			__ser0__.flush()
 			# self._logger.debug(">>> " + data)
+			self._is_busy = False
 			prev_resp = ""
 			retry = 15 	# wait max. 15 seconds for response
 			while True:
 				try:
-					response = __ser0__.readline()
+					response = self._got_response
 					# self._logger.debug("<<< [" + response +"]")
 
-					if response.startswith('echo:'):
-						continue
-					elif response.startswith('ok\n'):
-						return prev_resp
-					else:
-						prev_resp = response.rstrip("\n")
-						if prev_resp:
-							if self._no_log == False:
-								self._logger.info("SMuFF says [" + str(prev_resp) + "] to [" + str(data) +"]")
-						retry -= 1
+					if response == None:
+						time.sleep(1)
+						if self._is_busy == False:
+							retry -= 1
 						if retry == 0:
 							return None
-
+						continue
+					elif response.startswith('echo:'):
+						continue
+					else:
+						response = response.rstrip("\n")
+						if response:
+							if self._no_log == False:
+								self._logger.info("SMuFF says [" + str(response) + "] to [" + str(data) +"]")
+						return response
+						
 				except (OSError, serial.SerialException):
 					self._logger.info("Serial Exception!")
 					continue
@@ -492,8 +496,13 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			return True
 		return False
 
+	def set_busy(self, busy):
+		self._is_busy = busy
+
 	def set_response(self, response):
 		self._got_response = response
+		if not response == None:
+			self._logger.info("Got response [" + response + "]")
 
 
 	def parse_states(self, states):
@@ -587,13 +596,13 @@ def serial_reader(comm_instance, _logger):
 					continue
 				if data.startswith("echo: busy"):
 					comm_instance.set_response(None)
+					comm_instance.set_busy(True)
 					continue
+				if data.startswith("error:"):
+					comm_instance.set_response(last_response)
 				if data.startswith("ok\n"):
 					comm_instance.set_response(last_response)
 				last_response = data
-			else:
-				_logger.info("no data")
-				time.sleep(.3)
 		else:
 			_logger.info("Serial is closed")
 
