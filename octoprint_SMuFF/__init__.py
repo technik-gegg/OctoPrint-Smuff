@@ -260,7 +260,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			
 			# @SMuFF T0...99
 			if action and action.startswith(TOOL):
-				if self._printer.set_job_on_hold(True):
+				if self._printer.set_job_on_hold(True, False):
 					try:
 						self._pending_tool = action
 						self._logger.info("2>> TN: Feeder: " + str(self._feeder) + ", Pending: " + str(self._pending_tool) + ", Current: " + str(self._cur_tool))
@@ -298,7 +298,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 
 			# @SMuFF LOAD
 			if action and action == LOAD:
-				if self._printer.set_job_on_hold(True):
+				if self._printer.set_job_on_hold(True, False):
 					try:
 						self._logger.info("1>> LOAD: Feeder: " + str(self._feeder) + ", Pending: " + str(self._pending_tool) + ", Current: " + str(self._cur_tool))
 						# send a tool change command to SMuFF
