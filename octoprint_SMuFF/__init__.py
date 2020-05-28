@@ -101,7 +101,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		#self._timer = RepeatedTimer(5.0, self.on_timer_event)
 		#self._timer.start()
 		try:
-			thread.start_new_thread(serial_reader, self)
+			thread.start_new_thread(serial_reader)
 		except:
    			self._logger.info("Unable to start serial reader thread")
 
@@ -167,24 +167,24 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 
 		__ser0__.timeout = 1
 
-		self._skip_timer = True
+		#self._skip_timer = True
 		# request firmware info from SMuFF 
 		self._fw_info = self.send_SMuFF_and_wait(M115)
 		if self._fw_info:
 			params['firmware_info'] = self._fw_info
 		
 		# request the currently active tool
-		if self.get_tool() == True:
-			params['tool'] = self._cur_tool
+		#if self.get_tool() == True:
+		#params['tool'] = self._cur_tool
 
 		# request the endstop states
-		if self.get_endstops() == True:
-			params['selector_end'] = self._selector
-			params['revolver_end'] = self._revolver
-			params['feeder_end']   = self._feeder
-			params['feeder2_end']  = self._feeder2
+		#if self.get_endstops() == True:
+		#params['selector_end'] = self._selector
+		#params['revolver_end'] = self._revolver
+		#params['feeder_end']   = self._feeder
+		#params['feeder2_end']  = self._feeder2
 
-		self._skip_timer = False
+		#self._skip_timer = False
 
 		# look up the serial port driver
 		drvr = self.find_file(__ser_drvr__, "/dev")
