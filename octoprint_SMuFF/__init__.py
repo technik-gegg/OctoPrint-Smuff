@@ -34,27 +34,6 @@ ALIGN_SPEED	= " F"
 ESTOP_TRG 	= "triggered"
 ESTOP_ON	= "on"
 
-def serial_reader():
-	while 1:
-		if __ser0__ and __ser0__.is_open:
-			bytes = __ser0__.in_waiting
-			if bytes > 0:
-				data = __ser0__.read_until()	# read to EOL
-				self._logger.info("Got data: [" + data + "]")
-				if data.startswith("echo: states:"):
-					__plugin_implementation__.set_response(None)
-					__plugin_implementation__.parse_states(data):
-					continue
-				if data.startswith("echo: busy"):
-					__plugin_implementation__.set_response(None)
-					continue
-				if data.startswith("ok\n"):
-					__plugin_implementation__.set_response(last_response)
-				last_response = data
-		else:
-			self._logger.info("Serial is closed")
-
-
 class SmuffPlugin(octoprint.plugin.SettingsPlugin,
                   octoprint.plugin.AssetPlugin,
                   octoprint.plugin.TemplatePlugin,
@@ -566,7 +545,7 @@ def __plugin_load__():
 			self._logger.info("SMuFF has sent \"start\" response")
 
 		try:
-			th_serial = threading.Thread(target = serial_reader, args = ())
+			th_serial = threading.Thread(target = serial_reader, args = (__plugin_implementation__))
 			th_serial.start()
 		except:
 			exc_type, exc_value, exc_traceback = sys.exc_info()
@@ -592,3 +571,24 @@ def __plugin_disabled():
 			__ser0__.close()
 	except (OSError, serial.SerialException):
 		pass
+
+def serial_reader(comm_instance):
+	while 1:
+		if __ser0__ and __ser0__.is_open:
+			bytes = __ser0__.in_waiting
+			if bytes > 0:
+				data = __ser0__.read_until()	# read to EOL
+				self._logger.info("Got data: [" + data + "]")
+				if data.startswith("echo: states:"):
+					comm_instance.set_response(None)
+					comm_instance.parse_states(data)
+					continue
+				if data.startswith("echo: busy"):
+					comm_instance.set_response(None)
+					continue
+				if data.startswith("ok\n"):
+					comm_instance.set_response(last_response)
+				last_response = data
+		else:
+			self._logger.info("Serial is closed")
+
