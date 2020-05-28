@@ -10,7 +10,7 @@ import serial			# we need this for the serial communcation with the SMuFF
 import os, fnmatch
 import re
 import octoprint.plugin
-import thread
+import threading
 import time
 import sys
 import traceback
