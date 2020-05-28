@@ -34,6 +34,27 @@ ALIGN_SPEED	= " F"
 ESTOP_TRG 	= "triggered"
 ESTOP_ON	= "on"
 
+def serial_reader(self):
+	while 1:
+		if __ser0__ and __ser0__.is_open:
+			bytes = __ser0__.in_waiting
+			if bytes > 0:
+				data = __ser0__.read_until()	# read to EOL
+				self._logger.info("Got data: [" + data + "]")
+				if data.startswith("echo: states:"):
+					self._got_response = None
+					if self.parse_states(data):
+						self._plugin_manager.send_plugin_message(self._identifier, {'type': 'status', 'tool': self._cur_tool, 'feeder': self._feeder, 'feeder2': self._feeder2 })
+					continue
+				if data.startswith("echo: busy"):
+					self._got_response = None
+					continue
+				if data.startswith("ok\n"):
+					self._got_response = last_response
+				last_response = data
+		else:
+			self._logger.info("Serial is closed")
+
 
 class SmuffPlugin(octoprint.plugin.SettingsPlugin,
                   octoprint.plugin.AssetPlugin,
@@ -74,28 +95,6 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		
 		self._plugin_manager.send_plugin_message(self._identifier, {'type': 'status', 'tool': self._cur_tool, 'feeder': self._feeder, 'feeder2': self._feeder2 })
 		
-	def serial_reader(self):
-		while 1:
-			if __ser0__ and __ser0__.is_open:
-				bytes = __ser0__.in_waiting
-				if bytes > 0:
-					data = __ser0__.read_until()	# read to EOL
-					self._logger.info("Got data: [" + data + "]")
-					if data.startswith("echo: states:"):
-						self._got_response = None
-						if self.parse_states(data):
-							self._plugin_manager.send_plugin_message(self._identifier, {'type': 'status', 'tool': self._cur_tool, 'feeder': self._feeder, 'feeder2': self._feeder2 })
-						continue
-					if data.startswith("echo: busy"):
-						self._got_response = None
-						continue
-					if data.startswith("ok\n"):
-						self._got_response = last_response
-					last_response = data
-			else:
-				self._logger.info("Serial is closed")
-
-
 
 	def on_after_startup(self):
 		# set up a timer to poll the SMuFF
