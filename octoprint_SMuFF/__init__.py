@@ -437,6 +437,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		# SMuFF sends: echo: states: T: T4     S: off  R: off  F: off  F2: off
 		m = re.search(r'^((\w+:.)(\w+:))\s([T]:\s)(\w+)\s([S]:\s)(\w+)\s([R]:\s)(\w+)\s([F]:\s)(\w+)\s([F,2]+:\s)(\w+)', states)
 		if m:
+			self._logger.info("Tool [" + m.group(5).strip() +"]")
 			self._cur_tool 	= m.group(5).strip()
 			self._selector 	= m.group(7).strip() == ESTOP_ON
 			self._revolver 	= m.group(9).strip() == ESTOP_ON
