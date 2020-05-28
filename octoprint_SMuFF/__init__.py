@@ -215,7 +215,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 				if len(tmp) > 4:
 					spd = int(tmp[4])
 
-			self._logger.info("1>> " + cmd + "  action: " + str(action) + "  v1,v2: " + str(v1) + ", " + str(v2))
+			#self._logger.info("1>> " + cmd + "  action: " + str(action) + "  v1,v2: " + str(v1) + ", " + str(v2))
 
 			# @SMuFF SERVO
 			if action and action == SERVO:
@@ -256,21 +256,21 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 				if len(tmp) > 4:
 					spd = int(tmp[4])
 
-			self._logger.info("2>> " + cmd + "  action: " + str(action) + "  v1,v2: " + str(v1) + ", " + str(v2))
+			# self._logger.info("2>> " + cmd + "  action: " + str(action) + "  v1,v2: " + str(v1) + ", " + str(v2))
 			
 			# @SMuFF T0...99
 			if action and action.startswith(TOOL):
 				if self._printer.set_job_on_hold(True, False):
 					try:
 						self._pending_tool = action
-						self._logger.info("2>> TN: Feeder: " + str(self._feeder) + ", Pending: " + str(self._pending_tool) + ", Current: " + str(self._cur_tool))
+						#self._logger.info("2>> TN: Feeder: " + str(self._feeder) + ", Pending: " + str(self._pending_tool) + ", Current: " + str(self._cur_tool))
 						# check if there's some filament loaded
 						if self._feeder:
 							# send the "Before Tool Change" script to the printer
-							self._logger.info("2>> calling script")
+							#self._logger.info("2>> calling script")
 							self._printer.script("beforeToolChange")
 						else:
-							self._logger.info("2>> calling SMuFF LOAD")
+							#self._logger.info("2>> calling SMuFF LOAD")
 							self._printer.commands(AT_SMUFF + " " + LOAD)
 
 					except UnknownScript:
@@ -285,12 +285,12 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 				# check the feeder and keep retracting v1 as long as 
 				# the feeder endstop is on
 				if self._feeder:
-					self._logger.info(action + " Feeder is: " + str(self._feeder) + " Cmd is:" + G1_E + str(v1))
+					#self._logger.info(action + " Feeder is: " + str(self._feeder) + " Cmd is:" + G1_E + str(v1))
 					self._printer.commands(G1_E + str(v1) + ALIGN_SPEED + str(spd))
 					# self.send_printer_and_wait(G1_E + str(v1) + ALIGN_SPEED + str(spd))
 				else:
 					self._is_aligned = True
-					self._logger.info("Aligned now, cmd is: " + G1_E + str(v2))
+					#self._logger.info("Aligned now, cmd is: " + G1_E + str(v2))
 					# finally retract from selector (distance = v2)
 					self._printer.commands(G1_E + str(v2) + ALIGN_SPEED + str(spd))
 					#self.send_printer_and_wait(G1_E + str(v2) + ALIGN_SPEED + str(spd))
@@ -300,7 +300,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			if action and action == LOAD:
 				if self._printer.set_job_on_hold(True, False):
 					try:
-						self._logger.info("1>> LOAD: Feeder: " + str(self._feeder) + ", Pending: " + str(self._pending_tool) + ", Current: " + str(self._cur_tool))
+						# self._logger.info("1>> LOAD: Feeder: " + str(self._feeder) + ", Pending: " + str(self._pending_tool) + ", Current: " + str(self._cur_tool))
 						# send a tool change command to SMuFF
 						stat = self.send_SMuFF_and_wait(self._pending_tool)
 
@@ -317,9 +317,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 						self._printer.set_job_on_hold(False)
 			
 		
-
 	def extend_script_variables(self, comm_instance, script_type, script_name, *args, **kwargs):
-		self._logger.info("Script called: [" + str(script_type) + "," + str(script_name) + "]")
 		if script_type and script_type == "gcode":
 			variables = dict(
 				feeder	= self._feeder,
@@ -327,6 +325,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 				tool	= self._cur_tool,
 				aligned = self._is_aligned
 			)
+			self._logger.info(" >> Script vars query: [" + str(script_type) + "," + str(script_name) + "]".format(variables))
 			return None, None, variables
 		return None
 
