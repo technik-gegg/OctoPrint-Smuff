@@ -521,6 +521,8 @@ def __plugin_load__():
 	global __ser_drvr__
 	global __ser_baud__
 
+	_logger = logging.getLogger("octoprint.plugins.octoprint")
+
 	__plugin_implementation__ = SmuffPlugin()
 
 	__plugin_hooks__ = {
@@ -542,18 +544,18 @@ def __plugin_load__():
 		resp = __ser0__.readline()
 		# which is supposed to be 'start'
 		if resp.startswith('start'):
-			self._logger.info("SMuFF has sent \"start\" response")
+			_logger.info("SMuFF has sent \"start\" response")
 
 		try:
-			th_serial = threading.Thread(target = serial_reader, args = (__plugin_implementation__))
+			th_serial = threading.Thread(target = serial_reader, args = (__plugin_implementation__, _logger))
 			th_serial.start()
 		except:
 			exc_type, exc_value, exc_traceback = sys.exc_info()
 			tb = traceback.format_exception(exc_type, exc_value, exc_traceback)
-			self._logger.info("Unable to start serial reader thread: ".join(tb))
+			_logger.info("Unable to start serial reader thread: ".join(tb))
 
 	except (OSError, serial.SerialException):
-		self._logger.info("Serial port not found!")
+		_logger.info("Serial port not found!")
 
 
 
@@ -572,13 +574,13 @@ def __plugin_disabled():
 	except (OSError, serial.SerialException):
 		pass
 
-def serial_reader(comm_instance):
+def serial_reader(comm_instance, _logger):
 	while 1:
 		if __ser0__ and __ser0__.is_open:
 			bytes = __ser0__.in_waiting
 			if bytes > 0:
 				data = __ser0__.read_until()	# read to EOL
-				self._logger.info("Got data: [" + data + "]")
+				_logger.info("Got data: [" + data + "]")
 				if data.startswith("echo: states:"):
 					comm_instance.set_response(None)
 					comm_instance.parse_states(data)
@@ -590,8 +592,8 @@ def serial_reader(comm_instance):
 					comm_instance.set_response(last_response)
 				last_response = data
 			else:
-				self._logger.info("no data")
+				_logger.info("no data")
 				time.sleep(.3)
 		else:
-			self._logger.info("Serial is closed")
+			_logger.info("Serial is closed")
 
