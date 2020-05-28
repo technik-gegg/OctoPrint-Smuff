@@ -30,14 +30,14 @@ $(function() {
             }
             if(message.feeder != null) {
                 // console.log(" feeder: " + message.feeder);
-                var state = message.feeder ? "fa fa-check-circle" : "fa fa-times-circle";
-                $('#SMuFF_setting_feeder').prop('class', state);
-                $('#SMuFF_navbar_feeder').prop('class', state);
+                var _cls = message.feeder ? "fa fa-check-circle" : "fa fa-times-circle";
+                $('#SMuFF_setting_feeder').prop('class', _cls);
+                $('#SMuFF_navbar_feeder').prop('class', _cls);
             }
             if(message.feeder2 != null) {
                 //console.log(" feeder2: " + message.feeder2);
-                var state = message.feeder ? "fa fa-check-circle" : "fa fa-times-circle";
-                $('#SMuFF_setting_feeder2').prop('class', state);
+                var _cls = message.feeder2 ? "fa fa-check-circle" : "fa fa-times-circle";
+                $('#SMuFF_setting_feeder2').prop('class', _cls);
             }
         };
     }

@@ -375,7 +375,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 				elif self._response.startswith('echo:'):
 					continue
 				else:
-					self._logger.info("{" + str(data) +"} SMuFF says [" + str(self._response))
+					self._logger.info("{" + str(data) +"} SMuFF says [" + str(self._response) +"]")
 					self._got_response = False
 					return self._response
 
@@ -429,6 +429,11 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		# self._logger.info("Endstop states: [" + states + "]")
 		if len(states) == 0:
 			return False
+		global _cur_tool
+		global _selector
+		global _revolver
+		global _feeder
+		global _feeder2
 		# SMuFF sends: echo: states: T: T4     S: off  R: off  F: off  F2: off
 		m = re.search(r'^((\w+:.)(\w+:))\s([T]:\s)(\w+)\s([S]:\s)(\w+)\s([R]:\s)(\w+)\s([F]:\s)(\w+)\s([F,2]+:\s)(\w+)', states)
 		if m:
