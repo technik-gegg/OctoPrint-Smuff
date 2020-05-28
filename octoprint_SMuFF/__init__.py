@@ -10,6 +10,7 @@ import serial			# we need this for the serial communcation with the SMuFF
 import os, fnmatch
 import re
 import octoprint.plugin
+import thread
 import time
 import sys
 import logging
@@ -30,6 +31,7 @@ MOTORS		= "MOTORS"
 PRINTER		= "PRINTER"
 ALIGN_SPEED	= " F"
 ESTOP_TRG 	= "triggered"
+ESTOP_ON	= "on"
 
 
 class SmuffPlugin(octoprint.plugin.SettingsPlugin,
@@ -71,11 +73,37 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		
 		self._plugin_manager.send_plugin_message(self._identifier, {'type': 'status', 'tool': self._cur_tool, 'feeder': self._feeder, 'feeder2': self._feeder2 })
 		
+	def serial_reader(self):
+		while 1:
+			if __ser0__ and __ser0__.is_open:
+				bytes = __ser0__.in_waiting
+				if bytes > 0:
+					data = __ser0__.read_until()	# read to EOL
+					self._logger.info("Got data: [" + data + "]")
+					if data.startswith("echo: states:"):
+						self._got_response = None
+						if self.parse_states(data):
+							self._plugin_manager.send_plugin_message(self._identifier, {'type': 'status', 'tool': self._cur_tool, 'feeder': self._feeder, 'feeder2': self._feeder2 })
+						continue
+					if data.startswith("echo: busy"):
+						self._got_response = None
+						continue
+					if data.startswith("ok\n"):
+						self._got_response = last_response
+					last_response = data
+			else:
+				self._logger.info("Serial is closed")
+
+
 
 	def on_after_startup(self):
 		# set up a timer to poll the SMuFF
-		self._timer = RepeatedTimer(5.0, self.on_timer_event)
-		self._timer.start()
+		#self._timer = RepeatedTimer(5.0, self.on_timer_event)
+		#self._timer.start()
+		try:
+			thread.start_new_thread(serial_reader, self)
+		except:
+   			self._logger.info("Unable to start serial reader thread")
 
 
 	##~~ EventHandler mixin
@@ -494,6 +522,21 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			self._feeder2  = False # m.group(8).strip() == ESTOP_TRG
 			# self._logger.info("FEEDER: [" + str(self._feeder) +"]")
 			return True
+		return False
+
+	def parse_states(self, states):
+		#self._logger.info("Endstop states: [" + states + "]")
+		if len(states) == 0:
+			return False
+		m = re.search(r'^((\w+:.)(\w+:))\s([T]:\s)(\w+)\s([S]:\s)(\w+)\s([R]:\s)(\w+)\s([F]:\s)(\w+)\s([F,2]+:\s)(\w+)', states)
+		if m:
+			if m.group(3).strip() == "states:":
+				self._cur_tool 	= m.group(5).strip()
+				self._selector 	= m.group(7).strip() == ESTOP_ON
+				self._revolver 	= m.group(9).strip() == ESTOP_ON
+				self._feeder 	= m.group(11).strip() == ESTOP_ON
+				self._feeder2  	= m.group(13).strip() == ESTOP_ON
+				return True
 		return False
 		
 
