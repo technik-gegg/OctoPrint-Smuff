@@ -339,24 +339,24 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		return None
 
 	def extend_gcode_received(self, comm_instance, line, *args, **kwargs):
-		if 	line == "" \
-			or line.startswith("\n") \
-			or line.startswith("start") \
-			or line.startswith("echo:") \
-			or line.startswith("FIRMWARE") \
-			or line.startswith("Cap:") \
-			or line.startswith("Begin file list") \
-			or line.startswith("End file list") \
-			or line.startswith(" T:"):
+		#if 	line == "" \
+		#	or line.startswith("\n") \
+		#	or line.startswith("start") \
+		#	or line.startswith("echo:") \
+		#	or line.startswith("FIRMWARE") \
+		#	or line.startswith("Cap:") \
+		#	or line.startswith("Begin file list") \
+		#	or line.startswith("End file list") \
+		#	or line.startswith(" T:"):
 			# not interessed in those
-			if line.startswith("Begin file list"):
-				self._in_file_list = True
-			if line.startswith("End file list"):
-				self._in_file_list = False
-		else:
-			if self._in_file_list == False:
+		#	if line.startswith("Begin file list"):
+		#		self._in_file_list = True
+		#	if line.startswith("End file list"):
+		#		self._in_file_list = False
+		#else:
+		#	if self._in_file_list == False:
+		#		data = line 
 				#self._logger.info("<<< [" + line.rstrip("\n") +"]")
-				data = line 
 		return line
 	
 	##~~ helper functions
@@ -364,31 +364,31 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 	# sending data to SMuFF
 	def send_SMuFF_and_wait(self, data):
 		if __ser0__.is_open:
-			__ser0__.write("{}\n".format(data))
-			__ser0__.flush()
+			try:
+				__ser0__.write("{}\n".format(data))
+				__ser0__.flush()
+			except (OSError, serial.SerialException):
+				self._logger.info("Can't send to SMuFF")
+				return None
+			
 			# self._logger.debug(">>> " + data)
 			self._is_busy = False
 			prev_resp = ""
 			retry = 15 	# wait max. 15 seconds for response
 			while True:
-				try:
-					if _got_response == False:
-						time.sleep(1)
-						if self._is_busy == False:
-							retry -= 1
-						if retry == 0:
-							return None
-						continue
-					elif _response.startswith('echo:'):
-						continue
-					else:
-						if self._no_log == False:
-							self._logger.info("SMuFF says [" + str(response) + "] to [" + str(data) +"]")
-						return _response
-
-				except (OSError, serial.SerialException):
-					self._logger.info("Serial Exception!")
+				if _got_response == False:
+					time.sleep(1)
+					if self._is_busy == False:
+						retry -= 1
+					if retry == 0:
+						return None
+				elif _response.startswith('echo:'):
 					continue
+				else:
+					if self._no_log == False:
+						self._logger.info("SMuFF says [" + str(response) + "] to [" + str(data) +"]")
+					return _response
+
 		else:
 			self._logger.info("Serial not open")
 			return None
