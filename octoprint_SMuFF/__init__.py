@@ -272,6 +272,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 								break
 							else:
 								# not the result expected, retry
+								self._logger.info("Tool change failed, retrying" + str(retry))
 								retry = retry-1
 
 					except UnknownScript:
