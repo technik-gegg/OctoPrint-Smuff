@@ -343,7 +343,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 						start = time.time()
 						continue
 					ret = self._response
-					self.set_response(None)
+					self.set_response()
 					return ret
 
 		else:
