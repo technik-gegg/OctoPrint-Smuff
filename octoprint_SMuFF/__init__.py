@@ -262,7 +262,6 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 						while retry > 0:
 							# send a tool change command to SMuFF
 							res = self.send_SMuFF_and_wait(self._pending_tool)
-							self.hex_dump(res)
 
 							if str(res) == str(self._pending_tool):
 								self._pre_tool = self._cur_tool
@@ -477,7 +476,11 @@ def serial_reader(_instance, _logger):
 			if len(data) == 0:
 				continue
 
-			# _logger.info("Raw data: [" + data.rstrip("\n") + "]")
+			# _logger.info("Raw data: [" + _instance.hex_dump(data.rstrip("\n")) + "]")
+
+			if data[0:1] == "\x1b" and len(data) == 3:
+				_instance.hex_dump(data)
+				continue
 			
 			# after first connect the response from the SMuFF
 			# is supposed to be 'start'
@@ -506,6 +509,7 @@ def serial_reader(_instance, _logger):
 				continue
 
 			if data.startswith("ok\n"):
+				# filter SMuFF-Ifc messages, just in case
 				if last_response[0:1] == "\x1b":
 					last_response = last_response[3:]
 				_instance.set_response(last_response)
