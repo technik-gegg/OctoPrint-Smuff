@@ -257,15 +257,22 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			if action and action == LOAD:
 				if self._printer.set_job_on_hold(True, False):
 					try:
-						# self._logger.info("1>> LOAD: Feeder: " + str(self._feeder) + ", Pending: " + str(self._pending_tool) + ", Current: " + str(self._cur_tool))
-						# send a tool change command to SMuFF
-						stat = self.send_SMuFF_and_wait(self._pending_tool)
+						self._logger.info("1>> LOAD: Feeder: " + str(self._feeder) + ", Pending: " + str(self._pending_tool) + ", Current: " + str(self._cur_tool))
+						retry = 2
+						while retry >0:
+							# send a tool change command to SMuFF
+							stat = self.send_SMuFF_and_wait(self._pending_tool)
 
-						if stat != None:
-							self._pre_tool = self._cur_tool
-							self._cur_tool = self._pending_tool
-							# send the "After Tool Change" script to the printer
-							self._printer.script("afterToolChange")
+							if stat == self._pending_tool:
+								self._pre_tool = self._cur_tool
+								self._cur_tool = self._pending_tool
+								# send the "After Tool Change" script to the printer
+								retry = 0
+								self._printer.script("afterToolChange")
+								break
+							else:
+								# not the result expected, retry
+								retry = retry-1
 
 					except UnknownScript:
 						self._logger.info("Script 'afterToolChange' not found!")
@@ -303,7 +310,8 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 				self._in_file_list = False
 		else:
 			if self._in_file_list == False:
-				self._logger.info("Printer sent [" + line.rstrip("\n") +"]")
+				# self._logger.info("Printer sent [" + line.rstrip("\n") +"]")
+				return line
 		return line
 	
 	##~~ helper functions
