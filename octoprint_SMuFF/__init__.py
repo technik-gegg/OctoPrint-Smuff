@@ -469,10 +469,10 @@ def serial_reader(_instance, _logger):
 			byteCnt = __ser0__.in_waiting
 			# if byteCnt > 0:
 			data = __ser0__.readline()	# read to EOL
-			_logger.info("Raw data: [" + data.rstrip("\n") + "], (" + str(byteCnt) + " B)")
-			
 			if len(data) == 0:
 				continue
+
+			_logger.info("Raw data: [" + data.rstrip("\n") + "], (" + str(byteCnt) + " B)")
 			
 			# after first connect the response from the SMuFF
 			# is supposed to be 'start'
