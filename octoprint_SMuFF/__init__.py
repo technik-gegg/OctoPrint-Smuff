@@ -454,10 +454,10 @@ def __plugin_disabled():
 		pass
 
 def serial_reader(_instance, _logger):
-	while 1:
+	while not __unloading__:
 		if __ser0__ and __ser0__.is_open:
 			if __ser0__.in_waiting > 0:
-				data = __ser0__.read_until()	# read to EOL
+				data = __ser0__.readline()	# read to EOL
 				
 				# after connecting, read the response from the SMuFF
 				# which is supposed to be 'start'
@@ -471,7 +471,7 @@ def serial_reader(_instance, _logger):
 					continue
 
 				if data.startswith("echo: states:"):
-					_logger.info("SMuFF has sent states: [" + data.rstrip() + "]")
+					# _logger.info("SMuFF has sent states: [" + data.rstrip() + "]")
 					_instance.parse_states(data)
 					continue
 
