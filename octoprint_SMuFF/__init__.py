@@ -72,6 +72,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 	
 	def on_event(self, event, payload):
 		
+		self._logger.info("Event: [" + event + "]")
 		if event == Events.CONNECTED:
 			self._logger.info("Event: [" + event + "]")
 
