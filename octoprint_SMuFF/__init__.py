@@ -364,7 +364,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		# self._logger.info("Endstop states: [" + states + "]")
 		if len(states) == 0:
 			return False
-		# SMuFF sends: echo: states: T: T4     S: off  R: off  F: off  F2: off
+		# SMuFF sends: "echo: states: T: T4     S: off  R: off  F: off  F2: off"
 		m = re.search(r'^((\w+:.)(\w+:))\s([T]:\s)(\w+)\s([S]:\s)(\w+)\s([R]:\s)(\w+)\s([F]:\s)(\w+)\s([F,2]+:\s)(\w+)', states)
 		if m:
 			self._cur_tool 	= m.group(5).strip()
@@ -459,26 +459,27 @@ def serial_reader(_instance, _logger):
 			if __ser0__.in_waiting > 0:
 				data = __ser0__.readline()	# read to EOL
 				
-				# after connecting, read the response from the SMuFF
-				# which is supposed to be 'start'
+				# after first connect the response from the SMuFF
+				# is supposed to be 'start'
 				if data.startswith('start\n'):
 					_logger.info("SMuFF has sent \"start\" response")
 					continue
 
-				# don't process any debug messages
-				if data.startswith("echo: dbg:"):
-					_logger.info("SMuFF has sent a debug response: [" + data.rstrip() + "]")
-					continue
+				if data.startswith("echo:"):
+					# don't process any debug messages
+					if data[6:].startswith("dbg:"):
+						_logger.info("SMuFF has sent a debug response: [" + data.rstrip() + "]")
+						continue
 
-				if data.startswith("echo: states:"):
-					# _logger.info("SMuFF has sent states: [" + data.rstrip() + "]")
-					_instance.parse_states(data)
-					continue
+					if data[6:].startswith("states:"):
+						# _logger.info("SMuFF has sent states: [" + data.rstrip() + "]")
+						_instance.parse_states(data)
+						continue
 
-				if data.startswith("echo: busy"):
-					_logger.info("SMuFF has sent a busy response: [" + data.rstrip() + "]")
-					_instance.set_busy(True)
-					continue
+					if data[6:].startswith("busy"):
+						_logger.info("SMuFF has sent a busy response: [" + data.rstrip() + "]")
+						_instance.set_busy(True)
+						continue
 
 				if data.startswith("error:"):
 					__ser0__.reset_input_buffer()
