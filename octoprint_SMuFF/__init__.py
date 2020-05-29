@@ -312,6 +312,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 	def send_SMuFF_and_wait(self, data):
 		if __ser0__ and __ser0__.is_open:
 			try:
+				__ser0__.reset_output_buffer()
 				__ser0__.write("{}\n".format(data))
 				__ser0__.flush()
 			except (OSError, serial.SerialException):
@@ -482,8 +483,6 @@ def serial_reader(_instance, _logger):
 						continue
 
 				if data.startswith("error:"):
-					__ser0__.reset_input_buffer()
-					__ser0__.reset_output_buffer()
 					_logger.info("SMuFF has sent a error response: [" + data.rstrip() + "]")
 					continue
 
