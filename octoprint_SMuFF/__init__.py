@@ -313,7 +313,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		if __ser0__ and __ser0__.is_open:
 			try:
 				__ser0__.write("{}\n".format(data))
-				# __ser0__.flush()
+				__ser0__.flush()
 			except (OSError, serial.SerialException):
 				self._logger.info("Can't send to SMuFF")
 				return None
@@ -323,7 +323,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			start = time.time()
 			self._is_busy = False
 			while True:
-				if self._got_response == False:
+				if not self._got_response:
 					if time.time() - start >= timeout:
 						return None
 					if self._is_busy == True:
@@ -471,16 +471,19 @@ def serial_reader(instance, logger):
 					continue
 
 				if data.startswith("echo: states:"):
+					logger.info("SMuFF has sent states: [" + data.rstrip() + "]")
 					instance.parse_states(data)
 					continue
 
 				if data.startswith("echo: busy"):
+					logger.info("SMuFF has sent a busy response: [" + data.rstrip() + "]")
 					instance.set_busy(True)
 					continue
 
 				if data.startswith("error:"):
 					__ser0__.reset_input_buffer()
 					__ser0__.reset_output_buffer()
+					logger.info("SMuFF has sent a error response: [" + data.rstrip() + "]")
 					continue
 
 				if data.startswith("ok\n"):
@@ -488,7 +491,7 @@ def serial_reader(instance, logger):
 					continue
 
 				last_response = data.rstrip("\n")
-				# logger.info("Got data: [" + data.rstrip("\n") + "]")
+				logger.info("Got data: [" + data.rstrip("\n") + "]")
 		else:
 			logger.info("Serial is closed")
 
