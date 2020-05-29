@@ -453,47 +453,47 @@ def __plugin_disabled():
 	except (OSError, serial.SerialException):
 		pass
 
-def serial_reader(instance, logger):
+def serial_reader(_instance, _logger):
 	while not __unloading__:
 		if __ser0__ and __ser0__.is_open:
 			if __ser0__.in_waiting > 0:
-				data = __ser0__.readline()	# read to EOL
+				data = __ser0__.read_until()	# read to EOL
 				
 				# after connecting, read the response from the SMuFF
 				# which is supposed to be 'start'
 				if data.startswith('start\n'):
-					logger.info("SMuFF has sent \"start\" response")
+					_logger.info("SMuFF has sent \"start\" response")
 					continue
 
 				# don't process any debug messages
 				if data.startswith("echo: dbg:"):
-					logger.info("SMuFF has sent a debug response: [" + data.rstrip() + "]")
+					_logger.info("SMuFF has sent a debug response: [" + data.rstrip() + "]")
 					continue
 
 				if data.startswith("echo: states:"):
-					logger.info("SMuFF has sent states: [" + data.rstrip() + "]")
-					instance.parse_states(data)
+					_logger.info("SMuFF has sent states: [" + data.rstrip() + "]")
+					_instance.parse_states(data)
 					continue
 
 				if data.startswith("echo: busy"):
-					logger.info("SMuFF has sent a busy response: [" + data.rstrip() + "]")
-					instance.set_busy(True)
+					_logger.info("SMuFF has sent a busy response: [" + data.rstrip() + "]")
+					_instance.set_busy(True)
 					continue
 
 				if data.startswith("error:"):
 					__ser0__.reset_input_buffer()
 					__ser0__.reset_output_buffer()
-					logger.info("SMuFF has sent a error response: [" + data.rstrip() + "]")
+					_logger.info("SMuFF has sent a error response: [" + data.rstrip() + "]")
 					continue
 
 				if data.startswith("ok\n"):
-					instance.set_response(last_response)
+					_instance.set_response(last_response)
 					continue
 
 				last_response = data.rstrip("\n")
-				logger.info("Got data: [" + data.rstrip("\n") + "]")
+				_logger.info("Got data: [" + data.rstrip("\n") + "]")
 		else:
-			logger.info("Serial is closed")
+			_logger.info("Serial is closed")
 
-	logger.info("Serial port receiver closed")
+	_logger.info("Serial port receiver has stopped")
 
