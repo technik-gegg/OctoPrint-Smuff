@@ -417,6 +417,11 @@ def __plugin_load__():
 	__ser_drvr__ = "ttyS0"
 
 	try:
+		__ser0__ = serial.Serial("/dev/"+__ser_drvr__, __ser_baud__, timeout=1)
+	except (OSError, serial.SerialException):
+		_logger.info("Serial port not found!")
+
+	try:
 		__t_serial__ = threading.Thread(target = serial_reader, args = (__plugin_implementation__, _logger))
 		__t_serial__.start()
 	except:
@@ -424,11 +429,6 @@ def __plugin_load__():
 		tb = traceback.format_exception(exc_type, exc_value, exc_traceback)
 		_logger.info("Unable to start serial reader thread: ".join(tb))
 
-	try:
-		__ser0__ = serial.Serial("/dev/"+__ser_drvr__, __ser_baud__, timeout=1)
-
-	except (OSError, serial.SerialException):
-		_logger.info("Serial port not found!")
 
 
 
