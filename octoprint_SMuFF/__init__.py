@@ -478,10 +478,6 @@ def serial_reader(_instance, _logger):
 
 			# _logger.info("Raw data: [" + _instance.hex_dump(data.rstrip("\n")) + "]")
 
-			while data[0:1] == "\x1b":
-				_instance.hex_dump(data)
-				data = data[3:]
-			
 			# after first connect the response from the SMuFF
 			# is supposed to be 'start'
 			if data.startswith('start\n'):
@@ -509,9 +505,6 @@ def serial_reader(_instance, _logger):
 				continue
 
 			if data.startswith("ok\n"):
-				# filter SMuFF-Ifc messages, just in case
-				if last_response[0:1] == "\x1b":
-					last_response = last_response[3:]
 				_instance.set_response(last_response)
 				continue
 
