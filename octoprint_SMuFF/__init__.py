@@ -478,7 +478,7 @@ def serial_reader(_instance, _logger):
 
 			# _logger.info("Raw data: [" + _instance.hex_dump(data.rstrip("\n")) + "]")
 
-			if data[0:1] == "\x1b":
+			while data[0:1] == "\x1b":
 				_instance.hex_dump(data)
 				data = data[3:]
 			
