@@ -52,11 +52,6 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		self._is_aligned 	= False
 		self._got_response	= False
 		self._response		= None
-		self._ser1			= None
-		self._ser1_port 	= None
-		self._ser1_baud		= None
-		self._ser1_state	= None
-		self._ser1_init		= False
 		self._in_file_list	= False
 	
 	##~~ StartupPlugin mixin
@@ -77,32 +72,11 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 	
 	def on_event(self, event, payload):
 		
-		if event == "XXX_XXX": #Events.CONNECTED:
+		if event == Events.CONNECTED:
 			self._logger.info("Event: [" + event + "]")
-			# request the printers serial connection
-			state, self._ser1_port, self._ser1_baud, profile = self._printer.get_current_connection()
-			self._ser1_state = event
-
-			if self._ser1_init == False:
-				try:
-					self._ser1 = serial.Serial(self._ser1_port, self._ser1_baud, timeout=1)
-					self._ser1_init = True
-					self._logger.info("Printers serial port has been opened")
-				except (OSError, serial.SerialException):
-					self._ser1_init = False
-					self._logger.info("Can't open printers serial port")
 
 		if event == Events.DISCONNECTED:
 			self._logger.info("Event: [" + event + "]")
-			try:
-				if self._ser1 and self._ser1.is_open:
-					self._ser1.close()
-			except (OSError, serial.SerialException):
-				pass
-			self._ser1 = None
-			self._ser1_init = False
-			self._ser1_state = event
-			self._logger.info("Printers serial port has been closed")
 
 		if event == Events.PRINT_PAUSED:
 			self._logger.info("Event: [" + event + "]")
@@ -138,9 +112,15 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			params['firmware_info'] = self._fw_info
 		
 		# look up the serial port driver
-		drvr = self.find_file(__ser_drvr__, "/dev")
-		if len(drvr) > 0:
-			params['tty'] = "Found! (/dev/" + __ser_drvr__ +")"
+		if sys.platform == "win32":
+			if __ser_drvr__.startswith("tty"):
+				params['tty'] = "Wrong name for WIN32 ("+ __ser_drvr__ +")"
+			else:
+				params['tty'] = __ser_drvr__
+		else
+			drvr = self.find_file(__ser_drvr__, "/dev")
+			if len(drvr) > 0:
+				params['tty'] = "Found! (/dev/" + __ser_drvr__ +")"
 
 		return  params
 
@@ -229,11 +209,6 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 				self.send_SMuFF_and_wait(M18)
 				return ""
 
-			# @SMuFF PRINTER
-			if action and action == PRINTER:
-				self.send_printer_and_wait("M20")
-				return ""
-
 
 	def extend_tool_sending(self, comm_instance, phase, cmd, cmd_type, gcode, subcode, tags, *args, **kwargs):
 
@@ -278,24 +253,6 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 					finally:
 						self._printer.set_job_on_hold(False)
 
-			# @SMuFF ALIGN
-			if action and action == ALIGN:
-				if self._is_aligned:
-					return ""
-				# check the feeder and keep retracting v1 as long as 
-				# the feeder endstop is on
-				if self._feeder:
-					#self._logger.info(action + " Feeder is: " + str(self._feeder) + " Cmd is:" + G1_E + str(v1))
-					self._printer.commands(G1_E + str(v1) + ALIGN_SPEED + str(spd))
-					# self.send_printer_and_wait(G1_E + str(v1) + ALIGN_SPEED + str(spd))
-				else:
-					self._is_aligned = True
-					#self._logger.info("Aligned now, cmd is: " + G1_E + str(v2))
-					# finally retract from selector (distance = v2)
-					self._printer.commands(G1_E + str(v2) + ALIGN_SPEED + str(spd))
-					#self.send_printer_and_wait(G1_E + str(v2) + ALIGN_SPEED + str(spd))
-				return ""
-
 			# @SMuFF LOAD
 			if action and action == LOAD:
 				if self._printer.set_job_on_hold(True, False):
@@ -330,45 +287,44 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		return None
 
 	def extend_gcode_received(self, comm_instance, line, *args, **kwargs):
-		#if 	line == "" \
-		#	or line.startswith("\n") \
-		#	or line.startswith("start") \
-		#	or line.startswith("echo:") \
-		#	or line.startswith("FIRMWARE") \
-		#	or line.startswith("Cap:") \
-		#	or line.startswith("Begin file list") \
-		#	or line.startswith("End file list") \
-		#	or line.startswith(" T:"):
+		if 	line == "" \
+			or line.startswith("\n") \
+			or line.startswith("start") \
+			or line.startswith("echo:") \
+			or line.startswith("FIRMWARE") \
+			or line.startswith("Cap:") \
+			or line.startswith("Begin file list") \
+			or line.startswith("End file list") \
+			or line.startswith(" T:"):
 			# not interessed in those
-		#	if line.startswith("Begin file list"):
-		#		self._in_file_list = True
-		#	if line.startswith("End file list"):
-		#		self._in_file_list = False
-		#else:
-		#	if self._in_file_list == False:
-		#		data = line 
-				#self._logger.info("<<< [" + line.rstrip("\n") +"]")
+			if line.startswith("Begin file list"):
+				self._in_file_list = True
+			if line.startswith("End file list"):
+				self._in_file_list = False
+		else:
+			if self._in_file_list == False:
+				self._logger.info("Printer sent [" + line.rstrip("\n") +"]")
 		return line
 	
 	##~~ helper functions
 
 	# sending data to SMuFF
 	def send_SMuFF_and_wait(self, data):
-		if __ser0__.is_open:
+		if __ser0__ and __ser0__.is_open:
 			try:
 				__ser0__.write("{}\n".format(data))
-				__ser0__.flush()
+				# __ser0__.flush()
 			except (OSError, serial.SerialException):
 				self._logger.info("Can't send to SMuFF")
 				return None
 			
 			# self._logger.debug(">>> " + data)
 			self._is_busy = False
-			retry = 15 	# wait max. 15 seconds for response
+			timeout = 15 	# wait max. 15 seconds for response
 			start = time.time()
 			while True:
 				if self._got_response == False:
-					if time.time() - start >= retry:
+					if time.time() - start >= timeout:
 						return None
 					if self._is_busy == True:
 						start = time.time()
@@ -382,29 +338,6 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		else:
 			self._logger.info("Serial not open")
 			return None
-
-	# sending data directly to printer
-	def send_printer_and_wait(self, data):
-		if self._ser1 and self._ser1.is_open:
-			self._response = None
-			self._ser1.write("{}\n".format(data))
-			self._ser1.flush()
-			# self._logger.debug(">>> " + data)
-			retry = 15 	# wait max. 15 seconds for response
-			while True:
-				if self._got_response and self._response.startswith('ok\n'):
-					return self._response.rstrip("\n")
-				else:
-					self._got_response = None
-					time.sleep(.5)
-					retry -= 1
-					if retry == 0:
-						return None
-
-		else:
-			self._logger.info("Printer serial not open")
-			return None
-
 
 	def find_file(self, pattern, path):
 		result = []
@@ -421,7 +354,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		if not response == None:
 			self._got_response = True
 			self._response = response
-			self._logger.info("Got response [" + response + "]")
+			# self._logger.info("Got response [" + response + "]")
 		else:
 			self._got_response = False
 
@@ -429,11 +362,6 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		# self._logger.info("Endstop states: [" + states + "]")
 		if len(states) == 0:
 			return False
-		global _cur_tool
-		global _selector
-		global _revolver
-		global _feeder
-		global _feeder2
 		# SMuFF sends: echo: states: T: T4     S: off  R: off  F: off  F2: off
 		m = re.search(r'^((\w+:.)(\w+:))\s([T]:\s)(\w+)\s([S]:\s)(\w+)\s([R]:\s)(\w+)\s([F]:\s)(\w+)\s([F,2]+:\s)(\w+)', states)
 		if m:
@@ -444,7 +372,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			self._feeder2  	= m.group(13).strip() == ESTOP_ON
 			return True
 		else:
-			self._logger.info("No match in parse_states")
+			self._logger.info("No match in parse_states: [" + states + "]")
 		return False
 	
 	def get_feeder(self):
@@ -466,7 +394,9 @@ def __plugin_load__():
 	global __ser_drvr__
 	global __ser_baud__
 	global __t_serial__
+	global __unloading__
 
+	__unloading__ = False
 	_logger = logging.getLogger("octoprint.plugins.SMuFF")
 
 	__plugin_implementation__ = SmuffPlugin()
@@ -480,25 +410,20 @@ def __plugin_load__():
 	}
 
 	# change the baudrate here if you have to
-	__ser_baud__ = 38400
+	__ser_baud__ = 115200
 	# do __not__ change the serial port device
 	__ser_drvr__ = "ttyS0"
 
 	try:
-		__ser0__ = serial.Serial("/dev/"+__ser_drvr__, __ser_baud__, timeout=1)
-		# after connecting, read the response from the SMuFF
-		resp = __ser0__.readline()
-		# which is supposed to be 'start'
-		if resp.startswith('start'):
-			_logger.info("SMuFF has sent \"start\" response")
+		__t_serial__ = threading.Thread(target = serial_reader, args = (__plugin_implementation__, _logger))
+		__t_serial__.start()
+	except:
+		exc_type, exc_value, exc_traceback = sys.exc_info()
+		tb = traceback.format_exception(exc_type, exc_value, exc_traceback)
+		_logger.info("Unable to start serial reader thread: ".join(tb))
 
-		try:
-			__t_serial__ = threading.Thread(target = serial_reader, args = (__plugin_implementation__, _logger))
-			__t_serial__.start()
-		except:
-			exc_type, exc_value, exc_traceback = sys.exc_info()
-			tb = traceback.format_exception(exc_type, exc_value, exc_traceback)
-			_logger.info("Unable to start serial reader thread: ".join(tb))
+	try:
+		__ser0__ = serial.Serial("/dev/"+__ser_drvr__, __ser_baud__, timeout=1)
 
 	except (OSError, serial.SerialException):
 		_logger.info("Serial port not found!")
@@ -506,6 +431,7 @@ def __plugin_load__():
 
 
 def __plugin_unload__():
+	__unloading__ = True
 	if 	not __t_serial__ == None:
 		__t_serial__.join()
 	try:
@@ -516,6 +442,7 @@ def __plugin_unload__():
 
 
 def __plugin_disabled():
+	__unloading__ = True
 	if 	not __t_serial__ == None:
 		__t_serial__.join()
 	try:
@@ -524,29 +451,42 @@ def __plugin_disabled():
 	except (OSError, serial.SerialException):
 		pass
 
-def serial_reader(comm_instance, _logger):
-	while 1:
+def serial_reader(instance, logger):
+	while not __unloading__:
 		if __ser0__ and __ser0__.is_open:
 			if __ser0__.in_waiting > 0:
-				data = __ser0__.read_until()	# read to EOL
+				data = __ser0__.readline()	# read to EOL
 				
+				# after connecting, read the response from the SMuFF
+				# which is supposed to be 'start'
+				if data.startswith('start\n'):
+					logger.info("SMuFF has sent \"start\" response")
+					continue
+
+				# don't process any debug messages
+				if data.startswith("echo: dbg:"):
+					logger.info("SMuFF has sent a debug response: [" + data.rstrip() + "]")
+					continue
+
 				if data.startswith("echo: states:"):
-					comm_instance.parse_states(data)
+					instance.parse_states(data)
 					continue
 
 				if data.startswith("echo: busy"):
-					comm_instance.set_busy(True)
+					instance.set_busy(True)
 					continue
 
-				# if data.startswith("error:"):
-				# 	continue
+				if data.startswith("error:"):
+					__ser0__.reset_input_buffer()
+					__ser0__.reset_output_buffer()
+					continue
 
 				if data.startswith("ok\n"):
-					comm_instance.set_response(last_response)
+					instance.set_response(last_response)
 					continue
 
 				last_response = data.rstrip("\n")
-				_logger.info("Got data: [" + data.rstrip("\n") + "]")
+				# logger.info("Got data: [" + data.rstrip("\n") + "]")
 		else:
-			_logger.info("Serial is closed")
+			logger.info("Serial is closed")
 

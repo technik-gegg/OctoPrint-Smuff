@@ -1,0 +1,46 @@
+;-------------------------------------------
+; beforeToolChange script
+;-------------------------------------------
+G1 E-5 F5000	; retract 5 mm fast to avoid oozing
+G91				; switch to relative positioning
+G1 Z15 F8000	; lift nozzle
+G90				; switch back to absolute positioning
+M83				; set extruder to relative mode (important)
+G1 X0 Y0 F15000	; move to change position
+G1 E-545 F5000	; Retract filament according to your bowden length
+M400			; wait for move to complete
+;-------------------------------------------
+; instead of a fix retration value try to 
+; loop until the feeder endstop is triggerd
+;
+; ** does not work yet since OctoPrint  **
+; ** scripts buffer the plugin variable **
+; ** plugins.SMuFF.feeder and hence the **
+; ** trigger is not being recognized    **
+;-------------------------------------------
+{% set _stop = ""  %}
+{% for i in range(1, 16) %}
+{%   if not _stop  %}
+{%     if plugins.SMuFF.feeder=="on" %}
+         M83
+         G1 E-10 F300   ; retract by 10mm until endstop triggers 
+         M400
+{%     endif %}
+{%   else %}
+{%     set _stop = "1"  %}
+{%   endif  %}
+{% endfor  %}
+;-------------------------------------------
+; retract the last bit between endstop and 
+; filament guide
+;-------------------------------------------
+M83
+G1 E-50 F500
+M400
+
+G4 P500			; pause 500 ms
+;-------------------------------------------
+; the next line is important and must not be 
+; removed!
+;-------------------------------------------
+@SMuFF LOAD
