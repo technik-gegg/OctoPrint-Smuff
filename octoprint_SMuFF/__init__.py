@@ -319,19 +319,21 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 				return None
 			
 			# self._logger.debug(">>> " + data)
-			self._is_busy = False
 			timeout = 15 	# wait max. 15 seconds for response
 			start = time.time()
+			self._is_busy = False
 			while True:
 				if self._got_response == False:
 					if time.time() - start >= timeout:
 						return None
 					if self._is_busy == True:
 						start = time.time()
-				elif self._response.startswith('echo:'):
-					continue
 				else:
 					self._logger.info("{" + str(data) +"} SMuFF says [" + str(self._response) +"]")
+					if self._response.startswith('echo:'):
+						start = time.time()
+						continue
+
 					self._got_response = False
 					return self._response
 
@@ -489,4 +491,6 @@ def serial_reader(instance, logger):
 				# logger.info("Got data: [" + data.rstrip("\n") + "]")
 		else:
 			logger.info("Serial is closed")
+
+	logger.info("Serial port receiver closed")
 
