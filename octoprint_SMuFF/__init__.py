@@ -478,9 +478,9 @@ def serial_reader(_instance, _logger):
 
 			# _logger.info("Raw data: [" + _instance.hex_dump(data.rstrip("\n")) + "]")
 
-			if data[0:1] == "\x1b" and len(data) == 3:
+			if data[0:1] == "\x1b":
 				_instance.hex_dump(data)
-				continue
+				data = data[3:]
 			
 			# after first connect the response from the SMuFF
 			# is supposed to be 'start'
