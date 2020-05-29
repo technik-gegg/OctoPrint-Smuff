@@ -72,7 +72,6 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 	
 	def on_event(self, event, payload):
 		
-		self._logger.info("Event: [" + event + "]")
 		if event == Events.CONNECTED:
 			self._logger.info("Event: [" + event + "]")
 
@@ -264,7 +263,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 							# send a tool change command to SMuFF
 							res = self.send_SMuFF_and_wait(self._pending_tool)
 
-							if res == self._pending_tool:
+							if str(res) == str(self._pending_tool):
 								self._pre_tool = self._cur_tool
 								self._cur_tool = self._pending_tool
 								# send the "After Tool Change" script to the printer
@@ -272,7 +271,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 								retry = 0
 							else:
 								# not the result expected, retry
-								self._logger.info("Tool change failed, retrying" + str(retry) + " <" + res + "> != <" + str(self._pending_tool) + ">")
+								self._logger.info("Tool change failed, retrying  <" + res + "> != <" + str(self._pending_tool) + ">")
 								retry -= 1
 
 					except UnknownScript:
