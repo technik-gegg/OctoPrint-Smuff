@@ -117,7 +117,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 				params['tty'] = "Wrong name for WIN32 ("+ __ser_drvr__ +")"
 			else:
 				params['tty'] = __ser_drvr__
-		else
+		else:
 			drvr = self.find_file(__ser_drvr__, "/dev")
 			if len(drvr) > 0:
 				params['tty'] = "Found! (/dev/" + __ser_drvr__ +")"
