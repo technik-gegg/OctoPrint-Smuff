@@ -400,7 +400,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 	def get_tool(self):
 		return self._cur_tool
 
-	def hex_dump(self, s)
+	def hex_dump(self, s):
 		self._logger.info("res:".join("{:02x}".format(ord(c)) for c in s))
 		
 
