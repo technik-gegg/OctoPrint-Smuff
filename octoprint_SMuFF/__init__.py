@@ -125,12 +125,12 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		return  params
 
 
-		def get_template_configs(self):
-			self._logger.info("Settings-Template was requested")
-			return [
-				dict(type="settings", custom_bindings=True, template='SMuFF_settings.jinja2'),
-				dict(type="navbar", custom_bindings=True, template='SMuFF_navbar.jinja2')
-			]
+	def get_template_configs(self):
+		self._logger.info("Settings-Template was requested")
+		return [
+			dict(type="settings", custom_bindings=True, template='SMuFF_settings.jinja2'),
+			dict(type="navbar", custom_bindings=True, template='SMuFF_navbar.jinja2')
+		]
 
 	##~~ AssetPlugin mixin
 
