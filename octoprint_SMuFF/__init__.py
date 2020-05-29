@@ -259,21 +259,21 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 					try:
 						self._logger.info("1>> LOAD: Feeder: " + str(self._feeder) + ", Pending: " + str(self._pending_tool) + ", Current: " + str(self._cur_tool))
 						retry = 2
-						#while retry > 0:
-						# send a tool change command to SMuFF
-						res = self.send_SMuFF_and_wait(self._pending_tool)
-						self.hex_dump(res)
+						while retry > 0:
+							# send a tool change command to SMuFF
+							res = self.send_SMuFF_and_wait(self._pending_tool)
+							self.hex_dump(res)
 
-						if str(res) == str(self._pending_tool):
-							self._pre_tool = self._cur_tool
-							self._cur_tool = self._pending_tool
-							# send the "After Tool Change" script to the printer
-							self._printer.script("afterToolChange")
-							retry = 0
-						else:
-							# not the result expected, retry
-							self._logger.info("Tool change failed, retrying  <" + str(res) + "> != <" + str(self._pending_tool) + ">")
-							retry -= 1
+							if str(res) == str(self._pending_tool):
+								self._pre_tool = self._cur_tool
+								self._cur_tool = self._pending_tool
+								# send the "After Tool Change" script to the printer
+								self._printer.script("afterToolChange")
+								retry = 0
+							else:
+								# not the result expected, retry
+								self._logger.info("Tool change failed, retrying  <" + str(res) + "> != <" + str(self._pending_tool) + ">")
+								retry -= 1
 
 					except UnknownScript:
 						self._logger.info("Script 'afterToolChange' not found!")
@@ -401,7 +401,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		return self._cur_tool
 
 	def hex_dump(self, s):
-		self._logger.info("res:".join("{:02x}".format(ord(c)) for c in s))
+		self._logger.info(":".join("{:02x}".format(ord(c)) for c in s))
 		
 
 __plugin_name__ = "SMuFF Plugin"
@@ -506,6 +506,8 @@ def serial_reader(_instance, _logger):
 				continue
 
 			if data.startswith("ok\n"):
+				if last_response[0:1] == "\x1b":
+					last_response = last_response[3:]
 				_instance.set_response(last_response)
 				continue
 
