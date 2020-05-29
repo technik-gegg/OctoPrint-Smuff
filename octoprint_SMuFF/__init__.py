@@ -466,9 +466,11 @@ def __plugin_disabled():
 def serial_reader(_instance, _logger):
 	while not __unloading__:
 		if __ser0__ and __ser0__.is_open:
-			if __ser0__.in_waiting > 0:
+			byteCnt = __ser0__.in_waiting
+			if byteCnt > 0:
 				data = __ser0__.readline()	# read to EOL
-				
+				_logger.info("Got data: [" + data + "], (" + str(byteCnt) + " B)")
+
 				# after first connect the response from the SMuFF
 				# is supposed to be 'start'
 				if data.startswith('start\n'):
@@ -500,7 +502,7 @@ def serial_reader(_instance, _logger):
 					continue
 
 				last_response = data.rstrip("\n")
-				_logger.info("Got data: [" + data.rstrip("\n") + "]")
+				_logger.info("Got data: [" + last_response + "]")
 		else:
 			_logger.info("Serial is closed")
 
