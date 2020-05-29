@@ -342,9 +342,9 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 					if self._response.startswith('echo:'):
 						start = time.time()
 						continue
-
-					self._got_response = False
-					return self._response
+					ret = self._response
+					set_response(None)
+					return ret
 
 		else:
 			self._logger.info("Serial not open")
