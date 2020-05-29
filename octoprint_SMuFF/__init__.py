@@ -331,12 +331,15 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			timeout = 15 	# wait max. 15 seconds for response
 			start = time.time()
 			self._is_busy = False
+			ret = None
 			while True:
+				if self._is_busy:
+					start = time.time()
+
 				if not self._got_response:
 					if time.time() - start >= timeout:
 						return None
-					if self._is_busy == True:
-						start = time.time()
+					continue
 				else:
 					self._logger.info("{" + str(data) +"} SMuFF says [" + str(self._response) +"]")
 					if self._response.startswith('echo:'):
@@ -345,8 +348,8 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 					ret = self._response
 					self._got_response = False
 					self._response = None
-					return ret
-
+					break
+			return ret
 		else:
 			self._logger.info("Serial not open")
 			return None
