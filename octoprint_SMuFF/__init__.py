@@ -262,6 +262,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 						#while retry > 0:
 						# send a tool change command to SMuFF
 						res = self.send_SMuFF_and_wait(self._pending_tool)
+						self.hex_dump(res)
 
 						if str(res) == str(self._pending_tool):
 							self._pre_tool = self._cur_tool
@@ -398,6 +399,9 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 
 	def get_tool(self):
 		return self._cur_tool
+
+	def hex_dump(self, s)
+		self._logger.info("res:".join("{:02x}".format(ord(c)) for c in s))
 		
 
 __plugin_name__ = "SMuFF Plugin"
