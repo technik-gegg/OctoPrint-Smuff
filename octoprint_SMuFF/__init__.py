@@ -343,7 +343,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 						start = time.time()
 						continue
 					ret = self._response
-					set_response(None)
+					self.set_response(None)
 					return ret
 
 		else:
@@ -465,13 +465,11 @@ def __plugin_disabled():
 def serial_reader(_instance, _logger):
 	while not __unloading__:
 		if __ser0__ and __ser0__.is_open:
-			byteCnt = __ser0__.in_waiting
-			# if byteCnt > 0:
 			data = __ser0__.readline()	# read to EOL
 			if len(data) == 0:
 				continue
 
-			_logger.info("Raw data: [" + data.rstrip("\n") + "], (" + str(byteCnt) + " B)")
+			//_logger.info("Raw data: [" + data.rstrip("\n") + "]")
 			
 			# after first connect the response from the SMuFF
 			# is supposed to be 'start'
