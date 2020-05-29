@@ -263,7 +263,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 							# send a tool change command to SMuFF
 							res = self.send_SMuFF_and_wait(self._pending_tool)
 
-							if res and res.encode() == self._pending_tool.encode():
+							if not res == None:
 								self._pre_tool = self._cur_tool
 								self._cur_tool = self._pending_tool
 								# send the "After Tool Change" script to the printer
@@ -271,7 +271,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 								break
 							else:
 								# not the result expected, retry
-								self._logger.info("Tool change failed, retrying" + str(retry) + " <" + res + "> != <" + self._pending_tool + ">")
+								self._logger.info("Tool change failed, retrying" + str(retry) + " <" + res + "> != <" + str(self._pending_tool) + ">")
 								retry = retry-1
 
 					except UnknownScript:
