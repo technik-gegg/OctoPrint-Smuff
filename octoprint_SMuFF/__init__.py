@@ -263,7 +263,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 							# send a tool change command to SMuFF
 							stat = self.send_SMuFF_and_wait(self._pending_tool)
 
-							if stat.startswith(self._pending_tool):
+							if stat and stat == self._pending_tool:
 								self._pre_tool = self._cur_tool
 								self._cur_tool = self._pending_tool
 								# send the "After Tool Change" script to the printer
