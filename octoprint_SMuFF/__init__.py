@@ -454,7 +454,7 @@ def __plugin_disabled():
 		pass
 
 def serial_reader(_instance, _logger):
-	while not __unloading__:
+	while 1:
 		if __ser0__ and __ser0__.is_open:
 			if __ser0__.in_waiting > 0:
 				data = __ser0__.read_until()	# read to EOL
