@@ -426,7 +426,7 @@ def __plugin_load__():
 	}
 
 	# change the baudrate here if you have to
-	__ser_baud__ = 115200
+	__ser_baud__ = 38400
 	# do __not__ change the serial port device
 	__ser_drvr__ = "ttyS0"
 
