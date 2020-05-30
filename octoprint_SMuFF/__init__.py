@@ -520,14 +520,15 @@ def serial_reader(_instance, _logger):
 
 				last_response = data.rstrip("\n")
 				_logger.debug("Got data: [" + last_response + "]")
+
+		else:
+			_logger.error("Serial is closed")
+			if retryOpen > 0:
+				retryOpen -= 1
+				_logger.error("Trying to reopen serial port")
+				open_SMuFF_serial()
 			else:
-				_logger.error("Serial is closed")
-				if retryOpen > 0:
-					retryOpen -= 1
-					_logger.error("Trying to reopen serial port")
-					open_SMuFF_serial()
-				else:
-					break
+				break
 
 	_logger.info("Exiting Serial Port Receiver")
 
