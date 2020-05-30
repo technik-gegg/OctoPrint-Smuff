@@ -479,7 +479,7 @@ def serial_reader(_instance, _logger):
 			if len(data) == 0:
 				continue
 
-			# _logger.debug("Raw data: [" + _instance.hex_dump(data.rstrip("\n")) + "]")
+			_logger.debug("Raw data: [" + _instance.hex_dump(data.rstrip("\n")) + "]")
 
 			# after first connect the response from the SMuFF
 			# is supposed to be 'start'
