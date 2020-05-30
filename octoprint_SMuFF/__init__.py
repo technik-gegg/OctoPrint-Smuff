@@ -411,11 +411,9 @@ __plugin_name__ = "SMuFF Plugin"
 def __plugin_load__():
 	global __plugin_implementation__
 	global __plugin_hooks__
-	global __ser0__
-	global __ser_drvr__
-	global __ser_baud__
 	global __t_serial__
 	global __stop_ser__
+	global __ser_baud__
 
 	__stop_ser__ = False
 	_logger = logging.getLogger("octoprint.plugins.SMuFF")
@@ -432,8 +430,6 @@ def __plugin_load__():
 
 	# change the baudrate here if you have to
 	__ser_baud__ = 115200
-	# do __not__ change the serial port device
-	__ser_drvr__ = "ttyS0"
 
 	open_SMuFF_serial()
 
@@ -447,6 +443,10 @@ def __plugin_load__():
 
 
 def open_SMuFF_serial():
+	global __ser0__
+	global __ser_drvr__
+	# do __not__ change the serial port device
+	__ser_drvr__ = "ttyS0"
 	try:
 		__ser0__ = serial.Serial("/dev/"+__ser_drvr__, __ser_baud__, timeout=1)
 	except (OSError, serial.SerialException):
