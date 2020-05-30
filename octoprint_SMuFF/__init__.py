@@ -435,10 +435,7 @@ def __plugin_load__():
 	# do __not__ change the serial port device
 	__ser_drvr__ = "ttyS0"
 
-	try:
-		__ser0__ = serial.Serial("/dev/"+__ser_drvr__, __ser_baud__, timeout=1)
-	except (OSError, serial.SerialException):
-		_logger.error("Serial port not found!")
+	open_SMuFF_serial()
 
 	try:
 		__t_serial__ = threading.Thread(target = serial_reader, args = (__plugin_implementation__, _logger))
@@ -448,6 +445,12 @@ def __plugin_load__():
 		tb = traceback.format_exception(exc_type, exc_value, exc_traceback)
 		_logger.error("Unable to start serial reader thread: ".join(tb))
 
+
+def open_SMuFF_serial():
+	try:
+		__ser0__ = serial.Serial("/dev/"+__ser_drvr__, __ser_baud__, timeout=1)
+	except (OSError, serial.SerialException):
+		_logger.error("Can't open serial port!")
 
 
 
@@ -474,6 +477,7 @@ def __plugin_disabled():
 
 def serial_reader(_instance, _logger):
 	_logger.debug("Entering Serial Receiver")
+	retryOpen = 3
 	while not __stop_ser__:
 		if __ser0__ and __ser0__.is_open:
 			b = __ser0__.in_waiting
@@ -518,6 +522,12 @@ def serial_reader(_instance, _logger):
 				_logger.debug("Got data: [" + last_response + "]")
 			else:
 				_logger.error("Serial is closed")
+				if retryOpen > 0:
+					retryOpen -= 1
+					_logger.error("Trying to reopen serial port")
+					open_SMuFF_serial()
+				else:
+					break
 
 	_logger.info("Exiting Serial Port Receiver")
 
