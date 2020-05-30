@@ -326,7 +326,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 				return None
 			
 			# self._logger.debug(">>> " + data)
-			timeout = 15 	# wait max. 15 seconds for response
+			timeout = 5 	# wait max. 5 seconds for response
 			start = time.time()
 			self._is_busy = False
 			ret = None
@@ -426,7 +426,7 @@ def __plugin_load__():
 	}
 
 	# change the baudrate here if you have to
-	__ser_baud__ = 38400
+	__ser_baud__ = 115200
 	# do __not__ change the serial port device
 	__ser_drvr__ = "ttyS0"
 
