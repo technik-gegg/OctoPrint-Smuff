@@ -15,6 +15,7 @@ import time
 import sys
 import traceback
 import logging
+import binascii
 
 AT_SMUFF 	= "@SMuFF"
 M115	 	= "M115"
@@ -320,8 +321,11 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		if __ser0__ and __ser0__.is_open:
 			try:
 				__ser0__.write_timeout = 5
-				__ser0__.write("{!r}".format(data + "\n"))
-				#__ser0__.flush()
+				b = bytearray()
+				b = data + "\n".encode("ascii")
+				self._logger.debug("Sending: " + binascii.hexlify(b))
+				__ser0__.write(b)
+				__ser0__.flush()
 			except (OSError, serial.SerialException):
 				self._logger.error("Can't send to SMuFF")
 				return None
