@@ -231,13 +231,13 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 				if len(tmp) > 4:
 					spd = int(tmp[4])
 
-			# self._logger.debug("2>> " + cmd + "  action: " + str(action) + "  v1,v2: " + str(v1) + ", " + str(v2))
+			self._logger.debug("2>> " + cmd + "  action: " + str(action) + "  v1,v2: " + str(v1) + ", " + str(v2))
 			
 			# @SMuFF T0...99
 			if action and action.startswith(TOOL):
 				if self._printer.set_job_on_hold(True, False):
 					try:
-						self._pending_tool = action
+						self._pending_tool = str(action)
 						# self._logger.debug("2>> TN: Feeder: " + str(self._feeder) + ", Pending: " + str(self._pending_tool) + ", Current: " + str(self._cur_tool))
 						# check if there's some filament loaded
 						if self._feeder:
