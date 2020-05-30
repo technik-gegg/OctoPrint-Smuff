@@ -57,7 +57,6 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 	##~~ StartupPlugin mixin
 
 	def on_timer_event(self):
-		# self._logger.info("Tool [" + self._cur_tool +"]")
 		# send SMuFF status updates periodically
 		self._plugin_manager.send_plugin_message(self._identifier, {'type': 'status', 'tool': self._cur_tool, 'feeder': self._feeder, 'feeder2': self._feeder2 })
 		
@@ -73,27 +72,27 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 	def on_event(self, event, payload):
 		
 		if event == Events.CONNECTED:
-			self._logger.info("Event: [" + event + "]")
+			self._logger.debug("Event: [" + event + "]")
 
 		if event == Events.DISCONNECTED:
-			self._logger.info("Event: [" + event + "]")
+			self._logger.debug("Event: [" + event + "]")
 
 		if event == Events.PRINT_PAUSED:
-			self._logger.info("Event: [" + event + "]")
+			self._logger.debug("Event: [" + event + "]")
 
 		if event == Events.PRINT_RESUMED:
-			self._logger.info("Event: [" + event + "]")
+			self._logger.debug("Event: [" + event + "]")
 		
 		if event == Events.TOOL_CHANGE:
-			self._logger.info("Event: [" + event + "," + payload + "]")
+			self._logger.debug("Event: [" + event + "," + payload + "]")
 
 		if event == Events.WAITING:
-			self._logger.info("Event: [" + event + "]")
+			self._logger.debug("Event: [" + event + "]")
 
 	##~~ SettingsPlugin mixin
 
 	def get_settings_defaults(self):
-		self._logger.info("SMuFF plugin loaded, getting defaults")
+		self._logger.debug("SMuFF plugin loaded, getting defaults")
 
 		params = dict(
 			firmware_info	= "No data. Please check connection!",
@@ -126,7 +125,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 
 
 	def get_template_configs(self):
-		self._logger.info("Settings-Template was requested")
+		# self._logger.debug("Settings-Template was requested")
 		return [
 			dict(type="settings", custom_bindings=True, template='SMuFF_settings.jinja2'),
 			dict(type="navbar", custom_bindings=True, template='SMuFF_navbar.jinja2')
@@ -169,12 +168,12 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 
 	def extend_tool_queuing(self, comm_instance, phase, cmd, cmd_type, gcode, subcode, tags, *args, **kwargs):
 		
-		# self._logger.info("Processing queuing: [" + cmd + "," + str(cmd_type)+ "," + str(tags) + "]")
+		# self._logger.debug("Processing queuing: [" + cmd + "," + str(cmd_type)+ "," + str(tags) + "]")
 		
 		if gcode and gcode.startswith(TOOL):
 			# if the tool that's already loaded is addressed, ignore the filament change
 			if cmd == self._cur_tool:
-				self._logger.info(cmd + " equals " + self._cur_tool + " -- aborting tool change")
+				self._logger.warning(cmd + " equals " + self._cur_tool + " -- aborting tool change")
 				return None
 			self._is_aligned = False
 			# replace the tool change command
@@ -195,7 +194,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 				if len(tmp) > 4:
 					spd = int(tmp[4])
 
-			#self._logger.info("1>> " + cmd + "  action: " + str(action) + "  v1,v2: " + str(v1) + ", " + str(v2))
+			# self._logger.debug("1>> " + cmd + "  action: " + str(action) + "  v1,v2: " + str(v1) + ", " + str(v2))
 
 			# @SMuFF SERVO
 			if action and action == SERVO:
@@ -231,25 +230,25 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 				if len(tmp) > 4:
 					spd = int(tmp[4])
 
-			# self._logger.info("2>> " + cmd + "  action: " + str(action) + "  v1,v2: " + str(v1) + ", " + str(v2))
+			# self._logger.debug("2>> " + cmd + "  action: " + str(action) + "  v1,v2: " + str(v1) + ", " + str(v2))
 			
 			# @SMuFF T0...99
 			if action and action.startswith(TOOL):
 				if self._printer.set_job_on_hold(True, False):
 					try:
 						self._pending_tool = action
-						#self._logger.info("2>> TN: Feeder: " + str(self._feeder) + ", Pending: " + str(self._pending_tool) + ", Current: " + str(self._cur_tool))
+						# self._logger.debug("2>> TN: Feeder: " + str(self._feeder) + ", Pending: " + str(self._pending_tool) + ", Current: " + str(self._cur_tool))
 						# check if there's some filament loaded
 						if self._feeder:
 							# send the "Before Tool Change" script to the printer
-							#self._logger.info("2>> calling script")
+							#self._logger.debug("2>> calling script")
 							self._printer.script("beforeToolChange")
 						else:
-							#self._logger.info("2>> calling SMuFF LOAD")
+							#self._logger.debug("2>> calling SMuFF LOAD")
 							self._printer.commands(AT_SMUFF + " " + LOAD)
 
 					except UnknownScript:
-						self._logger.info("Script 'beforeToolChange' not found!")
+						self._logger.error("Script 'beforeToolChange' not found!")
 					finally:
 						self._printer.set_job_on_hold(False)
 
@@ -257,8 +256,8 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			if action and action == LOAD:
 				if self._printer.set_job_on_hold(True, False):
 					try:
-						self._logger.info("1>> LOAD: Feeder: " + str(self._feeder) + ", Pending: " + str(self._pending_tool) + ", Current: " + str(self._cur_tool))
-						retry = 2
+						self._logger.debug("1>> LOAD: Feeder: " + str(self._feeder) + ", Pending: " + str(self._pending_tool) + ", Current: " + str(self._cur_tool))
+						retry = 3	# retry up to 3 times
 						while retry > 0:
 							# send a tool change command to SMuFF
 							res = self.send_SMuFF_and_wait(self._pending_tool)
@@ -271,11 +270,11 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 								retry = 0
 							else:
 								# not the result expected, retry
-								self._logger.info("Tool change failed, retrying  <" + str(res) + "> != <" + str(self._pending_tool) + ">")
+								self._logger.warning("Tool change failed, retrying  <" + str(res) + "> != <" + str(self._pending_tool) + ">")
 								retry -= 1
 
 					except UnknownScript:
-						self._logger.info("Script 'afterToolChange' not found!")
+						self._logger.error("Script 'afterToolChange' not found!")
 					
 					finally:
 						self._printer.set_job_on_hold(False)
@@ -289,7 +288,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 				tool	= self._cur_tool,
 				aligned = "yes" if self._is_aligned else "no"
 			)
-			self._logger.info(" >> Script vars query: [" + str(script_type) + "," + str(script_name) + "] {0}".format(variables))
+			self._logger.debug(" >> Script vars query: [" + str(script_type) + "," + str(script_name) + "] {0}".format(variables))
 			return None, None, variables
 		return None
 
@@ -310,7 +309,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 				self._in_file_list = False
 		else:
 			if self._in_file_list == False:
-				# self._logger.info("Printer sent [" + line.rstrip("\n") +"]")
+				# self._logger.debug("Printer sent [" + line.rstrip("\n") +"]")
 				return line
 		return line
 	
@@ -320,11 +319,10 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 	def send_SMuFF_and_wait(self, data):
 		if __ser0__ and __ser0__.is_open:
 			try:
-				#__ser0__.reset_output_buffer()
 				__ser0__.write("{}\n".format(data))
 				__ser0__.flush()
 			except (OSError, serial.SerialException):
-				self._logger.info("Can't send to SMuFF")
+				self._logger.error("Can't send to SMuFF")
 				return None
 			
 			# self._logger.debug(">>> " + data)
@@ -351,7 +349,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 					break
 			return ret
 		else:
-			self._logger.info("Serial not open")
+			self._logger.error("Serial not open")
 			return None
 
 	def find_file(self, pattern, path):
@@ -369,12 +367,12 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		if not response == None:
 			self._got_response = True
 			self._response = response
-			# self._logger.info("Got response [" + response + "]")
+			# self._logger.debug("Got response [" + response + "]")
 		else:
 			self._got_response = False
 
 	def parse_states(self, states):
-		# self._logger.info("Endstop states: [" + states + "]")
+		# self._logger.debug("Endstop states: [" + states + "]")
 		if len(states) == 0:
 			return False
 		# SMuFF sends: "echo: states: T: T4     S: off  R: off  F: off  F2: off"
@@ -387,7 +385,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			self._feeder2  	= m.group(13).strip() == ESTOP_ON
 			return True
 		else:
-			self._logger.info("No match in parse_states: [" + states + "]")
+			self._logger.error("No match in parse_states: [" + states + "]")
 		return False
 	
 	def get_feeder(self):
@@ -400,7 +398,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		return self._cur_tool
 
 	def hex_dump(self, s):
-		self._logger.info(":".join("{:02x}".format(ord(c)) for c in s))
+		self._logger.debug(":".join("{:02x}".format(ord(c)) for c in s))
 		
 
 __plugin_name__ = "SMuFF Plugin"
@@ -435,7 +433,7 @@ def __plugin_load__():
 	try:
 		__ser0__ = serial.Serial("/dev/"+__ser_drvr__, __ser_baud__, timeout=1)
 	except (OSError, serial.SerialException):
-		_logger.info("Serial port not found!")
+		_logger.error("Serial port not found!")
 
 	try:
 		__t_serial__ = threading.Thread(target = serial_reader, args = (__plugin_implementation__, _logger))
@@ -443,7 +441,7 @@ def __plugin_load__():
 	except:
 		exc_type, exc_value, exc_traceback = sys.exc_info()
 		tb = traceback.format_exception(exc_type, exc_value, exc_traceback)
-		_logger.info("Unable to start serial reader thread: ".join(tb))
+		_logger.error("Unable to start serial reader thread: ".join(tb))
 
 
 
@@ -476,27 +474,27 @@ def serial_reader(_instance, _logger):
 			if len(data) == 0:
 				continue
 
-			# _logger.info("Raw data: [" + _instance.hex_dump(data.rstrip("\n")) + "]")
+			# _logger.debug("Raw data: [" + _instance.hex_dump(data.rstrip("\n")) + "]")
 
 			# after first connect the response from the SMuFF
 			# is supposed to be 'start'
 			if data.startswith('start\n'):
-				_logger.info("SMuFF has sent \"start\" response")
+				_logger.debug("SMuFF has sent \"start\" response")
 				continue
 
 			if data.startswith("echo:"):
 				# don't process any debug messages
 				if data[6:].startswith("dbg:"):
-					_logger.info("SMuFF has sent a debug response: [" + data.rstrip() + "]")
+					_logger.debug("SMuFF has sent a debug response: [" + data.rstrip() + "]")
 					continue
 
 				if data[6:].startswith("states:"):
-					# _logger.info("SMuFF has sent states: [" + data.rstrip() + "]")
+					# _logger.debug("SMuFF has sent states: [" + data.rstrip() + "]")
 					_instance.parse_states(data)
 					continue
 
 				if data[6:].startswith("busy"):
-					_logger.info("SMuFF has sent a busy response: [" + data.rstrip() + "]")
+					_logger.debug("SMuFF has sent a busy response: [" + data.rstrip() + "]")
 					_instance.set_busy(True)
 					continue
 
@@ -509,9 +507,9 @@ def serial_reader(_instance, _logger):
 				continue
 
 			last_response = data.rstrip("\n")
-			_logger.info("Got data: [" + last_response + "]")
+			_logger.debug("Got data: [" + last_response + "]")
 		else:
-			_logger.info("Serial is closed")
+			_logger.error("Serial is closed")
 
 	_logger.info("Serial port receiver has stopped")
 

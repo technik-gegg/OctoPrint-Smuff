@@ -1,19 +1,22 @@
-
 ;-------------------------------------------
 ; beforeToolChange script
 ;-------------------------------------------
+G60 S1			; save current positions
+				; this must be enabled in your Marlin firmware!
+M83				; set extruder to relative mode (important)
 G1 E-5 F5000	; retract 5 mm fast to avoid oozing
 G91				; switch to relative positioning
 G1 Z15 F8000	; lift nozzle
 G90				; switch back to absolute positioning
-M83				; set extruder to relative mode (important)
 G1 X0 Y0 F15000	; move to change position
+M83				; set extruder to relative mode (important)
 ;-------------------------------------------
 ; the next two lines must match your setup
 ; that's bowden length (500) + hotend length (45), 
 ; SMuFF selector width (90)
 ;-------------------------------------------
-G1 E-545 F5000	; Retract filament according to your bowden length
+G1 E-300 F5000	; Retract filament according to your bowden length
+G1 E-240 F5000	; doing it by two steps to avoid printer timeouts
 G1 E-90 F1000	; Retract from selector (slowly)
 
 M400			; wait for move to complete

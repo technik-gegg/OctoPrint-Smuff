@@ -3,16 +3,16 @@
 ;-------------------------------------------
 M83				; set extruder to relative mode (important)
 G1 E90 F1500	; Feed slowly from Selector into the bowden tube
-G1 E500 F5000	; Feed to hot end (fast)
+G1 E300 F5000	; Feed to hot end (fast)
+G1 E200 F5000	; doing it by two steps to avoid printer timeouts
 G1 E45 F500		; Feed down to nozzle (slow)
-
 ;-------------------------------------------
 ; use the next line only if you're not 
-; using a purge tower!
+; printing with a purge tower!
 ;-------------------------------------------
-G1 E100 F240	; Purge out old filament
+;G1 E100 F240	; Purge out old filament the 
+                ; E value might differ depending on the filament
 
 M400			; wait for move to finish
-G91				; switch to relative positioning
-G1 Z-15 F1000	; lower nozzle to old position
-G90				; switch back to absolute positioning
+G61 S1 XYZ		; restore saved positions
+				; this must be enabled in your Marlin firmware!
