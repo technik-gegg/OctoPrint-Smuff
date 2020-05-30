@@ -415,9 +415,9 @@ def __plugin_load__():
 	global __ser_drvr__
 	global __ser_baud__
 	global __t_serial__
-	global __unloading__
+	global __stop_ser__
 
-	__unloading__ = False
+	__stop_ser__ = False
 	_logger = logging.getLogger("octoprint.plugins.SMuFF")
 
 	__plugin_implementation__ = SmuffPlugin()
@@ -452,7 +452,7 @@ def __plugin_load__():
 
 
 def __plugin_unload__():
-	__unloading__ = True
+	__stop_ser__ = True
 	if 	not __t_serial__ == None:
 		__t_serial__.join()
 	try:
@@ -463,7 +463,7 @@ def __plugin_unload__():
 
 
 def __plugin_disabled():
-	__unloading__ = True
+	__stop_ser__ = True
 	if 	not __t_serial__ == None:
 		__t_serial__.join()
 	try:
@@ -473,7 +473,8 @@ def __plugin_disabled():
 		pass
 
 def serial_reader(_instance, _logger):
-	while not __unloading__:
+	_logger.debug("Entering Serial Receiver")
+	while not __stop_ser__:
 		if __ser0__ and __ser0__.is_open:
 			data = __ser0__.readline()	# read to EOL
 			if len(data) == 0:
@@ -516,5 +517,5 @@ def serial_reader(_instance, _logger):
 		else:
 			_logger.error("Serial is closed")
 
-	_logger.info("Serial port receiver has stopped")
+	_logger.info("Exiting Serial Port Receiver")
 
