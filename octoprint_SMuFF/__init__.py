@@ -476,46 +476,48 @@ def serial_reader(_instance, _logger):
 	_logger.debug("Entering Serial Receiver")
 	while not __stop_ser__:
 		if __ser0__ and __ser0__.is_open:
-			data = __ser0__.readline()	# read to EOL
-			if len(data) == 0:
-				continue
-
-			_logger.debug("Raw data: [" + _instance.hex_dump(data.rstrip("\n")) + "]")
-
-			# after first connect the response from the SMuFF
-			# is supposed to be 'start'
-			if data.startswith('start\n'):
-				_logger.debug("SMuFF has sent \"start\" response")
-				continue
-
-			if data.startswith("echo:"):
-				# don't process any debug messages
-				if data[6:].startswith("dbg:"):
-					_logger.debug("SMuFF has sent a debug response: [" + data.rstrip() + "]")
+			b = __ser0__.in_waiting
+			if b > 0:
+				data = __ser0__.read_until()	# read to EOL
+				if len(data) == 0:
 					continue
 
-				if data[6:].startswith("states:"):
-					# _logger.debug("SMuFF has sent states: [" + data.rstrip() + "]")
-					_instance.parse_states(data)
+				_logger.debug("Raw data: [" + _instance.hex_dump(data.rstrip("\n")) + "]" + "(" + b + ")")
+
+				# after first connect the response from the SMuFF
+				# is supposed to be 'start'
+				if data.startswith('start\n'):
+					_logger.debug("SMuFF has sent \"start\" response")
 					continue
 
-				if data[6:].startswith("busy"):
-					_logger.debug("SMuFF has sent a busy response: [" + data.rstrip() + "]")
-					_instance.set_busy(True)
+				if data.startswith("echo:"):
+					# don't process any debug messages
+					if data[6:].startswith("dbg:"):
+						_logger.debug("SMuFF has sent a debug response: [" + data.rstrip() + "]")
+						continue
+
+					if data[6:].startswith("states:"):
+						# _logger.debug("SMuFF has sent states: [" + data.rstrip() + "]")
+						_instance.parse_states(data)
+						continue
+
+					if data[6:].startswith("busy"):
+						_logger.debug("SMuFF has sent a busy response: [" + data.rstrip() + "]")
+						_instance.set_busy(True)
+						continue
+
+				if data.startswith("error:"):
+					_logger.info("SMuFF has sent a error response: [" + data.rstrip() + "]")
 					continue
 
-			if data.startswith("error:"):
-				_logger.info("SMuFF has sent a error response: [" + data.rstrip() + "]")
-				continue
+				if data.startswith("ok\n"):
+					_instance.set_response(last_response)
+					continue
 
-			if data.startswith("ok\n"):
-				_instance.set_response(last_response)
-				continue
-
-			last_response = data.rstrip("\n")
-			_logger.debug("Got data: [" + last_response + "]")
-		else:
-			_logger.error("Serial is closed")
+				last_response = data.rstrip("\n")
+				_logger.debug("Got data: [" + last_response + "]")
+			else:
+				_logger.error("Serial is closed")
 
 	_logger.info("Exiting Serial Port Receiver")
 
