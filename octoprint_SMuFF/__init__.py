@@ -36,6 +36,7 @@ MOTORS		= "MOTORS"
 PRINTER		= "PRINTER"
 ALIGN_SPEED	= " F"
 ESTOP_ON	= "on"
+LOGGER 		= "octoprint.plugins.SMuFF"
 
 class SmuffPlugin(octoprint.plugin.SettingsPlugin,
                   octoprint.plugin.AssetPlugin,
@@ -404,7 +405,7 @@ def __plugin_load__():
 	global __plugin_implementation__
 	global __plugin_hooks__
 	global __t_serial__
-	_logger = logging.getLogger("octoprint.plugins.SMuFF")
+	_logger = logging.getLogger(LOGGER)
 
 	__plugin_implementation__ = SmuffPlugin()
 
@@ -418,7 +419,7 @@ def __plugin_load__():
 
 
 	# set up a thread for reading the incoming SMuFF messages
-	__t_serial__ = threading.Thread(target = serial_reader, args = (__plugin_implementation__, _logger))
+	__t_serial__ = threading.Thread(target = serial_reader, args = (__plugin_implementation__))
 	__t_serial__.daemon = True
 
 	if open_SMuFF_serial(_logger):
@@ -465,18 +466,19 @@ def close_SMuFF_serial(_logger):
 
 
 def __plugin_unload__():
-	_logger = logging.getLogger("octoprint.plugins.SMuFF")
+	_logger = logging.getLogger(LOGGER)
 	close_SMuFF_serial(_logger)
 
 
 def __plugin_disabled():
-	_logger = logging.getLogger("octoprint.plugins.SMuFF")
+	_logger = logging.getLogger(LOGGER)
 	close_SMuFF_serial(_logger)
 
-def serial_reader(_instance, _logger):
+def serial_reader(_instance):
 	global __ser0__
 	global __stop_ser__
 
+	_logger = logging.getLogger(LOGGER)
 	_logger.debug("Entering serial receiver thread on {0}".format(__ser0__.port))
 	
 	retryOpen = 3
