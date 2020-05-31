@@ -57,10 +57,8 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		self._got_response	= False
 		self._response		= None
 		self._in_file_list	= False
-		thread = threading.Thread(target=self.serial_receiver, args=())
-		thread.daemon = True
-		thread.start()
-		self._logger.debug("Receiver thread started")
+		self._thread = threading.Thread(target=self.serial_receiver, args=())
+		self._thread.daemon = True
 
 	def serial_receiver(self):
 		self._logger.debug("Entering serial receiver thread on {0}".format(__ser0__.port))
@@ -132,6 +130,8 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		# set up a timer to poll the SMuFF
 		self._timer = RepeatedTimer(2.5, self.on_timer_event)
 		self._timer.start()
+		self._thread.start()
+		self._logger.debug("Receiver thread started")
 
 
 	##~~ EventHandler mixin
