@@ -73,7 +73,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 	def on_event(self, event, payload):
 		
 		if event == Events.CONNECTED:
-			self._logger.debug("Event: [" + event + "," + payload + "]")
+			self._logger.debug("Event: [" + event + ", {0}".format(payload) + "]")
 
 		if event == Events.DISCONNECTED:
 			self._logger.debug("Event: [" + event + "]")
@@ -85,7 +85,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			self._logger.debug("Event: [" + event + "]")
 		
 		if event == Events.TOOL_CHANGE:
-			self._logger.debug("Event: [" + event + "," + payload + "]")
+			self._logger.debug("Event: [" + event + ", {0}".format(payload) + "]")
 
 		if event == Events.WAITING:
 			self._logger.debug("Event: [" + event + "]")
