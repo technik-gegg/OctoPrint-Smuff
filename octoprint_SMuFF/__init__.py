@@ -44,7 +44,8 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 				  octoprint.plugin.StartupPlugin,
 				  octoprint.plugin.ShutdownPlugin):
 
-	def __init__(self):
+	def __init__(self, serial):
+		self._serial 		= serial
 		self._fw_info 		= "?"
 		self._cur_tool 		= "?"
 		self._pre_tool 		= "?"
@@ -312,14 +313,14 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 
 	# sending data to SMuFF
 	def send_SMuFF_and_wait(self, data):
-		if __ser0__ and __ser0__.is_open:
+		if _serial and _serial.is_open:
 			try:
-				__ser0__.write_timeout = 5
+				_serial.write_timeout = 5
 				b = bytearray()
 				b = data + "\n".encode("ascii")
 				self._logger.debug("Sending: " + binascii.hexlify(b))
-				__ser0__.write(b)
-				__ser0__.flush()
+				_serial.write(b)
+				_serial.flushOutput()
 			except (OSError, serial.SerialException):
 				self._logger.error("Can't send to SMuFF")
 				return None
@@ -412,7 +413,8 @@ def __plugin_load__():
 
 	_logger = logging.getLogger(LOGGER)
 
-	__plugin_implementation__ = SmuffPlugin()
+	__ser0__ = serial.Serial()
+	__plugin_implementation__ = SmuffPlugin(__ser0__)
 
 	__plugin_hooks__ = {
 		"octoprint.comm.protocol.gcode.received":		__plugin_implementation__.extend_gcode_received,
@@ -422,7 +424,6 @@ def __plugin_load__():
 		"octoprint.plugin.softwareupdate.check_config": __plugin_implementation__.get_update_information
 	}
 
-	__ser0__ = serial.Serial()
 	# set up a thread for reading the incoming SMuFF messages
 	__t_serial__ = threading.Thread(target = serial_reader, args = (__plugin_implementation__, _logger, __ser0__))
 	__t_serial__.daemon = True
