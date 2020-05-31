@@ -58,67 +58,6 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		self._got_response	= False
 		self._response		= None
 		self._in_file_list	= False
-		self._thread = threading.Thread(target=self.serial_receiver, args=())
-		self._thread.daemon = True
-
-	def serial_receiver(self):
-		self._logger.debug("Entering serial receiver thread on {0}".format(__ser0__.port))
-
-		retryOpen = 3
-		while not __stop_ser__:
-			if __ser0__ and __ser0__.is_open:
-				b = __ser0__.in_waiting
-				#_logger.debug("{0}".format(b))
-				if b > 0:
-					self._logger.debug("Chars waiting: {0}".format(b))
-					data = __ser0__.read_until()	# read to EOL
-
-					self._logger.debug("Raw data: [{0}]".format(data.rstrip("\n")))
-
-					# after first connect the response from the SMuFF
-					# is supposed to be 'start'
-					if data.startswith('start\n'):
-						self._logger.debug("SMuFF has sent \"start\" response")
-						continue
-
-					if data.startswith("echo:"):
-						self._logger.debug("ECHO-MSG: {0}".format(data[6:]))
-						# don't process any debug messages
-						if data[6:].startswith("dbg:"):
-							self._logger.debug("SMuFF has sent a debug response: [" + data.rstrip() + "]")
-							continue
-
-						if data[6:].startswith("states:"):
-							self._logger.debug("SMuFF has sent states: [" + data.rstrip() + "]")
-							self.parse_states(data)
-							continue
-
-						if data[6:].startswith("busy"):
-							self._logger.debug("SMuFF has sent a busy response: [" + data.rstrip() + "]")
-							self.set_busy(True)
-							continue
-
-					if data.startswith("error:"):
-						self._logger.info("SMuFF has sent a error response: [" + data.rstrip() + "]")
-						continue
-
-					if data.startswith("ok\n"):
-						self.set_response(last_response)
-						continue
-
-					last_response = data.rstrip("\n")
-					self._logger.debug("Got data: [" + last_response + "]")
-
-			else:
-				self._logger.error("Serial is closed")
-				if not __stop_ser__ and retryOpen > 0:
-					retryOpen -= 1
-					self._logger.error("Trying to reopen serial port")
-					open_SMuFF_serial(self._logger)
-				else:
-					break
-
-		self._logger.info("Exiting serial port receiver")
 
 	##~~ ShutdownPlugin mixin
 	
@@ -165,8 +104,6 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 	def get_settings_defaults(self):
 		#state, ser1_port, ser1_baud, profile = self._printer.get_current_connection()
 		self._logger.debug("SMuFF plugin loaded, getting defaults [{0}]".format(self._printer.get_current_connection()))
-		self._thread.start()
-		self._logger.debug("Receiver thread started")
 
 
 		params = dict(
@@ -500,11 +437,11 @@ def __plugin_load__():
 
 	# set up a thread for reading the incoming SMuFF messages
 	__t_serial__ = threading.Thread(target = serial_reader, args = (__plugin_implementation__, _logger))
+	__t_serial__.daemon = True
 
 	if open_SMuFF_serial(_logger):
 		try:
-			#__t_serial__.start()
-			_logger.debug("no thread here");
+			__t_serial__.start()
 		except:
 			exc_type, exc_value, exc_traceback = sys.exc_info()
 			tb = traceback.format_exception(exc_type, exc_value, exc_traceback)
@@ -586,9 +523,7 @@ def serial_reader(_instance, _logger):
 
 					if data[6:].startswith("states:"):
 						_logger.debug("SMuFF has sent states: [" + data.rstrip() + "]")
-						_instance.parse_states(data)
-						_logger.debug("tool: {0}".format(_instance.get_tool()))
-						_logger.debug("tools: {0}".format(_instance.get_tool(_instance)))
+						_instance.parse_states(data.rstrip())
 						continue
 
 					if data[6:].startswith("busy"):
