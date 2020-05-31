@@ -58,12 +58,12 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		self._response		= None
 		self._in_file_list	= False
 		thread = threading.Thread(target=self.serial_receiver, args=())
-		thread.daemon = True                            # Daemonize thread
-		thread.start()                                  # Start the execution
+		thread.daemon = True
+		thread.start()
 
-    def serial_receiver(self):
+	def serial_receiver(self):
 		self._logger.debug("Entering serial receiver thread on {0}".format(__ser0__.port))
-		
+
 		retryOpen = 3
 		while not __stop_ser__:
 			if __ser0__ and __ser0__.is_open:
