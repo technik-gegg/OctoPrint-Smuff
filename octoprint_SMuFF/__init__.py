@@ -117,8 +117,8 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		
 		# look up the serial port driver
 		if sys.platform == "win32":
-			if SERDEV.startswith("tty"):
-				params['tty'] = "Wrong name for WIN32 ("+ SERDEV +")"
+			if SERDEV.startswith("serial"):
+				params['tty'] = "Wrong device on WIN32 ({0})".format(SERDEV)
 			else:
 				params['tty'] = SERDEV
 		else:
@@ -447,13 +447,14 @@ def __plugin_load__():
 def open_SMuFF_serial(_logger):
 	global __ser0__
 	__ser0__ = None
-	# do __not__ change the serial port device
 	try:
 		__ser0__ = serial.Serial("/dev/"+SERDEV, SERBAUD, timeout=1)
-		_logger.debug("Serial port {0} opened".format(SERDEV))
+		_logger.debug("Serial port /dev/{0} opened".format(SERDEV))
 		return True
 	except (OSError, serial.SerialException):
-		_logger.error("Can't open serial port!")
+		exc_type, exc_value, exc_traceback = sys.exc_info()
+		tb = traceback.format_exception(exc_type, exc_value, exc_traceback)
+		_logger.error("Can't open serial port /dev/{0}!".format(SERDEV)+"  Exc: {0}".format(tb))
 	return False
 
 def close_SMuFF_serial(_logger):
