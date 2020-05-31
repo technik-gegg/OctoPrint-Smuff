@@ -380,10 +380,10 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			self._got_response = False
 
 	def parse_states(self, states):
-		# self._logger.debug("Endstop states: [" + states + "]")
+		self._logger.debug("Endstop states: [" + states + "]")
 		if len(states) == 0:
 			return False
-		# SMuFF sends: "echo: states: T: T4     S: off  R: off  F: off  F2: off"
+		# Note: SMuFF sends: "echo: states: T: T4     S: off  R: off  F: off  F2: off"
 		m = re.search(r'^((\w+:.)(\w+:))\s([T]:\s)(\w+)\s([S]:\s)(\w+)\s([R]:\s)(\w+)\s([F]:\s)(\w+)\s([F,2]+:\s)(\w+)', states)
 		if m:
 			self._cur_tool 	= m.group(5).strip()
