@@ -73,7 +73,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 	def on_event(self, event, payload):
 		
 		if event == Events.CONNECTED:
-			self._logger.debug("Event: [" + event + "]")
+			self._logger.debug("Event: [" + event + "," + payload + "]")
 
 		if event == Events.DISCONNECTED:
 			self._logger.debug("Event: [" + event + "]")
@@ -523,7 +523,7 @@ def serial_reader(_instance, _logger):
 
 		else:
 			_logger.error("Serial is closed")
-			if retryOpen > 0:
+			if not __stop_ser__ and retryOpen > 0:
 				retryOpen -= 1
 				_logger.error("Trying to reopen serial port")
 				open_SMuFF_serial()
