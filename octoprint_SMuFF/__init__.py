@@ -17,6 +17,9 @@ import traceback
 import logging
 import binascii
 
+# change the baudrate here if you have to
+SERBAUD		= 115200
+SERDEV		= "ttyS0"
 AT_SMUFF 	= "@SMuFF"
 M115	 	= "M115"
 M119	 	= "M119"
@@ -98,7 +101,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 
 		params = dict(
 			firmware_info	= "No data. Please check connection!",
-			baudrate		= __ser_baud__,
+			baudrate		= SERBAUD,
 			tty 			= "Not found. Please enable the UART on your Raspi!",
 			tool			= self._cur_tool,
 			selector_end	= self._selector,
@@ -114,14 +117,14 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		
 		# look up the serial port driver
 		if sys.platform == "win32":
-			if __ser_drvr__.startswith("tty"):
-				params['tty'] = "Wrong name for WIN32 ("+ __ser_drvr__ +")"
+			if SERDEV.startswith("tty"):
+				params['tty'] = "Wrong name for WIN32 ("+ SERDEV +")"
 			else:
-				params['tty'] = __ser_drvr__
+				params['tty'] = SERDEV
 		else:
-			drvr = self.find_file(__ser_drvr__, "/dev")
+			drvr = self.find_file(SERDEV, "/dev")
 			if len(drvr) > 0:
-				params['tty'] = "Found! (/dev/" + __ser_drvr__ +")"
+				params['tty'] = "Found! (/dev/" + SERDEV +")"
 
 		return  params
 
@@ -414,7 +417,6 @@ def __plugin_load__():
 	global __plugin_hooks__
 	global __t_serial__
 	global __stop_ser__
-	global __ser_baud__
 
 	__stop_ser__ = False
 	_logger = logging.getLogger("octoprint.plugins.SMuFF")
@@ -429,53 +431,54 @@ def __plugin_load__():
 		"octoprint.plugin.softwareupdate.check_config": __plugin_implementation__.get_update_information
 	}
 
-	# change the baudrate here if you have to
-	__ser_baud__ = 115200
 
-	open_SMuFF_serial(_logger)
+	# set up a thread for reading the incoming SMuFF messages
+	__t_serial__ = threading.Thread(target = serial_reader, args = (__plugin_implementation__, _logger))
 
-	try:
-		__t_serial__ = threading.Thread(target = serial_reader, args = (__plugin_implementation__, _logger))
-		__t_serial__.start()
-	except:
-		exc_type, exc_value, exc_traceback = sys.exc_info()
-		tb = traceback.format_exception(exc_type, exc_value, exc_traceback)
-		_logger.error("Unable to start serial reader thread: ".join(tb))
+	if open_SMuFF_serial(_logger):
+		try:
+			__t_serial__.start()
+		except:
+			exc_type, exc_value, exc_traceback = sys.exc_info()
+			tb = traceback.format_exception(exc_type, exc_value, exc_traceback)
+			_logger.error("Unable to start serial reader thread: ".join(tb))
 
 
 def open_SMuFF_serial(_logger):
 	global __ser0__
-	global __ser_drvr__
 	# do __not__ change the serial port device
-	__ser_drvr__ = "ttyS0"
 	try:
-		__ser0__ = serial.Serial("/dev/"+__ser_drvr__, __ser_baud__, timeout=1)
-		_logger.debug("Serial port {0} opened".format(__ser_drvr__))
+		__ser0__ = serial.Serial("/dev/"+SERDEV, SERBAUD, timeout=1)
+		_logger.debug("Serial port {0} opened".format(SERDEV))
+		return True
 	except (OSError, serial.SerialException):
 		_logger.error("Can't open serial port!")
+	return False
 
+def close_SMuFF_serial(_logger):
+	global __stop_ser__
+	global __ser0__
+	global __t_serial__
+	
+	__stop_ser__ = True
+	if 	not __t_serial__ == None:
+		__t_serial__.join()
+	try:
+		if __ser0__.is_open:
+			__ser0__.close()
+			_logger.debug("Serial port closed")
+	except (OSError, serial.SerialException):
+		pass
 
 
 def __plugin_unload__():
-	__stop_ser__ = True
-	if 	not __t_serial__ == None:
-		__t_serial__.join()
-	try:
-		if __ser0__.is_open:
-			__ser0__.close()
-	except (OSError, serial.SerialException):
-		pass
+	_logger = logging.getLogger("octoprint.plugins.SMuFF")
+	close_SMuFF_serial(_logger)
 
 
 def __plugin_disabled():
-	__stop_ser__ = True
-	if 	not __t_serial__ == None:
-		__t_serial__.join()
-	try:
-		if __ser0__.is_open:
-			__ser0__.close()
-	except (OSError, serial.SerialException):
-		pass
+	_logger = logging.getLogger("octoprint.plugins.SMuFF")
+	close_SMuFF_serial(_logger)
 
 def serial_reader(_instance, _logger):
 	_logger.debug("Entering Serial Receiver")
