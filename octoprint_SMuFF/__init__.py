@@ -493,8 +493,9 @@ def serial_reader(_instance, _logger):
 	while not __stop_ser__:
 		if __ser0__ and __ser0__.is_open:
 			b = __ser0__.in_waiting
-			_logger.debug("{0}".format(b))
+			#_logger.debug("{0}".format(b))
 			if b > 0:
+				_logger.debug("Chars waiting: {0}".format(b))
 				data = __ser0__.read_until()	# read to EOL
 
 				_logger.debug("Raw data: [" + _instance.hex_dump(data.rstrip("\n")) + "]" + "(" + b + ")")
@@ -506,13 +507,14 @@ def serial_reader(_instance, _logger):
 					continue
 
 				if data.startswith("echo:"):
+					_logger.debug("ECHO-MSG: {0}".format(data[6:]))
 					# don't process any debug messages
 					if data[6:].startswith("dbg:"):
 						_logger.debug("SMuFF has sent a debug response: [" + data.rstrip() + "]")
 						continue
 
 					if data[6:].startswith("states:"):
-						# _logger.debug("SMuFF has sent states: [" + data.rstrip() + "]")
+						_logger.debug("SMuFF has sent states: [" + data.rstrip() + "]")
 						_instance.parse_states(data)
 						continue
 
