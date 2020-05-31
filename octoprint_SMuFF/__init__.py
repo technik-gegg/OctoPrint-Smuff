@@ -528,7 +528,7 @@ def serial_reader(_instance, _logger):
 			if not __stop_ser__ and retryOpen > 0:
 				retryOpen -= 1
 				_logger.error("Trying to reopen serial port")
-				open_SMuFF_serial()
+				open_SMuFF_serial(_logger)
 			else:
 				break
 
