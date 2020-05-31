@@ -451,6 +451,7 @@ def open_SMuFF_serial(_logger):
 		exc_type, exc_value, exc_traceback = sys.exc_info()
 		tb = traceback.format_exception(exc_type, exc_value, exc_traceback)
 		_logger.error("Can't open serial port /dev/{0}!".format(SERDEV)+"  Exc: {0}".format(tb))
+	
 	return False
 
 def close_SMuFF_serial(_logger):
@@ -485,6 +486,8 @@ def serial_reader(_instance):
 	_logger.debug("Entering serial receiver thread on {0}".format(__ser0__.port))
 	
 	retryOpen = 3
+	time.sleep(5)
+	
 	while not __stop_ser__:
 		if __ser0__ and __ser0__.is_open:
 			b = __ser0__.in_waiting
