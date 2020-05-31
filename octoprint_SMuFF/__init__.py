@@ -41,6 +41,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
                   octoprint.plugin.AssetPlugin,
                   octoprint.plugin.TemplatePlugin,
 				  octoprint.plugin.StartupPlugin,
+				  octoprint.plugin.ShutdownPlugin,
 				  octoprint.plugin.EventHandlerPlugin):
 
 	def __init__(self):
@@ -119,19 +120,26 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 
 		self._logger.info("Exiting serial port receiver")
 
+	##~~ ShutdownPlugin mixin
+	
+	def on_shutdown(self):
+		close_SMuFF_serial(self._logger)
+		self._logger.debug("Shutting down")
+
 	##~~ StartupPlugin mixin
 
 	def on_timer_event(self):
 		# send SMuFF status updates periodically
 		self._plugin_manager.send_plugin_message(self._identifier, {'type': 'status', 'tool': self._cur_tool, 'feeder': self._feeder, 'feeder2': self._feeder2 })
 		
+	def on_startup(self, host, port):
+		self._thread.start()
+		self._logger.debug("Receiver thread started")
 
 	def on_after_startup(self):
 		# set up a timer to poll the SMuFF
 		self._timer = RepeatedTimer(2.5, self.on_timer_event)
 		self._timer.start()
-		self._thread.start()
-		self._logger.debug("Receiver thread started")
 
 
 	##~~ EventHandler mixin
