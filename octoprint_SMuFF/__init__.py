@@ -492,8 +492,6 @@ def serial_reader(_instance, _logger):
 			b = __ser0__.in_waiting
 			if b > 0:
 				data = __ser0__.read_until()	# read to EOL
-				if len(data) == 0:
-					continue
 
 				_logger.debug("Raw data: [" + _instance.hex_dump(data.rstrip("\n")) + "]" + "(" + b + ")")
 
