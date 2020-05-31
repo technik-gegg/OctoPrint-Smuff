@@ -340,6 +340,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			self._is_busy = False
 			ret = None
 			while True:
+				time.sleep(.1)
 				if self._is_busy:
 					start = time.time()
 
@@ -484,7 +485,7 @@ def __plugin_disabled():
 
 def serial_reader(_instance, _logger):
 	global __ser0__
-	_logger.debug("Entering Serial Receiver on {0}".format(__ser0__.port))
+	_logger.debug("Entering serial receiver thread on {0}".format(__ser0__.port))
 	retryOpen = 3
 	while not __stop_ser__:
 		if __ser0__ and __ser0__.is_open:
