@@ -315,12 +315,12 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 	def send_SMuFF_and_wait(self, data):
 		if self._serial and self._serial.is_open:
 			try:
-				#b = bytearray()
-				#b = data + "\n".encode("ascii")
-				#self._logger.debug("Sending: " + binascii.hexlify(b))
-				#self._serial.write(b)
+				b = bytearray()
+				b = data + "\n".encode("ascii")
+				self._logger.debug("Sending: ".format(b))
+				self._serial.write(b)
 				#self._serial.flushOutput()
-				self._serial.write("{0}\n".format(data))
+				#self._serial.write("{0}\n".format(data))
 			except (OSError, serial.SerialException):
 				self._logger.error("Can't send to SMuFF")
 				return None
