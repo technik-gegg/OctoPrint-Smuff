@@ -498,7 +498,7 @@ def serial_reader(_instance, _logger):
 				_logger.debug("Chars waiting: {0}".format(b))
 				data = __ser0__.read_until()	# read to EOL
 
-				_logger.debug("Raw data: [" + data.rstrip("\n") + "]" + "(" + _instance.hex_dump(data.rstrip("\n")) + ")")
+				_logger.debug("Raw data: [{0}]".format(data.rstrip("\n")))
 
 				# after first connect the response from the SMuFF
 				# is supposed to be 'start'
