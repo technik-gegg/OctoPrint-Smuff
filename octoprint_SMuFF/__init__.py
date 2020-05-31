@@ -19,7 +19,7 @@ import binascii
 
 # change the baudrate here if you have to
 SERBAUD		= 115200
-SERDEV		= "ttyS0"
+SERDEV		= "serial0"
 AT_SMUFF 	= "@SMuFF"
 M115	 	= "M115"
 M119	 	= "M119"
@@ -446,6 +446,7 @@ def __plugin_load__():
 
 def open_SMuFF_serial(_logger):
 	global __ser0__
+	__ser0__ = None
 	# do __not__ change the serial port device
 	try:
 		__ser0__ = serial.Serial("/dev/"+SERDEV, SERBAUD, timeout=1)
