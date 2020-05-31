@@ -315,7 +315,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 	def send_SMuFF_and_wait(self, data):
 		if self._serial and self._serial.is_open:
 			try:
-				b = bytearray()
+				b = bytearray(40)
 				b = data + "\n".encode("ascii")
 				self._logger.debug("Sending: {0}".format(b))
 				self._serial.write(b)
