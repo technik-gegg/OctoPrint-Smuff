@@ -420,12 +420,10 @@ def __plugin_load__():
 		"octoprint.plugin.softwareupdate.check_config": __plugin_implementation__.get_update_information
 	}
 
-
-	# set up a thread for reading the incoming SMuFF messages
-	__t_serial__ = threading.Thread(target = serial_reader, args = (__plugin_implementation__))
-	__t_serial__.daemon = True
-
 	__ser0__ = serial.Serial()
+	# set up a thread for reading the incoming SMuFF messages
+	__t_serial__ = threading.Thread(target = serial_reader, args = (__plugin_implementation__, _logger, __ser0__))
+	__t_serial__.daemon = True
 
 	if open_SMuFF_serial(_logger):
 		try:
@@ -481,20 +479,18 @@ def __plugin_disabled():
 	_logger = logging.getLogger(LOGGER)
 	close_SMuFF_serial(_logger)
 
-def serial_reader(_instance):
-	_logger = logging.getLogger(LOGGER)
-	_logger.debug("Entering serial receiver thread on {0}".format(__ser0__.port))
+def serial_reader(_instance, _logger, _serial):
+	_logger.debug("Entering serial receiver thread on {0}".format(_serial.port))
 	
 	retryOpen = 3
-	time.sleep(5)
-	
+
 	while not __stop_ser__:
-		if __ser0__ and __ser0__.is_open:
-			b = __ser0__.in_waiting
+		if _serial and _serial.is_open:
+			b = _serial.in_waiting
 			#_logger.debug("{0}".format(b))
 			if b > 0:
 				_logger.debug("Chars waiting: {0}".format(b))
-				data = __ser0__.read_until()	# read to EOL
+				data = _serial.read_until()	# read to EOL
 
 				_logger.debug("Raw data: [{0}]".format(data.rstrip("\n")))
 
