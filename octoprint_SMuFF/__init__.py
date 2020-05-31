@@ -93,7 +93,8 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 	##~~ SettingsPlugin mixin
 
 	def get_settings_defaults(self):
-		self._logger.debug("SMuFF plugin loaded, getting defaults")
+		#state, ser1_port, ser1_baud, profile = self._printer.get_current_connection()
+		self._logger.debug("SMuFF plugin loaded, getting defaults [{0}]".format(self._printer.get_current_connection()))
 
 		params = dict(
 			firmware_info	= "No data. Please check connection!",
@@ -449,6 +450,7 @@ def open_SMuFF_serial():
 	__ser_drvr__ = "ttyS0"
 	try:
 		__ser0__ = serial.Serial("/dev/"+__ser_drvr__, __ser_baud__, timeout=1)
+		_logger.debug("Serial port {0} opened".format(__ser_drvr__))
 	except (OSError, serial.SerialException):
 		_logger.error("Can't open serial port!")
 
