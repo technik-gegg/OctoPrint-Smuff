@@ -516,6 +516,8 @@ def serial_reader(_instance, _logger):
 					if data[6:].startswith("states:"):
 						_logger.debug("SMuFF has sent states: [" + data.rstrip() + "]")
 						_instance.parse_states(data)
+						_logger.debug("tool: {0}".format(_instance.get_tool()))
+						_logger.debug("tools: {0}".format(_instance.get_tool(_instance)))
 						continue
 
 					if data[6:].startswith("busy"):
