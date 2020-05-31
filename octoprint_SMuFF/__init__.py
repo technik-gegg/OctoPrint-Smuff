@@ -405,6 +405,9 @@ def __plugin_load__():
 	global __plugin_implementation__
 	global __plugin_hooks__
 	global __t_serial__
+	global __stop_ser__
+	global __ser0__
+
 	_logger = logging.getLogger(LOGGER)
 
 	__plugin_implementation__ = SmuffPlugin()
@@ -422,6 +425,8 @@ def __plugin_load__():
 	__t_serial__ = threading.Thread(target = serial_reader, args = (__plugin_implementation__))
 	__t_serial__.daemon = True
 
+	__ser0__ = serial.Serial()
+
 	if open_SMuFF_serial(_logger):
 		try:
 			__t_serial__.start()
@@ -432,14 +437,15 @@ def __plugin_load__():
 
 
 def open_SMuFF_serial(_logger):
-	global __ser0__
 	global __stop_ser__
 
 	__stop_ser__ = False
-	__ser0__ = None
 	try:
-		__ser0__ = serial.Serial("/dev/"+SERDEV, SERBAUD, timeout=1)
-		_logger.debug("Serial port /dev/{0} opened".format(SERDEV))
+		__ser0__.port = "/dev/{0}".format(SERDEV)
+		__ser0__.baudrate = SERBAUD
+		__ser0__.timeout=1
+		__ser0__.open()
+		_logger.debug("Serial port {0} opened".format(__ser0__.port))
 		return True
 	except (OSError, serial.SerialException):
 		exc_type, exc_value, exc_traceback = sys.exc_info()
@@ -475,9 +481,6 @@ def __plugin_disabled():
 	close_SMuFF_serial(_logger)
 
 def serial_reader(_instance):
-	global __ser0__
-	global __stop_ser__
-
 	_logger = logging.getLogger(LOGGER)
 	_logger.debug("Entering serial receiver thread on {0}".format(__ser0__.port))
 	
@@ -534,6 +537,8 @@ def serial_reader(_instance):
 				open_SMuFF_serial(_logger)
 			else:
 				break
+		
+		time.sleep(0.01)
 
 	_logger.info("Exiting serial port receiver")
 
