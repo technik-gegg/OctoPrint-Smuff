@@ -132,10 +132,6 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		# send SMuFF status updates periodically
 		self._plugin_manager.send_plugin_message(self._identifier, {'type': 'status', 'tool': self._cur_tool, 'feeder': self._feeder, 'feeder2': self._feeder2 })
 		
-	def on_startup(self, host, port):
-		self._thread.start()
-		self._logger.debug("Receiver thread started")
-
 	def on_after_startup(self):
 		# set up a timer to poll the SMuFF
 		self._timer = RepeatedTimer(2.5, self.on_timer_event)
@@ -169,6 +165,9 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 	def get_settings_defaults(self):
 		#state, ser1_port, ser1_baud, profile = self._printer.get_current_connection()
 		self._logger.debug("SMuFF plugin loaded, getting defaults [{0}]".format(self._printer.get_current_connection()))
+		self._thread.start()
+		self._logger.debug("Receiver thread started")
+
 
 		params = dict(
 			firmware_info	= "No data. Please check connection!",
