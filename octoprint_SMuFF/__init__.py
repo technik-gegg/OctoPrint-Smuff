@@ -432,7 +432,7 @@ def __plugin_load__():
 	# change the baudrate here if you have to
 	__ser_baud__ = 115200
 
-	open_SMuFF_serial()
+	open_SMuFF_serial(_logger)
 
 	try:
 		__t_serial__ = threading.Thread(target = serial_reader, args = (__plugin_implementation__, _logger))
@@ -443,7 +443,7 @@ def __plugin_load__():
 		_logger.error("Unable to start serial reader thread: ".join(tb))
 
 
-def open_SMuFF_serial():
+def open_SMuFF_serial(_logger):
 	global __ser0__
 	global __ser_drvr__
 	# do __not__ change the serial port device
