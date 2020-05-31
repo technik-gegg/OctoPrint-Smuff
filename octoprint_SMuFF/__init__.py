@@ -353,8 +353,6 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 						start = time.time()
 						continue
 					ret = self._response
-					self._got_response = False
-					self._response = None
 					break
 			return ret
 		else:
@@ -376,7 +374,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		if not response == None:
 			self._got_response = True
 			self._response = response
-			# self._logger.debug("Got response [" + response + "]")
+			self._logger.debug("Got response [" + response + "]")
 		else:
 			self._got_response = False
 
