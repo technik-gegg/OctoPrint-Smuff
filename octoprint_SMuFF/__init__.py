@@ -470,7 +470,9 @@ def close_SMuFF_serial(_logger):
 			__ser0__.close()
 			_logger.debug("Serial port closed")
 	except (OSError, serial.SerialException):
-		pass
+		exc_type, exc_value, exc_traceback = sys.exc_info()
+		tb = traceback.format_exception(exc_type, exc_value, exc_traceback)
+		_logger.error("Can't close serial port /dev/{0}!".format(SERDEV)+"  Exc: {0}".format(tb))
 
 
 def __plugin_unload__():
@@ -483,7 +485,8 @@ def __plugin_disabled():
 	close_SMuFF_serial(_logger)
 
 def serial_reader(_instance, _logger):
-	_logger.debug("Entering Serial Receiver")
+	global __ser0__
+	_logger.debug("Entering Serial Receiver on {0}".format(__ser0__.port))
 	retryOpen = 3
 	while not __stop_ser__:
 		if __ser0__ and __ser0__.is_open:
