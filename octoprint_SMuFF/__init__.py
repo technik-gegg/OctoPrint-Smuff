@@ -318,9 +318,9 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 				b = bytearray(40)
 				b = data + "\n".encode("ascii")
 				self._logger.debug("Sending: {0}".format(b))
-				self._serial.write(b)
+				#self._serial.write(b)
+				self._serial.write_line("{0}\n".format(data))
 				self._serial.flushOutput()
-				#self._serial.write("{0}\n".format(data))
 			except (OSError, serial.SerialException):
 				self._logger.error("Can't send to SMuFF")
 				return None
