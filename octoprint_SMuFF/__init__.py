@@ -344,6 +344,8 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 						start = time.time()
 						continue
 					ret = self._response
+					self._response = None
+					self._got_response = False
 					break
 			return ret
 		else:
@@ -370,7 +372,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			self._got_response = False
 
 	def parse_states(self, states):
-		self._logger.debug("Endstop states: [" + states + "]")
+		#self._logger.debug("Endstop states: [" + states + "]")
 		if len(states) == 0:
 			return False
 		# Note: SMuFF sends: "echo: states: T: T4     S: off  R: off  F: off  F2: off"
@@ -489,10 +491,10 @@ def serial_reader(_instance, _logger, _serial):
 			b = _serial.in_waiting
 			#_logger.debug("{0}".format(b))
 			if b > 0:
-				_logger.debug("Chars waiting: {0}".format(b))
+				#_logger.debug("Chars waiting: {0}".format(b))
 				data = _serial.read_until()	# read to EOL
 
-				_logger.debug("Raw data: [{0}]".format(data.rstrip("\n")))
+				#_logger.debug("Raw data: [{0}]".format(data.rstrip("\n")))
 
 				# after first connect the response from the SMuFF
 				# is supposed to be 'start'
@@ -501,7 +503,7 @@ def serial_reader(_instance, _logger, _serial):
 					continue
 
 				if data.startswith("echo:"):
-					_logger.debug("ECHO-MSG: {0}".format(data[6:]))
+					#_logger.debug("ECHO-MSG: {0}".format(data[6:]))
 					# don't process any debug messages
 					if data[6:].startswith("dbg:"):
 						_logger.debug("SMuFF has sent a debug response: [" + data.rstrip() + "]")
@@ -537,7 +539,7 @@ def serial_reader(_instance, _logger, _serial):
 			else:
 				break
 		
-		time.sleep(0.01)
+		#time.sleep(0.01)
 
 	_logger.info("Exiting serial port receiver")
 
