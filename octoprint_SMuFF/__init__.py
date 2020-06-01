@@ -400,6 +400,17 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 
 	def hex_dump(self, s):
 		self._logger.debug(":".join("{:02x}".format(ord(c)) for c in s))
+
+	def is_serial_open(self):
+		if self._serial:
+			return self._serial.is_open
+		return False
+
+	def serial_in_waiting(self):
+		return self._serial.in_waiting
+
+	def read_serial(self):
+		return self._serial.read_until()
 		
 
 __plugin_name__ = "SMuFF Plugin"
@@ -494,12 +505,16 @@ def serial_reader(_instance, _logger, _serial):
 	retryOpen = 3
 
 	while not __stop_ser__:
-		if _serial and _serial.is_open:
-			b = _serial.in_waiting
+		#if _serial and _serial.is_open:
+		if _instance.is_serial_open:
+			b = _instance.serial_in_waiting
+
+			#b = _serial.in_waiting
 			#_logger.debug("{0}".format(b))
 			if b > 0:
 				#_logger.debug("Chars waiting: {0}".format(b))
-				data = _serial.read_until()	# read to EOL
+				#data = _serial.read_until()	# read to EOL
+				data = _instance.read_serial()
 
 				#_logger.debug("Raw data: [{0}]".format(data.rstrip("\n")))
 
