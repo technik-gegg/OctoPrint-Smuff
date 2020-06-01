@@ -501,19 +501,19 @@ def __plugin_disabled():
 	close_SMuFF_serial(_logger)
 
 def serial_reader(_instance, _logger, _serial):
-
-	_logger.debug("Entering serial receiver thread on {0}".format(_serial.port))
+	global __ser0__
+	_logger.debug("Entering serial receiver thread on {0}".format(__ser0__.port))
 	
 	retryOpen = 3
 
 	while not __stop_ser__:
-		_logger.debug("SER: {0}".format(_serial.is_open))
-		if _serial:
-			b = _serial.in_waiting
+		_logger.debug("SER: {0}".format(__ser0__.is_open))
+		if __ser0__.is_open:
+			b = __ser0__.in_waiting
 			#_logger.debug("{0}".format(b))
 			if b > 0:
 				#_logger.debug("Chars waiting: {0}".format(b))
-				data = _serial.read_until()	# read to EOL
+				data = __ser0__.read_until()	# read to EOL
 
 				#_logger.debug("Raw data: [{0}]".format(data.rstrip("\n")))
 
