@@ -89,11 +89,11 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		#state, ser1_port, ser1_baud, profile = self._printer.get_current_connection()
 		self._logger.debug("SMuFF plugin loaded, getting defaults")
 
-		if open_SMuFF_serial(self._logger):
+		if self.open_SMuFF_serial():
 			self._logger.debug("SMuFF plugin, serial opened")
 			try:
 				# set up a thread for reading the incoming SMuFF messages
-				__t_serial__ = threading.Thread(target = serial_reader, args = (__plugin_implementation__, self._logger, self._serial))
+				__t_serial__ = threading.Thread(target = serial_reader, args = (self, self._logger, self._serial))
 				__t_serial__.start()
 			except:
 				exc_type, exc_value, exc_traceback = sys.exc_info()
@@ -110,10 +110,6 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			feeder_end		= self._feeder,
 			feeder2_end		= self._feeder
 		)
-
-		if self._serial and not self._serial.is_open:
-			_logger.debug("Serial was closed, reopening...")
-			open_SMuFF_serial(self._logger)
 
 		# request firmware info from SMuFF 
 		self._fw_info = self.send_SMuFF_and_wait(M115)
@@ -324,6 +320,45 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		return line
 	
 	##~~ helper functions
+	def open_SMuFF_serial(self):
+		global __stop_ser__
+
+		__stop_ser__ = False
+		try:
+			__ser0__.port 			= "/dev/{0}".format(SERDEV)
+			__ser0__.baudrate 		= SERBAUD
+			__ser0__.timeout 		= 10
+			__ser0__.write_timeout 	= 10
+			__ser0__.bytesize 		= serial.EIGHTBITS
+			__ser0__.stopbits 		= serial.STOPBITS_TWO
+			__ser0__.parity 		= serial.PARITY_NONE
+			__ser0__.xonxoff 		= True
+			__ser0__.open()
+			self._logger.debug("Serial port {0} opened".format(__ser0__.port))
+			return True
+		except (OSError, serial.SerialException):
+			exc_type, exc_value, exc_traceback = sys.exc_info()
+			tb = traceback.format_exception(exc_type, exc_value, exc_traceback)
+			self._logger.error("Can't open serial port /dev/{0}!".format(SERDEV)+"  Exc: {0}".format(tb))
+		
+		return False
+
+	def close_SMuFF_serial(self):
+		global __stop_ser__
+		global __ser0__
+		global __t_serial__
+		
+		__stop_ser__ = True
+		if 	not __t_serial__ == None:
+			__t_serial__.join()
+		try:
+			if __ser0__.is_open:
+				__ser0__.close()
+				self._logger.debug("Serial port closed")
+		except (OSError, serial.SerialException):
+			exc_type, exc_value, exc_traceback = sys.exc_info()
+			tb = traceback.format_exception(exc_type, exc_value, exc_traceback)
+			self._logger.error("Can't close serial port /dev/{0}!".format(SERDEV)+"  Exc: {0}".format(tb))
 
 	# sending data to SMuFF
 	def send_SMuFF_and_wait(self, data):
@@ -450,55 +485,15 @@ def __plugin_load__():
 	}
 
 
-def open_SMuFF_serial(_logger):
-	global __stop_ser__
-
-	__stop_ser__ = False
-	try:
-		__ser0__.port 			= "/dev/{0}".format(SERDEV)
-		__ser0__.baudrate 		= SERBAUD
-		__ser0__.timeout 		= 10
-		__ser0__.write_timeout 	= 10
-		__ser0__.bytesize 		= serial.EIGHTBITS
-		__ser0__.stopbits 		= serial.STOPBITS_TWO
-		__ser0__.parity 		= serial.PARITY_NONE
-		__ser0__.xonxoff 		= True
-		__ser0__.open()
-		_logger.debug("Serial port {0} opened".format(__ser0__.port))
-		return True
-	except (OSError, serial.SerialException):
-		exc_type, exc_value, exc_traceback = sys.exc_info()
-		tb = traceback.format_exception(exc_type, exc_value, exc_traceback)
-		_logger.error("Can't open serial port /dev/{0}!".format(SERDEV)+"  Exc: {0}".format(tb))
-	
-	return False
-
-def close_SMuFF_serial(_logger):
-	global __stop_ser__
-	global __ser0__
-	global __t_serial__
-	
-	__stop_ser__ = True
-	if 	not __t_serial__ == None:
-		__t_serial__.join()
-	try:
-		if __ser0__.is_open:
-			__ser0__.close()
-			_logger.debug("Serial port closed")
-	except (OSError, serial.SerialException):
-		exc_type, exc_value, exc_traceback = sys.exc_info()
-		tb = traceback.format_exception(exc_type, exc_value, exc_traceback)
-		_logger.error("Can't close serial port /dev/{0}!".format(SERDEV)+"  Exc: {0}".format(tb))
-
 
 def __plugin_unload__():
 	_logger = logging.getLogger(LOGGER)
-	close_SMuFF_serial(_logger)
+	__plugin_implementation__.close_SMuFF_serial()
 
 
 def __plugin_disabled():
 	_logger = logging.getLogger(LOGGER)
-	close_SMuFF_serial(_logger)
+	__plugin_implementation__.close_SMuFF_serial()
 
 def serial_reader(_instance, _logger, _serial):
 	global __ser0__
@@ -556,11 +551,9 @@ def serial_reader(_instance, _logger, _serial):
 			if not __stop_ser__ and retryOpen > 0:
 				retryOpen -= 1
 				_logger.error("Trying to reopen serial port")
-				open_SMuFF_serial(_logger)
+				_instance.open_SMuFF_serial()
 			else:
 				break
 		
-		#time.sleep(0.01)
-	_serial.close()
 	_logger.info("Exiting serial port receiver")
 
