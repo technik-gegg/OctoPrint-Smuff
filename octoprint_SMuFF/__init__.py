@@ -74,8 +74,8 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		
 	def on_after_startup(self):
 		# set up a timer to poll the SMuFF
-		self._timer = RepeatedTimer(2.5, self.on_timer_event)
-		self._timer.start()
+		# self._timer = RepeatedTimer(2.5, self.on_timer_event)
+		# self._timer.start()
 
 
 	##~~ EventHandler mixin
