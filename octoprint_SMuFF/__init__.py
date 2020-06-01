@@ -183,7 +183,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		# self._logger.debug("Processing queuing: [" + cmd + "," + str(cmd_type)+ "," + str(tags) + "]")
 		
 		if gcode and gcode.startswith(TOOL):
-			self._logger.debug("Current tool: {0}".format(comm_instance._currentTool))
+			self._logger.debug("OctoPrint current tool: {0}".format(comm_instance._currentTool))
 			# if the tool that's already loaded is addressed, ignore the filament change
 			if cmd == self._cur_tool:
 				self._logger.warning(cmd + " equals " + self._cur_tool + " -- aborting tool change")
@@ -278,6 +278,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 							if str(res) == str(self._pending_tool):
 								self._pre_tool = self._cur_tool
 								self._cur_tool = self._pending_tool
+								comm_instance._currentTool = self._cur_tool
 								# send the "After Tool Change" script to the printer
 								self._printer.script("SMuFF_afterToolChange")
 								retry = 0
@@ -306,6 +307,8 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		return None
 
 	def extend_gcode_received(self, comm_instance, line, *args, **kwargs):
+
+		comm_instance._currentTool = self._cur_tool
 		if 	line == "" \
 			or line.startswith("\n") \
 			or line.startswith("start") \
