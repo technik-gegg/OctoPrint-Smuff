@@ -76,6 +76,8 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		# set up a timer to poll the SMuFF
 		self._timer = RepeatedTimer(2.5, self.on_timer_event)
 		self._timer.start()
+		# dummy open
+		serial.Serial("/dev/{0}".format(SERDEV), SERBAUD)
 
 
 	##~~ EventHandler mixin
