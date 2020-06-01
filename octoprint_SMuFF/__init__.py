@@ -464,47 +464,47 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		while not __stop_ser__:
 			#_logger.debug("SER: {0}".format(__ser0__.is_open))
 			if self._serial.is_open:
-				b = self._serial.in_waiting
+				#b = self._serial.in_waiting
 				#_logger.debug("{0}".format(b))
-				if b > 0:
-					#_logger.debug("Chars waiting: {0}".format(b))
-					data = self._serial.readline()	# read to EOL
+				#if b > 0:
+				#_logger.debug("Chars waiting: {0}".format(b))
+				data = self._serial.readline()	# read to EOL
 
-					#_logger.debug("Raw data: [{0}]".format(data.rstrip("\n")))
+				#_logger.debug("Raw data: [{0}]".format(data.rstrip("\n")))
 
-					# after first connect the response from the SMuFF
-					# is supposed to be 'start'
-					if data.startswith('start\n'):
-						self._logger.debug("SMuFF has sent \"start\" response")
+				# after first connect the response from the SMuFF
+				# is supposed to be 'start'
+				if data.startswith('start\n'):
+					self._logger.debug("SMuFF has sent \"start\" response")
+					continue
+
+				if data.startswith("echo:"):
+					#_logger.debug("ECHO-MSG: {0}".format(data[6:]))
+					# don't process any debug messages
+					if data[6:].startswith("dbg:"):
+						self._logger.debug("SMuFF has sent a debug response: [" + data.rstrip() + "]")
 						continue
 
-					if data.startswith("echo:"):
-						#_logger.debug("ECHO-MSG: {0}".format(data[6:]))
-						# don't process any debug messages
-						if data[6:].startswith("dbg:"):
-							self._logger.debug("SMuFF has sent a debug response: [" + data.rstrip() + "]")
-							continue
-
-						if data[6:].startswith("states:"):
-							self._logger.debug("SMuFF has sent states: [" + data.rstrip() + "]")
-							self.parse_states(data.rstrip())
-							continue
-
-						if data[6:].startswith("busy"):
-							self._logger.debug("SMuFF has sent a busy response: [" + data.rstrip() + "]")
-							self.set_busy(True)
-							continue
-
-					if data.startswith("error:"):
-						self._logger.info("SMuFF has sent a error response: [" + data.rstrip() + "]")
+					if data[6:].startswith("states:"):
+						self._logger.debug("SMuFF has sent states: [" + data.rstrip() + "]")
+						self.parse_states(data.rstrip())
 						continue
 
-					if data.startswith("ok\n"):
-						self.set_response(last_response)
+					if data[6:].startswith("busy"):
+						self._logger.debug("SMuFF has sent a busy response: [" + data.rstrip() + "]")
+						self.set_busy(True)
 						continue
 
-					last_response = data.rstrip("\n")
-					self._logger.debug("Got data: [" + last_response + "]")
+				if data.startswith("error:"):
+					self._logger.info("SMuFF has sent a error response: [" + data.rstrip() + "]")
+					continue
+
+				if data.startswith("ok\n"):
+					self.set_response(last_response)
+					continue
+
+				last_response = data.rstrip("\n")
+				self._logger.debug("Got data: [" + last_response + "]")
 
 			else:
 				self._logger.error("Serial is closed")
