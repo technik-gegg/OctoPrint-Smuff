@@ -89,7 +89,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		#state, ser1_port, ser1_baud, profile = self._printer.get_current_connection()
 		self._logger.debug("SMuFF plugin loaded, getting defaults")
 
-		open_SMuFF_serial(self._logger):
+		open_SMuFF_serial(self._logger)
 
 		params = dict(
 			firmware_info	= "No data. Please check connection!",
