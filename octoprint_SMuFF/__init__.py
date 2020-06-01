@@ -19,7 +19,7 @@ import binascii
 
 # change the baudrate here if you have to
 SERBAUD		= 115200
-SERDEV		= "serial0"
+SERDEV		= "ttyAMA1"
 AT_SMUFF 	= "@SMuFF"
 M115	 	= "M115"
 M119	 	= "M119"
