@@ -75,7 +75,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 	def on_after_startup(self):
 		# set up a timer to poll the SMuFF
 		self._timer = RepeatedTimer(2.5, self.on_timer_event)
-		# self._timer.start()
+		self._timer.start()
 
 
 	##~~ EventHandler mixin
@@ -102,9 +102,9 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		)
 
 		# request firmware info from SMuFF 
-		self._fw_info = self.send_SMuFF_and_wait(M115)
-		if self._fw_info:
-			params['firmware_info'] = self._fw_info
+		#self._fw_info = self.send_SMuFF_and_wait(M115)
+		#if self._fw_info:
+		#	params['firmware_info'] = self._fw_info
 		
 		# look up the serial port driver
 		if sys.platform == "win32":
