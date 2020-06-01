@@ -545,7 +545,7 @@ def serial_reader(_instance, _logger, _serial):
 			else:
 				break
 		
-		#time.sleep(0.01)
+		time.sleep(0.01)
 
 	_logger.info("Exiting serial port receiver")
 
