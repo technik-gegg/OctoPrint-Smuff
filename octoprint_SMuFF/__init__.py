@@ -442,14 +442,15 @@ def open_SMuFF_serial(_logger):
 
 	__stop_ser__ = False
 	try:
-		__ser0__.port = "/dev/{0}".format(SERDEV)
-		__ser0__.baudrate = SERBAUD
-		__ser0__.timeout = 10
-		__ser0__.write_timeout = 10
-		__ser0__.bytesize = serial.EIGHTBITS
-		__ser0__.stopbits = serial.STOPBITS_TWO
-		__ser0__.parity = serial.PARITY_NONE
-		__ser0__.xonxoff = True
+		__ser0__.port 			= "/dev/{0}".format(SERDEV)
+		__ser0__.baudrate 		= SERBAUD
+		__ser0__.timeout 		= 10
+		__ser0__.write_timeout 	= 10
+		__ser0__.bytesize 		= serial.EIGHTBITS
+		__ser0__.stopbits 		= serial.STOPBITS_TWO
+		__ser0__.parity 		= serial.PARITY_NONE
+		__ser0__.xonxoff 		= True
+		__ser0__.exclusive 		= True
 		__ser0__.open()
 		_logger.debug("Serial port {0} opened".format(__ser0__.port))
 		return True
