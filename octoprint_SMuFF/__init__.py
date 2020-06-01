@@ -183,6 +183,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		# self._logger.debug("Processing queuing: [" + cmd + "," + str(cmd_type)+ "," + str(tags) + "]")
 		
 		if gcode and gcode.startswith(TOOL):
+			self._logger.debug("Current tool: {0}".format(comm_instance._currentTool))
 			# if the tool that's already loaded is addressed, ignore the filament change
 			if cmd == self._cur_tool:
 				self._logger.warning(cmd + " equals " + self._cur_tool + " -- aborting tool change")
