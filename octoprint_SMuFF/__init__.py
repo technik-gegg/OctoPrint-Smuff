@@ -508,7 +508,7 @@ def serial_reader(_instance, _logger, _serial):
 	retryOpen = 3
 
 	while not __stop_ser__:
-		_logger.debug("{0}".format(_serial.is_open))
+		_logger.debug("SER: {0}".format(_serial.is_open))
 		if _serial:
 			b = _instance.serial_in_waiting
 
@@ -564,7 +564,7 @@ def serial_reader(_instance, _logger, _serial):
 			else:
 				break
 		
-		time.sleep(0.01)
+		#time.sleep(0.01)
 
 	_logger.info("Exiting serial port receiver")
 
