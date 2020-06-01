@@ -91,6 +91,14 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 
 		if open_SMuFF_serial(self._logger):
 			self._logger.debug("SMuFF plugin, serial opened")
+			try:
+				# set up a thread for reading the incoming SMuFF messages
+				__t_serial__ = threading.Thread(target = serial_reader, args = (__plugin_implementation__, self._logger, self._serial))
+				__t_serial__.start()
+			except:
+				exc_type, exc_value, exc_traceback = sys.exc_info()
+				tb = traceback.format_exception(exc_type, exc_value, exc_traceback)
+				_logger.error("Unable to start serial reader thread: ".join(tb))
 
 		params = dict(
 			firmware_info	= "No data. Please check connection!",
@@ -441,15 +449,6 @@ def __plugin_load__():
 		"octoprint.plugin.softwareupdate.check_config": __plugin_implementation__.get_update_information
 	}
 
-	try:
-		# set up a thread for reading the incoming SMuFF messages
-		__t_serial__ = threading.Thread(target = serial_reader, args = (__plugin_implementation__, _logger, __ser0__))
-		__t_serial__.start()
-	except:
-		exc_type, exc_value, exc_traceback = sys.exc_info()
-		tb = traceback.format_exception(exc_type, exc_value, exc_traceback)
-		_logger.error("Unable to start serial reader thread: ".join(tb))
-
 
 def open_SMuFF_serial(_logger):
 	global __stop_ser__
@@ -502,9 +501,6 @@ def __plugin_disabled():
 	close_SMuFF_serial(_logger)
 
 def serial_reader(_instance, _logger, _serial):
-
-	while _serial == None:
-		_logger.debug("Waiting for serial port")
 
 	_logger.debug("Entering serial receiver thread on {0}".format(_serial.port))
 	
