@@ -102,9 +102,9 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		)
 
 		# request firmware info from SMuFF 
-		#self._fw_info = self.send_SMuFF_and_wait(M115)
-		#if self._fw_info:
-		#	params['firmware_info'] = self._fw_info
+		self._fw_info = self.send_SMuFF_and_wait(M115)
+		if self._fw_info:
+			params['firmware_info'] = self._fw_info
 		
 		# look up the serial port driver
 		if sys.platform == "win32":
@@ -437,7 +437,6 @@ def __plugin_load__():
 
 	# set up a thread for reading the incoming SMuFF messages
 	__t_serial__ = threading.Thread(target = serial_reader, args = (__plugin_implementation__, _logger, __ser0__))
-	__t_serial__.daemon = True
 
 	if open_SMuFF_serial(_logger):
 		try:
