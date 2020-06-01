@@ -93,7 +93,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			self._logger.debug("SMuFF plugin, serial opened")
 			try:
 				# set up a thread for reading the incoming SMuFF messages
-				__t_serial__ = threading.Thread(target = serial_reader, args = (self, self._logger, self._serial))
+				__t_serial__ = threading.Thread(target = self.serial_reader)
 				__t_serial__.start()
 			except:
 				exc_type, exc_value, exc_traceback = sys.exc_info()
@@ -450,16 +450,68 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 	def hex_dump(self, s):
 		self._logger.debug(":".join("{:02x}".format(ord(c)) for c in s))
 
-	def is_serial_open(self):
-		if self._serial:
-			return self._serial.is_open
-		return False
+	def serial_reader(self):
+		self._logger.debug("Entering serial receiver thread on {0}".format(self._serial.port))
+		# self._serial.open()
+		
+		retryOpen = 3
 
-	def serial_in_waiting(self):
-		return self._serial.in_waiting
+		while not __stop_ser__:
+			#_logger.debug("SER: {0}".format(__ser0__.is_open))
+			if self._serial.is_open:
+				b = self._serial.in_waiting
+				#_logger.debug("{0}".format(b))
+				if b > 0:
+					#_logger.debug("Chars waiting: {0}".format(b))
+					data = self._serial.read_until()	# read to EOL
 
-	def read_serial(self):
-		return self._serial.read_until()
+					#_logger.debug("Raw data: [{0}]".format(data.rstrip("\n")))
+
+					# after first connect the response from the SMuFF
+					# is supposed to be 'start'
+					if data.startswith('start\n'):
+						self._logger.debug("SMuFF has sent \"start\" response")
+						continue
+
+					if data.startswith("echo:"):
+						#_logger.debug("ECHO-MSG: {0}".format(data[6:]))
+						# don't process any debug messages
+						if data[6:].startswith("dbg:"):
+							self._logger.debug("SMuFF has sent a debug response: [" + data.rstrip() + "]")
+							continue
+
+						if data[6:].startswith("states:"):
+							self._logger.debug("SMuFF has sent states: [" + data.rstrip() + "]")
+							self.parse_states(data.rstrip())
+							continue
+
+						if data[6:].startswith("busy"):
+							self._logger.debug("SMuFF has sent a busy response: [" + data.rstrip() + "]")
+							self.set_busy(True)
+							continue
+
+					if data.startswith("error:"):
+						self._logger.info("SMuFF has sent a error response: [" + data.rstrip() + "]")
+						continue
+
+					if data.startswith("ok\n"):
+						self.set_response(last_response)
+						continue
+
+					last_response = data.rstrip("\n")
+					self._logger.debug("Got data: [" + last_response + "]")
+
+			else:
+				self._logger.error("Serial is closed")
+				if not __stop_ser__ and retryOpen > 0:
+					retryOpen -= 1
+					self._logger.error("Trying to reopen serial port")
+					self.open_SMuFF_serial()
+				else:
+					break
+			
+		self._logger.info("Exiting serial port receiver")
+
 		
 
 __plugin_name__ = "SMuFF Plugin"
@@ -494,67 +546,4 @@ def __plugin_unload__():
 def __plugin_disabled():
 	_logger = logging.getLogger(LOGGER)
 	__plugin_implementation__.close_SMuFF_serial()
-
-def serial_reader(_instance, _logger, _serial):
-	global __ser0__
-	_logger.debug("Entering serial receiver thread on {0}".format(_serial.port))
-	_serial.open()
-	
-	retryOpen = 3
-
-	while not __stop_ser__:
-		#_logger.debug("SER: {0}".format(__ser0__.is_open))
-		if _serial.is_open:
-			b = _serial.in_waiting
-			#_logger.debug("{0}".format(b))
-			if b > 0:
-				#_logger.debug("Chars waiting: {0}".format(b))
-				data = _serial.read_until()	# read to EOL
-
-				#_logger.debug("Raw data: [{0}]".format(data.rstrip("\n")))
-
-				# after first connect the response from the SMuFF
-				# is supposed to be 'start'
-				if data.startswith('start\n'):
-					_logger.debug("SMuFF has sent \"start\" response")
-					continue
-
-				if data.startswith("echo:"):
-					#_logger.debug("ECHO-MSG: {0}".format(data[6:]))
-					# don't process any debug messages
-					if data[6:].startswith("dbg:"):
-						_logger.debug("SMuFF has sent a debug response: [" + data.rstrip() + "]")
-						continue
-
-					if data[6:].startswith("states:"):
-						_logger.debug("SMuFF has sent states: [" + data.rstrip() + "]")
-						_instance.parse_states(data.rstrip())
-						continue
-
-					if data[6:].startswith("busy"):
-						_logger.debug("SMuFF has sent a busy response: [" + data.rstrip() + "]")
-						_instance.set_busy(True)
-						continue
-
-				if data.startswith("error:"):
-					_logger.info("SMuFF has sent a error response: [" + data.rstrip() + "]")
-					continue
-
-				if data.startswith("ok\n"):
-					_instance.set_response(last_response)
-					continue
-
-				last_response = data.rstrip("\n")
-				_logger.debug("Got data: [" + last_response + "]")
-
-		else:
-			_logger.error("Serial is closed")
-			if not __stop_ser__ and retryOpen > 0:
-				retryOpen -= 1
-				_logger.error("Trying to reopen serial port")
-				_instance.open_SMuFF_serial()
-			else:
-				break
-		
-	_logger.info("Exiting serial port receiver")
 
