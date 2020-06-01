@@ -103,7 +103,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 				_logger.error("Unable to start serial reader thread: ".join(tb))
 
 		time.sleep(2)
-		# dummy open
+		# dummy open - needed to start receiver thread
 		serial.Serial("/dev/{0}".format(SERDEV), SERBAUD)
 
 		params = dict(
@@ -376,10 +376,10 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			try:
 				b = bytearray(40)
 				b = data + "\n".encode("ascii")
-				self._logger.debug("Sending: {0}".format(b))
 				#self._serial.write(b)
-				self._serial.write("{0}\n".format(data))
-				self._serial.flushOutput()
+				n = self._serial.write("{0}\n".format(data))
+				self._logger.debug("Sending: {0}".format(b) + ", bytes sent {0}".format(n))
+				# self._serial.flushOutput()
 			except (OSError, serial.SerialException):
 				self._logger.error("Can't send to SMuFF")
 				return None
