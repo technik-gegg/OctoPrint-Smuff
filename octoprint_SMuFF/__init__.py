@@ -99,7 +99,8 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 				exc_type, exc_value, exc_traceback = sys.exc_info()
 				tb = traceback.format_exception(exc_type, exc_value, exc_traceback)
 				_logger.error("Unable to start serial reader thread: ".join(tb))
-			time.sleep(2)
+
+		time.sleep(2)
 
 		params = dict(
 			firmware_info	= "No data. Please check connection!",
@@ -333,7 +334,6 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			__ser0__.bytesize 		= serial.EIGHTBITS
 			__ser0__.stopbits 		= serial.STOPBITS_TWO
 			__ser0__.parity 		= serial.PARITY_NONE
-			__ser0__.xonxoff 		= True
 			__ser0__.open()
 			__ser0__.dtr = True
 			__ser0__.rts = True
