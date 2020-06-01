@@ -278,7 +278,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 							if str(res) == str(self._pending_tool):
 								self._pre_tool = self._cur_tool
 								self._cur_tool = self._pending_tool
-								comm_instance._currentTool = self._cur_tool
+								comm_instance._currentTool = self.parse_tool_number(self._cur_tool)
 								# send the "After Tool Change" script to the printer
 								self._printer.script("SMuFF_afterToolChange")
 								retry = 0
@@ -308,7 +308,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 
 	def extend_gcode_received(self, comm_instance, line, *args, **kwargs):
 
-		comm_instance._currentTool = self._cur_tool
+		comm_instance._currentTool = self.parse_tool_number(self._cur_tool)
 		if 	line == "" \
 			or line.startswith("\n") \
 			or line.startswith("start") \
@@ -453,6 +453,15 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			self._logger.error("No match in parse_states: [" + states + "]")
 		return False
 	
+	def parse_tool_number(self, tool):
+		try:
+			return int(re.findall(r'[-\d]+', tool)[0])
+		except Exception:
+			self._logger.error("Can't parse tool number in {0}".format(tool))
+
+		return -1
+
+
 	def get_feeder(self):
 		return self._feeder
 
