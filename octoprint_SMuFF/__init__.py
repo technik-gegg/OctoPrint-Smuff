@@ -338,6 +338,8 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			__ser0__.dtr = True
 			__ser0__.rts = True
 			self._logger.debug("Serial port {0} opened".format(__ser0__.port))
+			__ser0__.flushOutput()
+			__ser0__.flushInput()
 			return True
 		except (OSError, serial.SerialException):
 			exc_type, exc_value, exc_traceback = sys.exc_info()
@@ -466,7 +468,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 				#_logger.debug("{0}".format(b))
 				if b > 0:
 					#_logger.debug("Chars waiting: {0}".format(b))
-					data = self._serial.read_until()	# read to EOL
+					data = self._serial.readline()	# read to EOL
 
 					#_logger.debug("Raw data: [{0}]".format(data.rstrip("\n")))
 
