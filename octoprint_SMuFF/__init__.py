@@ -87,8 +87,9 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 
 	def get_settings_defaults(self):
 		#state, ser1_port, ser1_baud, profile = self._printer.get_current_connection()
-		self._logger.debug("SMuFF plugin loaded, getting defaults [{0}]".format(self._printer.get_current_connection()))
+		self._logger.debug("SMuFF plugin loaded, getting defaults")
 
+		open_SMuFF_serial(self._logger):
 
 		params = dict(
 			firmware_info	= "No data. Please check connection!",
@@ -439,16 +440,14 @@ def __plugin_load__():
 		"octoprint.plugin.softwareupdate.check_config": __plugin_implementation__.get_update_information
 	}
 
-	# set up a thread for reading the incoming SMuFF messages
-	__t_serial__ = threading.Thread(target = serial_reader, args = (__plugin_implementation__, _logger, __ser0__))
-
-	if open_SMuFF_serial(_logger):
-		try:
-			__t_serial__.start()
-		except:
-			exc_type, exc_value, exc_traceback = sys.exc_info()
-			tb = traceback.format_exception(exc_type, exc_value, exc_traceback)
-			_logger.error("Unable to start serial reader thread: ".join(tb))
+	try:
+		# set up a thread for reading the incoming SMuFF messages
+		__t_serial__ = threading.Thread(target = serial_reader, args = (__plugin_implementation__, _logger, __ser0__))
+		__t_serial__.start()
+	except:
+		exc_type, exc_value, exc_traceback = sys.exc_info()
+		tb = traceback.format_exception(exc_type, exc_value, exc_traceback)
+		_logger.error("Unable to start serial reader thread: ".join(tb))
 
 
 def open_SMuFF_serial(_logger):
@@ -501,12 +500,14 @@ def __plugin_disabled():
 	_logger = logging.getLogger(LOGGER)
 	close_SMuFF_serial(_logger)
 
-def serial_reader(_instance, _logger, _ser):
+def serial_reader(_instance, _logger, _serial):
+
+	while _serial == None:
+		_logger.debug("Waiting for serial port")
+
 	_logger.debug("Entering serial receiver thread on {0}".format(_serial.port))
 	
 	retryOpen = 3
-
-	_serial = serial.Serial("/dev/{0}".format(SERDEV), SERBAUD, timeout=10)
 
 	while not __stop_ser__:
 		_logger.debug("SER: {0}".format(_serial.is_open))
