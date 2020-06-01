@@ -498,11 +498,12 @@ def __plugin_disabled():
 def serial_reader(_instance, _logger, _serial):
 	global __ser0__
 	_logger.debug("Entering serial receiver thread on {0}".format(__ser0__.port))
+	__ser0__.open()
 	
 	retryOpen = 3
 
 	while not __stop_ser__:
-		_logger.debug("SER: {0}".format(__ser0__.is_open))
+		#_logger.debug("SER: {0}".format(__ser0__.is_open))
 		if __ser0__.is_open:
 			b = __ser0__.in_waiting
 			#_logger.debug("{0}".format(b))
