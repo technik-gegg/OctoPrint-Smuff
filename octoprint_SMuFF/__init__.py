@@ -77,7 +77,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		self._timer = RepeatedTimer(2.5, self.on_timer_event)
 		self._timer.start()
 		# dummy open
-		serial.Serial("/dev/{0}".format(SERDEV), SERBAUD)
+		# serial.Serial("/dev/{0}".format(SERDEV), SERBAUD)
 
 
 	##~~ EventHandler mixin
@@ -103,6 +103,8 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 				_logger.error("Unable to start serial reader thread: ".join(tb))
 
 		time.sleep(2)
+		# dummy open
+		serial.Serial("/dev/{0}".format(SERDEV), SERBAUD)
 
 		params = dict(
 			firmware_info	= "No data. Please check connection!",
