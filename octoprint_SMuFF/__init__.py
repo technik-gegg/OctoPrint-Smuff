@@ -334,6 +334,8 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			__ser0__.parity 		= serial.PARITY_NONE
 			__ser0__.xonxoff 		= True
 			__ser0__.open()
+			__ser0__.dtr = True
+			__ser0__.rts = True
 			self._logger.debug("Serial port {0} opened".format(__ser0__.port))
 			return True
 		except (OSError, serial.SerialException):
