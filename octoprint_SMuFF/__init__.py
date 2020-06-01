@@ -464,7 +464,6 @@ def open_SMuFF_serial(_logger):
 		__ser0__.stopbits 		= serial.STOPBITS_TWO
 		__ser0__.parity 		= serial.PARITY_NONE
 		__ser0__.xonxoff 		= True
-		__ser0__.exclusive 		= True
 		__ser0__.open()
 		_logger.debug("Serial port {0} opened".format(__ser0__.port))
 		return True
@@ -502,22 +501,21 @@ def __plugin_disabled():
 	_logger = logging.getLogger(LOGGER)
 	close_SMuFF_serial(_logger)
 
-def serial_reader(_instance, _logger, _serial):
+def serial_reader(_instance, _logger, _ser):
 	_logger.debug("Entering serial receiver thread on {0}".format(_serial.port))
 	
 	retryOpen = 3
 
+	_serial = serial.Serial("/dev/{0}".format(SERDEV), SERBAUD, timeout=10)
+
 	while not __stop_ser__:
 		_logger.debug("SER: {0}".format(_serial.is_open))
 		if _serial:
-			b = _instance.serial_in_waiting
-
-			#b = _serial.in_waiting
+			b = _serial.in_waiting
 			#_logger.debug("{0}".format(b))
 			if b > 0:
 				#_logger.debug("Chars waiting: {0}".format(b))
-				#data = _serial.read_until()	# read to EOL
-				data = _instance.read_serial()
+				data = _serial.read_until()	# read to EOL
 
 				#_logger.debug("Raw data: [{0}]".format(data.rstrip("\n")))
 
@@ -565,6 +563,6 @@ def serial_reader(_instance, _logger, _serial):
 				break
 		
 		#time.sleep(0.01)
-
+	_serial.close()
 	_logger.info("Exiting serial port receiver")
 
