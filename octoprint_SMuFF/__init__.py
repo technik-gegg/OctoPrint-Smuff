@@ -101,6 +101,10 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			feeder2_end		= self._feeder
 		)
 
+		if self._serial and not self._serial.is_open:
+			_logger.debug("Serial was closed, reopening...")
+			open_SMuFF_serial(self._logger)
+
 		# request firmware info from SMuFF 
 		self._fw_info = self.send_SMuFF_and_wait(M115)
 		if self._fw_info:
