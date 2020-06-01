@@ -504,8 +504,8 @@ def serial_reader(_instance, _logger, _serial):
 	retryOpen = 3
 
 	while not __stop_ser__:
-		#if _serial and _serial.is_open:
-		if _instance.is_serial_open:
+		_logger.debug("{0}".format(_serial.is_open))
+		if _serial:
 			b = _instance.serial_in_waiting
 
 			#b = _serial.in_waiting
