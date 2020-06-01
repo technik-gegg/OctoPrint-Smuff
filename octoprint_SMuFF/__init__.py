@@ -186,7 +186,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			# if the tool that's already loaded is addressed, ignore the filament change
 			if cmd == self._cur_tool:
 				self._logger.warning(cmd + " equals " + self._cur_tool + " -- aborting tool change")
-				return None
+				return "M117 No tool change"
 			self._is_aligned = False
 			# replace the tool change command
 			return [ AT_SMUFF + " " + cmd ]
@@ -254,13 +254,13 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 						if self._feeder:
 							# send the "Before Tool Change" script to the printer
 							#self._logger.debug("2>> calling script")
-							self._printer.script("beforeToolChange")
+							self._printer.script("SMuFF_beforeToolChange")
 						else:
 							#self._logger.debug("2>> calling SMuFF LOAD")
 							self._printer.commands(AT_SMUFF + " " + LOAD)
 
 					except UnknownScript:
-						self._logger.error("Script 'beforeToolChange' not found!")
+						self._logger.error("Script 'SMuFF_beforeToolChange' not found!")
 					finally:
 						self._printer.set_job_on_hold(False)
 
@@ -278,7 +278,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 								self._pre_tool = self._cur_tool
 								self._cur_tool = self._pending_tool
 								# send the "After Tool Change" script to the printer
-								self._printer.script("afterToolChange")
+								self._printer.script("SMuFF_afterToolChange")
 								retry = 0
 							else:
 								# not the result expected, retry
@@ -286,7 +286,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 								retry -= 1
 
 					except UnknownScript:
-						self._logger.error("Script 'afterToolChange' not found!")
+						self._logger.error("Script 'SMuFF_afterToolChange' not found!")
 					
 					finally:
 						self._printer.set_job_on_hold(False)
