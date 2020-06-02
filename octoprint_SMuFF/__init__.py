@@ -6,10 +6,11 @@ from octoprint.util import RepeatedTimer
 from octoprint.printer import UnknownScript
 from octoprint.events import Events
 
+import octoprint.plugin
+
 from . import serial                    # we need this for the serial communcation with the SMuFF
 from . import os, fnmatch
 from . import re
-from . import octoprint.plugin
 from . import threading
 from . import time
 from . import sys
