@@ -338,17 +338,21 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 				self._serlock.release()
 
 			timeout = 5 	# wait max. 5 seconds for response
-			while self._serevent.isSet():
+			done = False
+			resp = None
+			while not done:
 				is_set = self._serevent.wait(timeout)
 				if is_set:
 					self._logger.info("{" + str(data) +"} SMuFF says [" + str(self._response) +"]")
 					resp = self._response
 					self._response = None
-					return resp
+					done = True
 				else:
 					self._logger.info("No event received... aborting")
-					return None
-
+					if not self._is_busy and not self._response.startswith('echo:'):
+						done = True
+			
+			return resp
 
 			#start = time.time()
 			#self._is_busy = False
@@ -389,15 +393,12 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		self._is_busy = busy
 
 	def set_response(self, response):
+		self._response = response
 		if not response == None:
-			self._got_response = True
-			self._response = response
 			self._logger.debug("Got response [" + response + "]")
-		else:
-			self._got_response = False
 
 	def parse_states(self, states):
-		#self._logger.debug("Endstop states: [" + states + "]")
+		self._logger.debug("Endstop states: [" + states + "]")
 		if len(states) == 0:
 			return False
 		# Note: SMuFF sends: "echo: states: T: T4     S: off  R: off  F: off  F2: off"
@@ -435,15 +436,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 
 def serial_reader(_logger, _instance, _serial, _lock, _event):
 	_logger.debug("Entering serial receiver thread on {0}".format(_serial.port))
-	# self._serial.open()
-	
-	while not _serial.is_open:
-		_logger.info("Serial receiver waiting for serial port...")
-		time.sleep(.5)
-
-	_logger.info("Serial reciever port is ready")
 	retryOpen = 3
-
 	while not __stop_ser__:
 		if _serial.is_open:
 			b = self._serial.in_waiting
@@ -510,6 +503,7 @@ def open_SMuFF_serial():
 	__stop_ser__ = False
 	try:
 		__ser0__ = serial.serial_for_url('spy:///dev/{}'.format(SERDEV), baudrate=SERBAUD, timeout=10)
+		_logger.debug("Serial port /dev/{} is open".format(SERDVE))
 	except (OSError, serial.SerialException):
 		exc_type, exc_value, exc_traceback = sys.exc_info()
 		tb = traceback.format_exception(exc_type, exc_value, exc_traceback)
@@ -571,8 +565,8 @@ def __plugin_load__():
 	__plugin_hooks__ = {
 		"octoprint.comm.protocol.gcode.received":		__plugin_implementation__.extend_gcode_received,
 		"octoprint.comm.protocol.scripts": 				__plugin_implementation__.extend_script_variables,
-    	"octoprint.comm.protocol.gcode.sending": 		__plugin_implementation__.extend_tool_sending,
-    	"octoprint.comm.protocol.gcode.queuing": 		__plugin_implementation__.extend_tool_queuing,
+		"octoprint.comm.protocol.gcode.sending": 		__plugin_implementation__.extend_tool_sending,
+		"octoprint.comm.protocol.gcode.queuing": 		__plugin_implementation__.extend_tool_queuing,
 		"octoprint.plugin.softwareupdate.check_config": __plugin_implementation__.get_update_information
 	}
 
