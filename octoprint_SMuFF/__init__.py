@@ -8,15 +8,15 @@ from octoprint.events import Events
 
 import octoprint.plugin
 
-from . import serial                    # we need this for the serial communcation with the SMuFF
-from . import os, fnmatch
-from . import re
-from . import threading
-from . import time
-from . import sys
-from . import traceback
-from . import logging
-from . import binascii
+import serial                    # we need this for the serial communcation with the SMuFF
+import os, fnmatch
+import re
+import threading
+import time
+import sys
+import traceback
+import logging
+import binascii
 
 # change the baudrate here if you have to
 SERBAUD		= 115200
