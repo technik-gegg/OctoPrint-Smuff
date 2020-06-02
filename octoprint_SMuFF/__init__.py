@@ -503,7 +503,7 @@ def open_SMuFF_serial():
 	__stop_ser__ = False
 	try:
 		__ser0__ = serial.serial_for_url('spy:///dev/{}'.format(SERDEV), baudrate=SERBAUD, timeout=10)
-		_logger.debug("Serial port /dev/{} is open".format(SERDVE))
+		_logger.debug("Serial port /dev/{} is open".format(SERDEV))
 	except (OSError, serial.SerialException):
 		exc_type, exc_value, exc_traceback = sys.exc_info()
 		tb = traceback.format_exception(exc_type, exc_value, exc_traceback)
