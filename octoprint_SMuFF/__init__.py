@@ -552,7 +552,7 @@ def __plugin_load__():
 	_logger = logging.getLogger(LOGGER)
 
 	__t_lock__ = threading.Lock()
-	__t_event__ = threading.event()
+	__t_event__ = threading.Event()
 	__plugin_implementation__ = SmuffPlugin(__t_lock__, __t_event__)
 
 	if open_SMuFF_serial():
