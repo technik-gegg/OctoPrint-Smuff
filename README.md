@@ -1,8 +1,8 @@
 # OctoPrint-Smuff
 
-This is a very basic plugin for OctoPrint which handles tool changes for the SMuFF ([as published on Thingiverse](https://www.thingiverse.com/thing:3431438/)).
+This is a plugin for OctoPrint which handles tool changes for the SMuFF ([as published on Thingiverse](https://www.thingiverse.com/thing:3431438/)).
 This plugin runs in the background and tracks tool changes (**Tx**) via the **octoprint.comm.protocol.gcode.queuing** hook of OctoPrint.
-When triggered, it'll send the according command to the SMuFF via the Raspberry's second onboard UART **ttyS0**.
+When triggered, it'll send the according command to the SMuFF via the Raspberry's second onboard UART **ttyS0** (RPI-3) or **ttyAMA1** (RPI-4).
 
 ## Setup
 
@@ -18,9 +18,11 @@ In order to make this plugin working as expected, you have to do two additional 
 
 ## Setting up your Raspberry Pi
 
-Simply launch **raspi-config** in a terminal window on your Raspberry Pi, then go to **Interfacing Options** and choose **Serial**.
-Set **login shell over serial** to **No** and **serial port hardware enabled** to **Yes**.
-Finish raspi-config and reboot. After rebooting, make sure you'll see the **ttyS0** device in your **/dev** folder.
+Open the **/boot/config.txt** file on your Raspberry Pi and add the following lines to it:
+
+![Raspi-Config](https://github.com/technik-gegg/OctoPrint-Smuff/blob/master/extras/Raspi-Config-txt.jpg)
+
+Save the configuration and reboot. After rebooting, make sure you'll see the **ttyS0** device (RPI-3) or the **ttyAMA1** device (RPI-4) in your **/dev** folder.
 
 Here's a nice article on that topic from [ABelectronics UK](https://www.abelectronics.co.uk/kb/article/1035/raspberry-pi-3--4-and-zero-w-serial-port-usage).
 
@@ -51,14 +53,14 @@ All necessary operations for a tool change (i.e. unloading current filament, loa
 
 ## Configuration
 
-There's not much configuration going on here, since the only relevant paramter is the baudrate using to connect between from the Raspberry Pi to the SMuFF.
-This has been constantly set to **115200 baud**, which ought to be fast enough.
-If, for some reason, you have to change this baudrate, you'll have to modify it within the __init__.py source file.
+There's not much configuration going on here, since the only relevant paramters are the baudrate and the serial port used to connect the Raspberry Pi to the SMuFF.
+The baudrate has been set constantly to **115200 baud**, which ought to be fast enough.
+If you have to change this baudrate, you'll have to modify it within the __init__.py source file.
 
 As you open the **Settings** dialog for the plugin, you'll be provided with some information whether or not the plugin was able to connect to the SMuFF. If the connection was sucessful, you'll see the firmware information coming directly from the SMuFF.
 If you don't see the firmware info here, you'll need to check your physical connection.
 
-![OctoPrint SMuFF plugin](https://github.com/technik-gegg/SMuFF-Ifc/blob/master/images/OctoPrint%20plugin.jpg)
+![OctoPrint SMuFF plugin](https://github.com/technik-gegg/OctoPrint-Smuff/blob/master/extras/Settings-Screen.jpg)
 
 ## Additional setup
 
@@ -66,5 +68,5 @@ The main configuration will happen in the **OctoPrint GCODE Scripts section**.
 You have to apply the GCodes that will be executed **before** and **after** the tool change triggers. In those scripts you have to configure all the movements and retractions/feeds needed for a successful filament swapping.
 The picture below shows you a sample of such scripts. Be aware that you have to modify these scripts to accomodate your printer setup (i.e. bowden tube length, speeds, etc.).
 
-![OctoPrint GCODE Scripts](https://github.com/technik-gegg/SMuFF-Ifc/blob/master/images/OctoPrint_GCODE_Scripts.jpg)
+![OctoPrint GCODE Scripts](https://github.com/technik-gegg/SMuFF-Ifc/blob/master/images/OctoPrint-Scripts.jpg)
 
