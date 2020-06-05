@@ -416,6 +416,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		if data.startswith('start\n'):
 			self._logger.debug("SMuFF has sent \"start\" response")
 			return
+
 		if data.startswith("echo:"):
 			# don't process any general debug messages
 			if data[6:].startswith("dbg:"):
@@ -429,12 +430,36 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 				self._logger.debug("SMuFF has sent a busy response: [" + data.rstrip() + "]")
 				self.set_busy(True)
 			return
+
 		if data.startswith("error:"):
 			self._logger.info("SMuFF has sent a error response: [" + data.rstrip() + "]")
 			# maybe the SMuFF has received garbage
 			if data[7:].startswith("Unknown command:"):
 				self._serial.flushOutput()
 			self.set_error(True)
+			return
+
+		if data.startswith("//action:"):
+			self._logger.info("SMuFF has sent an action request: [" + data.rstrip() + "]")
+			# what action is it? is it a tool change?
+			if data[10:].startswith("T"):
+				tool = self.parse_tool_number(data[10:])
+				# only if the printer isn't printing
+				state = self._printer.get_state_id()
+				self._logger.debug("SMuFF requested an action while printer in state '{}'".format(state))
+				if state == "OPERATIONAL":
+					# query the nozzle temp
+					temps = self._printer.get_current_temperatures()
+					try:
+						if temps['tool0']['actual'] > 160:
+							self._logger.debug("Nozzle temp. > 160")
+							self._printer.change_tool("tool{}".format(tool))
+						else:
+							self._logger.error("Can't change to tool {}, nozzle too cold".format(tool))
+					except:
+						self._logger.debug("Can't query temperatures. Aborting.")
+				else:
+					self._logger.error("Can't change to tool {}, printer not ready or printing".format(tool))
 			return
 
 		if data.startswith("ok\n"):
