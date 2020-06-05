@@ -1,0 +1,6 @@
+{% if plugins.SMuFF.feeder=="on" %}
+M117 Feeder = {{ plugins.SMuFF.feeder }}
+M83
+G1 E-10 F300
+M400
+{% endif %}

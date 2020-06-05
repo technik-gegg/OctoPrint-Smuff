@@ -1,27 +1,53 @@
 <div class="header"><div class="header-logo"></div><div>{{ _('SMuFF Properties') }}</div></div>
-<div>
+<div id="settings_plugin_SMuFF">
+    <div>
+        <p>For connection details please visit <a href="https://github.com/technik-gegg/OctoPrint-Smuff" target="_blank">Github</a>.</p>
+        <p>&nbsp;</p>
+    </div>
     <form class="form-horizontal">
-        <div class="control-group">
-            <label class="control-label">{{ _('Serial Port:') }}</label>
-            <div class="controls">
-                <input type="text" class="input-block-level" data-bind="value: settings.plugins.SMuFF.tty" readonly />
+        <div class="aligned">
+            <label class="label-aligned">{{ _('Serial Port / Baudrate:') }}</label>
+            <div class="ml-1">
+                <span id="SMuFF_setting_tty"      class="data" data-bind="html: _settings.tty()"></span>&nbsp;&nbsp;
+                <span id="SMuFF_setting_baudrate" class="data" data-bind="html: _settings.baudrate()"></span>
             </div>
         </div>
 
-        <div class="control-group">
-            <label class="control-label">{{ _('Baudrate:') }}</label>
-            <div class="controls">
-                <input type="text" class="input-block-level" data-bind="value: settings.plugins.SMuFF.baudrate" readonly />
+        <div class="aligned">
+            <label class="label-aligned">{{ _('Firmware Info:') }}</label>
+            <div class="ml-1">
+                <div id="SMuFF_setting_firmware" class="data" data-bind="html: _settings.firmware_info()"></div>
             </div>
         </div>
 
-        <div class="control-group">
-            <label class="control-label">{{ _('Firmware Info:') }}</label>
-            <div class="controls">
-                <input type="text" class="input-block-level" data-bind="value: settings.plugins.SMuFF.firmware_info" readonly />
+        <div class="aligned">
+            <label class="label-aligned">{{ _('Active Tool:') }}</label>
+            <div class="ml-1">
+                <span id="SMuFF_setting_tool" class="data" data-bind="html: _settings.tool()"></span>
             </div>
         </div>
 
-        <div>For connection details please visit <a href="https://github.com/technik-gegg/OctoPrint-Smuff" target="_blank">Github</a>.</div>
+        <div class="aligned">
+            <label class="label-aligned">{{ _('Feeder:') }}</label>
+            <div class="ml-1">
+                <span style="margin-right: 1em;">
+                    1&nbsp;<i id="SMuFF_setting_feeder" class="fa fa-times-circle" data-bind="attr: { class: _settings.feeder_end() }"></i>
+                </span>
+                <span style="margin-left: 1em;">
+                    2&nbsp;<i id="SMuFF_setting_feeder2" class="fa fa-times-circle" data-bind="attr: { class: _settings.feeder2_end() }"></i>
+                </span>
+            </div>
+        </div>
+        
+        <div style="width: 100%">
+            <p>&nbsp;</p>
+            <p>
+                <div class="info">
+                    <i class="fa fa-warning fa-2x"></i>
+                    Don't forget to add / modify the <a href="#settings_gcodeScripts" data-toggle="tab">GCODE Scripts</a> <b>Before Tool Change</b> and <b>After Tool Change</b> according to your printers environment.
+                </div>
+            </p>
+        </div>
+
     </form>
 </div>

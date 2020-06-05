@@ -1,0 +1,27 @@
+;-------------------------------------------
+; beforeToolChange script
+;-------------------------------------------
+M400			; wait for move to complete
+G60 S1			; save current positions (must be enabled in the FW)
+M83				; set extruder to relative mode (important)
+G1 E-5 F5000		; retract 5 mm to avoid oozing
+G91				; switch to relative positioning
+G1 Z15 F8000		; lift nozzle
+G90				; switch back to absolute positioning
+G1 X0 Y0 F15000	; move to change position
+M83				; set extruder to relative mode (important)
+;-------------------------------------------
+; the next two lines must match your setup
+; that's bowden length (500) + hotend length (45), 
+; SMuFF selector width (90)
+;-------------------------------------------
+G1 E-45 F5000 	; Retract from nozzle
+G1 E-255 F4000	; Retract filament according to your bowden length
+G1 E-240 F4000	; Retract filament according to your bowden length
+G1 E-65 F1200	; Retract from selector (slowly)
+
+M400			; wait for move to complete
+;-------------------------------------------
+; the next line is important and must not be removed!
+;-------------------------------------------
+@SMuFF LOAD

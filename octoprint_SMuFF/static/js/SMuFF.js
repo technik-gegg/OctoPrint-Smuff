@@ -10,9 +10,36 @@ $(function() {
 
         // assign the injected parameters, e.g.:
         // self.loginStateViewModel = parameters[0];
-        // self.settingsViewModel = parameters[1];
+        self.settingsViewModel = parameters[0];
+        //console.log("SMuFF ViewModel params: " + self.settingsViewModel);
+        self._settings = null;
 
-        // TODO: Implement your plugin's view model here.
+        self.onBeforeBinding = function() {
+            self._settings = self.settingsViewModel.settings.plugins.SMuFF;
+            //console.log("_settings initialized. FW-Info: {" + self._settings.firmware_info() + "}");
+        };
+
+        self.onDataUpdaterPluginMessage = function(plugin, message) {
+            if(plugin !== "SMuFF") {
+                return;
+            }
+            if(message.tool != null) {
+                // console.log(" tool: " + message.tool);
+                $('#SMuFF_setting_tool').text(message.tool);
+                $('#SMuFF_navbar_tool').text(message.tool);
+            }
+            if(message.feeder != null) {
+                // console.log(" feeder: " + message.feeder);
+                var _cls = message.feeder ? "fa fa-check-circle" : "fa fa-times-circle";
+                $('#SMuFF_setting_feeder').prop('class', _cls);
+                $('#SMuFF_navbar_feeder').prop('class', _cls);
+            }
+            if(message.feeder2 != null) {
+                // console.log(" feeder2: " + message.feeder2);
+                var _cls = message.feeder2 ? "fa fa-check-circle" : "fa fa-times-circle";
+                $('#SMuFF_setting_feeder2').prop('class', _cls);
+            }
+        };
     }
 
     /* view model class, parameters for constructor, container to bind to
@@ -22,8 +49,8 @@ $(function() {
     OCTOPRINT_VIEWMODELS.push({
         construct: SmuffViewModel,
         // ViewModels your plugin depends on, e.g. loginStateViewModel, settingsViewModel, ...
-        dependencies: [ /* "loginStateViewModel", "settingsViewModel" */ ],
+        dependencies: [ "settingsViewModel" ],
         // Elements to bind to, e.g. #settings_plugin_SMuFF, #tab_plugin_SMuFF, ...
-        elements: [ /* ... */ ]
+        elements: [ "#settings_plugin_SMuFF", "#navbar_plugin_SMuFF" ]
     });
 });
