@@ -128,8 +128,24 @@ Needless to say that you have to adopt these scripts (bowden length, hotend leng
     M400			; wait for move to finish
     G61 S1 XYZ F2400	; restore saved positions (must be enabled in the FW)
 
+## Testing your GCode scripts
+
+The easiest way to test out your GCode scripts is allowing the printer doing cold extrusions (**M302 S0**) and by initiating tool changes by sending **Tx** commands from the OctoPrint Terminal.
+
+I did it by utilizing the [Teminal Commands Extend plugin](https://github.com/jneilliii/OctoPrint-TerminalCommandsExtended) from author *jneilliii*.
+
+![Marlin Extruder Configuration](https://github.com/technik-gegg/OctoPrint-Smuff/blob/master/extras/Terminal-Commands.jpg)
+
+As you may have spotted in the picture, there are some convenience commands such as Servo open/close. The (pseudo) GCode for this is *@SMuFF SERVO 1 1* for closing and *@SMuFF SERVO 1 0* for opening the servo.
+
+**Important:** Remove the bowden tube from the hotend before you do this.
+
+If your scripts are set up correctly, the tool changing will end up with filament sticking out at the end of the bowden tube. The length of the filament sticking out is supposed to be the length of your hotend (more or less the distance from inlet/fitting to nozzle).
+
 ## Marlin setup (IMPORTANT!)
-In order to make it all work with Marlin, you have to modify some parameters in your firmware, recompile and flash it to your printer.
+
+In order to make it all play well together with Marlin, you have to modify some settings in your firmware, recompile and flash it to your printer.
+If you haven't updated your firmware to Marlin 2.0.x yet, this might be the right moment to do this.
 
 First of all, you need to tell your Marlin it's a multi extruder setup by defining the number of tools used:
 
@@ -139,14 +155,23 @@ Also important: Remove the comments in front of the **SINGLENOZZLE** definition.
 
 Event though OctoPrint controls tool changes via the SMuFF and the printer won't receive any T*x* GCode, it'll send the initial temperature settings for each "Extruder", which usually come out of your slicers GCode. If the Printer isn't configured for multi material, this will lead to error messages and OctoPrint might reset the current tool to T0 - which will eventually select the wrong tool.
 
-Next, you have to set up fake steppers, to satisfy the Marlin sanity check. Do so by duplicating the **E*x*_STEP_PIN**, **E*x*_DIR_PIN** and **E*x*_ENABLE_PIN** in your printers *Configuration.h* or your printers *Pins.h* for each extruder defined in the first step:
+Next, you have to set up fake steppers, to satisfy the Marlin sanity check. Do so by duplicating the **E*x*_STEP_PIN**, **E*x*_DIR_PIN** and **E*x*_ENABLE_PIN** in your printers *Configuration.h* or your printers *Pins.h* for each extruder defined in the first step and set them all to the same pin numbers as for **E0_*xxx*_PIN**:
 
 ![Marlin Fake Steppers](https://github.com/technik-gegg/OctoPrint-Smuff/blob/master/extras/Fake-Stepper-Pins.jpg)
 
-Next, comment out PREVENT_LENGTHY_EXTRUDE. Otherwise this will lead to problems while trying to swap the filament:
+Next, comment out **PREVENT_LENGTHY_EXTRUDE**. Otherwise this will lead to problems while trying to swap the filament:
 
 ![Marlin Extrusion Length](https://github.com/technik-gegg/OctoPrint-Smuff/blob/master/extras/Extrusion-Length.jpg)
 
-Finally, enable the option to store/restore positions with the G60/G61 GCodes, since it's being used in the after-/beforeToolChange scripts:
+You may leave it in there and redefine the **EXTRUDE_MAXLENGTH**, as I've tried to, but it didn't work out for negative extrusions (a.k.a retractions). The Marlin firmware still reported an error.
+
+Finally, enable the option to store/restore positions by the **G60/G61** GCodes, since this feature is being used in the after-/beforeToolChange scripts:
 
 ![Marlin G60/G61](https://github.com/technik-gegg/OctoPrint-Smuff/blob/master/extras/G60-Enable.jpg)
+
+## Slicing multi material models
+
+To set up a test print, you need to slice a multi material model first and then upload it to OctoPrint.
+Please notice: This plugin won't work if you copy the sliced model directly to your printers SD-Card. You have to use the OctoPrints internal storage for this.
+
+To be able to slice multi material models you need to set up you slicer accordingly. There is a fantastic video on this topic from [Michael (a.k.a.Teaching Tech)](https://www.youtube.com/channel/UCbgBDBrwsikmtoLqtpc59Bw) which covers all the known slicers [here](https://www.youtube.com/watch?v=xRtvbICRh1w).
