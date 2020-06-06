@@ -13,7 +13,7 @@ or manually using this URL:
 
 In order to make this plugin working as expected, you have to do two additional things:
 
-- Setup the UART mode in your Raspberry
+- Setup the UART mode on your Raspberry
 - connect the Raspberry to your SMuFF controller (via 3-Wire serial interface)
 
 ## Setting up your Raspberry Pi
@@ -127,6 +127,8 @@ Needless to say that you have to adopt these scripts (bowden length, hotend leng
 
     M400			; wait for move to finish
     G61 S1 XYZ F2400	; restore saved positions (must be enabled in the FW)
+
+The values for feed and retraction here apply to a bowden tube length of about 520 mm, which is feasible for the Ender 3, whereas the SmuFF was mounted on the top bar. The 45 mm for the hotend reflect the Ender 3s stock hotend. Remember that you have to adopt these values according to your printer setup. You can adjust those settings with the following step.
 
 ## Testing your GCode scripts
 
