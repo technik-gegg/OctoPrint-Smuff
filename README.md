@@ -30,7 +30,7 @@ For the physical, serial connection take a 3-Wire cable and connect the pins **6
 
 *Image: Raspberry Pi-3 expansion header*
 
-For the Raspberry Pi 4 it's recommended using the 2nd UART from the PLO11, since it's a "real" UART. The TX and RX signals for this UART can be found at the pins GPIO0 and GPIO1.
+For the Raspberry **Pi 4** I'd recommend using the 2nd UART from the PL011, since it's a "real" UART. The TX and RX signals for this UART can be found at the pins **27 (TX, aka GPIO0 aka UART2_TXD)** and **28 (RX,aka GPIO1 aka UART2_RXD)**. The **GND** is available on pin **30**.
 
 ![Raspi-Connector](extras/Raspi4-GPIO.jpg)
 
@@ -173,7 +173,8 @@ Since the SMuFF became your main extruder now, you also have to adjust the extru
 
 ![Marlin E-Steps](extras/Extruder-Steps.jpg)
 
-Because the SMuFF has a geared drive with a gear ratio of 3:1, the E-Steps sould be in the range of 402-405. Set it to **M92 E402** and calibrate the exact value afterwards. Don't forget to store the settings with **M500**
+Because the SMuFF has a geared drive with a gear ratio of 3:1, the E-Steps sould be in the range of 402-405. Set it to **M92 E402** and calibrate the exact value afterwards.
+Don't forget to store the new setting with **M500** each time you change this value.
 
 ## Slicing multi material models
 
