@@ -20,19 +20,19 @@ In order to make this plugin working as expected, you have to do two additional 
 
 Open the **/boot/config.txt** file on your Raspberry Pi and add the following lines to it:
 
-![Raspi-Config](https://github.com/technik-gegg/OctoPrint-Smuff/blob/master/extras/Raspi-Config-txt.jpg)
+![Raspi-Config](extras/Raspi-Config-txt.jpg)
 
 Save the configuration and reboot. After rebooting, make sure you'll see the **ttyS0** device (RPI-3) or the **ttyAMA1** device (RPI-4) in your **/dev** folder.
 
 For the physical, serial connection take a 3-Wire cable and connect the pins **6 or 9 (GND)**, **8 (TX, aka GPIO14 aka UART0_TXD)** and **10 (RX aka GPIO15 aka UART0_RXD)** of the Raspi-3 extension connector to the serial interface of your SMuFF (on the SKR V1.1 mini that's the header named **TFT**).
 
-![Raspi-Connector](https://github.com/technik-gegg/OctoPrint-Smuff/blob/master/extras/Raspi3-GPIO.jpg)
+![Raspi-Connector](extras/Raspi3-GPIO.jpg)
 
 *Image: Raspberry Pi-3 expansion header*
 
 For the Raspberry Pi 4 it's recommended using the 2nd UART from the PLO11, since it's a "real" UART. The TX and RX signals for this UART can be found at the pins GPIO0 and GPIO1.
 
-![Raspi-Connector](https://github.com/technik-gegg/OctoPrint-Smuff/blob/master/extras/Raspi4-GPIO.jpg)
+![Raspi-Connector](extras/Raspi4-GPIO.jpg)
 
 *Image: Raspberry Pi-4 expansion header*
 
@@ -65,11 +65,11 @@ If you have to change the baudrate or the port, you'll have to modify it within 
 As you open the **Settings** dialog for the plugin, you'll be provided with some information whether or not the plugin was able to connect to the SMuFF. If the connection was sucessful, you'll see the firmware information coming directly from the SMuFF.
 If you don't see the firmware info here, you'll need to check your physical connection.
 
-![OctoPrint SMuFF plugin](https://github.com/technik-gegg/OctoPrint-Smuff/blob/master/extras/Settings-Screen.jpg)
+![OctoPrint SMuFF plugin](extras/Settings-Screen.jpg)
 
 Also, there's an indicator in the navbar of OctoPrint, showing you which tool is currently selected and whether or not filament has been loaded (i.e. Feeder endstop has triggered). Please notice, that the navbar indicator is being updated frequently.
 
-![OctoPrint SMuFF plugin Navbar](https://github.com/technik-gegg/OctoPrint-Smuff/blob/master/extras/Navbar.jpg)
+![OctoPrint SMuFF plugin Navbar](extras/Navbar.jpg)
 
 ## Additional setup
 
@@ -77,7 +77,7 @@ The main configuration will happen in the **OctoPrint GCODE Scripts section**.
 You have to apply the GCodes that will be executed **before** and **after** the tool change triggers. In those scripts you have to configure all the movements and retractions/feeds needed for a successful filament swapping.
 The picture below shows you a sample of such scripts. Be aware that you have to modify these scripts to accomodate your printer setup (i.e. bowden tube length, speeds, etc.).
 
-![OctoPrint GCODE Scripts](https://github.com/technik-gegg/OctoPrint-Smuff/blob/master/extras/OctoPrint-Scripts.jpg)
+![OctoPrint GCODE Scripts](extras/OctoPrint-Scripts.jpg)
 
 Here are the sample scripts in detail. Simply copy and paste this into your OctoPrint GCodes.
 Needless to say that you have to adopt these scripts (bowden length, hotend length) to the setup of your printer.
@@ -134,7 +134,7 @@ The easiest way to test out your GCode scripts is allowing the printer doing col
 
 I did it by utilizing the [Teminal Commands Extend plugin](https://github.com/jneilliii/OctoPrint-TerminalCommandsExtended) from author *jneilliii*.
 
-![Marlin Extruder Configuration](https://github.com/technik-gegg/OctoPrint-Smuff/blob/master/extras/Terminal-Commands.jpg)
+![Marlin Extruder Configuration](extras/Terminal-Commands.jpg)
 
 As you may have spotted in the picture, there are some convenience commands such as Servo open/close. The (pseudo) GCode for this is *@SMuFF SERVO 1 1* for closing and *@SMuFF SERVO 1 0* for opening the servo.
 
@@ -149,7 +149,7 @@ If you haven't updated your firmware to Marlin 2.0.x yet, this might be the righ
 
 First of all, you need to tell your Marlin it's a multi extruder setup by defining the number of tools used:
 
-![Marlin Extruder Configuration](https://github.com/technik-gegg/OctoPrint-Smuff/blob/master/extras/Extruders-Config.jpg)
+![Marlin Extruder Configuration](extras/Extruders-Config.jpg)
 
 Also important: Remove the comments in front of the **SINGLENOZZLE** definition.
 
@@ -157,17 +157,23 @@ Event though OctoPrint controls tool changes via the SMuFF and the printer won't
 
 Next, you have to set up fake steppers, to satisfy the Marlin sanity check. Do so by duplicating the **E*x*_STEP_PIN**, **E*x*_DIR_PIN** and **E*x*_ENABLE_PIN** in your printers *Configuration.h* or your printers *Pins.h* for each extruder defined in the first step and set them all to the same pin numbers as for **E0_*xxx*_PIN**:
 
-![Marlin Fake Steppers](https://github.com/technik-gegg/OctoPrint-Smuff/blob/master/extras/Fake-Stepper-Pins.jpg)
+![Marlin Fake Steppers](extras/Fake-Stepper-Pins.jpg)
 
 Next, comment out **PREVENT_LENGTHY_EXTRUDE**. Otherwise this will lead to problems while trying to swap the filament:
 
-![Marlin Extrusion Length](https://github.com/technik-gegg/OctoPrint-Smuff/blob/master/extras/Extrusion-Length.jpg)
+![Marlin Extrusion Length](extras/Extrusion-Length.jpg)
 
 You may leave it in there and redefine the **EXTRUDE_MAXLENGTH**, as I've tried to, but it didn't work out for negative extrusions (a.k.a retractions). The Marlin firmware still reported an error.
 
 Finally, enable the option to store/restore positions by the **G60/G61** GCodes, since this feature is being used in the after-/beforeToolChange scripts:
 
-![Marlin G60/G61](https://github.com/technik-gegg/OctoPrint-Smuff/blob/master/extras/G60-Enable.jpg)
+![Marlin G60/G61](extras/G60-Enable.jpg)
+
+Since the SMuFF became your main extruder now, you also have to adjust the extruder steps for your printer. The most convenient way doing this is by setting it using the **M92** GCode in the terminal window.
+
+![Marlin E-Steps](extras/Extruder-Steps.jpg)
+
+Because the SMuFF has a geared drive with a gear ratio of 3:1, the E-Steps sould be in the range of 402-405. Set it to **M92 E402** and calibrate the exact value afterwards. Don't forget to store the settings with **M500**
 
 ## Slicing multi material models
 

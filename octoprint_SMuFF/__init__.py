@@ -20,8 +20,9 @@ import binascii
 # change the baudrate and port here if you have to
 # this might move into the settings some day
 SERBAUD		= 115200
-SERDEV		= "ttyAMA1"
+SERDEVS		= [ "ttyS0", "ttyAMA1" ]
 
+SERDEV		= ""	# will be initialized later on
 AT_SMUFF 	= "@SMuFF"
 M115	 	= "M115"
 M119	 	= "M119"
@@ -481,6 +482,12 @@ def open_SMuFF_serial():
 
 	_logger = logging.getLogger(LOGGER)
 	__stop_ser__ = False
+
+	SERDEV = SERDEVS[0]			# default is ttyS0
+	mod = get_pi_model()		# query current model
+	if mod == 4:
+		SERDEV = SERDEVS[1]		# switch to ttyAMA1 on Pi 4
+
 	try:
 		__ser0__ = serial.Serial("/dev/{}".format(SERDEV), baudrate=SERBAUD, timeout=10)
 		_logger.debug("Serial port /dev/{} is open".format(SERDEV))
@@ -547,6 +554,22 @@ def serial_reader(_logger, _serial, _instance, _lock):
 
 	_logger.info("Exiting serial port receiver")
 
+def get_pi_model():
+	# get Pi model from cpuinfo
+	_logger = logging.getLogger(LOGGER)
+	model = 4
+	try:
+		f = open("/proc/cpuinfo","r")
+		for line in f:
+			if line.startswith("Model"):
+				if line.find("Pi 4") == -1:
+					model = 3
+				_logger.info("Running on Pi {}".format(model))
+		f.close()
+	except:
+		_logger.info("Can't read cpuinfo, assuming  Pi 3")
+		model = 3
+	return model
 
 __plugin_name__ = "SMuFF Plugin"
 __plugin_pythoncompat__ = ">=3,<4"
