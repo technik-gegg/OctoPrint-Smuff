@@ -178,6 +178,8 @@ Since the SMuFF became your main extruder now, you also have to adjust the extru
 Because the SMuFF has a geared drive with a gear ratio of 3:1, the E-Steps sould be in the range of 402-405. Set it to **M92 E402** and calibrate the exact value afterwards.
 Don't forget to store the new setting with **M500** each time you change this value.
 
+***Notice***: You can do this configuration directly in the Marlin firmware as well (look out for **DEFAULT_AXIS_STEPS_PER_UNIT**), though, I wouldn't reccomend doing so before you've calibrated the exact E-Steps for your printer.
+
 ## Slicing multi material models
 
 To set up a test print, you need to slice a multi material model first and then upload it to OctoPrint.
