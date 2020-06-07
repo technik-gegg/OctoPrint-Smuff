@@ -40,6 +40,7 @@ PRINTER		= "PRINTER"
 ALIGN_SPEED	= " F"
 ESTOP_ON	= "on"
 LOGGER 		= "octoprint.plugins.SMuFF"
+ACTION_CMD 	= "//action:"
 
 class SmuffPlugin(octoprint.plugin.SettingsPlugin,
                   octoprint.plugin.AssetPlugin,
@@ -312,10 +313,10 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 	##~~ helper functions
 
 	# sending data to SMuFF
-	def send_SMuFF_and_wait(self, data):
+	def send_SMuFF(self, data):
 		if self._serial and self._serial.is_open:
 			try:
-				b = bytearray(40)		# not expecting commands longer then that
+				b = bytearray(80)		# not expecting commands longer then that
 				b = "{}\n".format(data).encode("ascii")
 				# lock down the reader thread just in case 
 				# (shouldn't be needed at all, since simultanous read/write operations should
@@ -324,36 +325,42 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 				n = self._serial.write(b)
 				self._serlock.release()
 				self._logger.debug("Sending {1} bytes: [{0}]".format(b, n))
+				return True
 			except (OSError, serial.SerialException):
 				self._serlock.release()
 				self._logger.error("Can't send command to SMuFF")
-				return None
-
-			timeout = 10 	# wait max. 10 seconds for a response
-			done = False
-			resp = None
-			self.set_busy(False)	# reset busy and
-			self.set_error(False)	# error flags
-			while not done:
-				self._serevent.clear()
-				is_set = self._serevent.wait(timeout)
-				if is_set:
-					self._logger.info("To [{0}] SMuFF says [{1}] (is_error = {2})".format(data, self._response, self._is_error))
-					resp = self._response
-					if self._response == None or self._is_error:
-						done = True
-					elif not self._response.startswith('echo:'):
-						done = True
-
-					self._response = None
-				else:
-					self._logger.info("No event received... aborting")
-					if self._is_busy == False:
-						done = True
-			return resp
+				return False
 		else:
 			self._logger.error("Serial not open")
+			return False
+		
+	# sending data to SMuFF and waiting for a response
+	def send_SMuFF_and_wait(self, data):
+		if self.send_SMuFF(data) == False:
 			return None
+
+		timeout = 10 	# wait max. 10 seconds for a response
+		done = False
+		resp = None
+		self.set_busy(False)	# reset busy and
+		self.set_error(False)	# error flags
+		while not done:
+			self._serevent.clear()
+			is_set = self._serevent.wait(timeout)
+			if is_set:
+				self._logger.info("To [{0}] SMuFF says [{1}] (is_error = {2})".format(data, self._response, self._is_error))
+				resp = self._response
+				if self._response == None or self._is_error:
+					done = True
+				elif not self._response.startswith('echo:'):
+					done = True
+
+				self._response = None
+			else:
+				self._logger.info("No event received... aborting")
+				if self._is_busy == False:
+					done = True
+		return resp
 
 	def find_file(self, pattern, path):
 		result = []
@@ -440,7 +447,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			self.set_error(True)
 			return
 
-		if data.startswith("//action:"):
+		if data.startswith(ACTION_CMD):
 			self._logger.info("SMuFF has sent an action request: [" + data.rstrip() + "]")
 			# what action is it? is it a tool change?
 			if data[10:].startswith("T"):
@@ -455,12 +462,16 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 						if temps['tool0']['actual'] > 160:
 							self._logger.debug("Nozzle temp. > 160")
 							self._printer.change_tool("tool{}".format(tool))
+							self.send_SMuFF("{0} T: ok".format(ACTION_CMD,))
 						else:
 							self._logger.error("Can't change to tool {}, nozzle too cold".format(tool))
+							self.send_SMuFF("{0} T: Too cold".format(ACTION_CMD,))
 					except:
 						self._logger.debug("Can't query temperatures. Aborting.")
+						self.send_SMuFF("{0} T: No temps".format(ACTION_CMD,))
 				else:
 					self._logger.error("Can't change to tool {}, printer not ready or printing".format(tool))
+					self.send_SMuFF("{0} T: Printer not ready".format(ACTION_CMD,))
 			return
 
 		if data.startswith("ok\n"):
