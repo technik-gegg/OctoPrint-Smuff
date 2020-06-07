@@ -490,7 +490,8 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 def open_SMuFF_serial():
 	global __stop_ser__
 	global __ser0__
-
+	global SERDEV
+	
 	_logger = logging.getLogger(LOGGER)
 	__stop_ser__ = False
 
