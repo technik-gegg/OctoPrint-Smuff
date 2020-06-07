@@ -462,13 +462,13 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 						if temps['tool0']['actual'] > 160:
 							self._logger.debug("Nozzle temp. > 160")
 							self._printer.change_tool("tool{}".format(tool))
-							self.send_SMuFF("{0} T: \"ok\"".format(ACTION_CMD))
+							self.send_SMuFF("{0} T: OK".format(ACTION_CMD))
 						else:
 							self._logger.error("Can't change to tool {}, nozzle too cold".format(tool))
-							self.send_SMuFF("{0} T: \"Too cold\"".format(ACTION_CMD))
+							self.send_SMuFF("{0} T: \"Nozzle too cold\"".format(ACTION_CMD))
 					except:
 						self._logger.debug("Can't query temperatures. Aborting.")
-						self.send_SMuFF("{0} T: \"No temps\"".format(ACTION_CMD))
+						self.send_SMuFF("{0} T: \"No nozzle temp. avail.\"".format(ACTION_CMD))
 				else:
 					self._logger.error("Can't change to tool {}, printer not ready or printing".format(tool))
 					self.send_SMuFF("{0} T: \"Printer not ready\"".format(ACTION_CMD))
