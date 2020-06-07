@@ -28,6 +28,7 @@ M115	 	= "M115"
 M119	 	= "M119"
 M280	 	= "M280 P"
 M18			= "M18"
+G12			= "G12 S200 I130 J160 P10 R10"
 TOOL 		= "T"
 NOTOOL		= "T255"
 G1_E	 	= "G1 E"
@@ -35,6 +36,7 @@ ALIGN 	 	= "ALIGN"
 REPEAT 		= "REPEAT"
 LOAD 		= "LOAD"
 SERVO		= "SERVO"
+WIPE		= "WIPE"
 MOTORS		= "MOTORS"
 PRINTER		= "PRINTER"
 ALIGN_SPEED	= " F"
@@ -196,6 +198,12 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			if action and action == SERVO:
 				# send a servo command to SMuFF
 				self.send_SMuFF_and_wait(M280 + str(v1) + " R" + str(v2))
+				return ""
+
+			# @SMuFF WIPE
+			if action and action == WIPE:
+				# send a servo wipe command to SMuFF
+				self.send_SMuFF_and_wait(G12)
 				return ""
 
 			# @SMuFF MOTORS
@@ -491,7 +499,7 @@ def open_SMuFF_serial():
 	global __stop_ser__
 	global __ser0__
 	global SERDEV
-	
+
 	_logger = logging.getLogger(LOGGER)
 	__stop_ser__ = False
 
