@@ -28,7 +28,7 @@ M115	 	= "M115"
 M119	 	= "M119"
 M280	 	= "M280 P"
 M18			= "M18"
-G12			= "G12 S200 I130 J160 P10 R10"
+G12			= "G12" # change the wiping sequence on the SMuFF in SMuFF.CFG
 TOOL 		= "T"
 NOTOOL		= "T255"
 G1_E	 	= "G1 E"
@@ -200,12 +200,6 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 				self.send_SMuFF_and_wait(M280 + str(v1) + " R" + str(v2))
 				return ""
 
-			# @SMuFF WIPE
-			if action and action == WIPE:
-				# send a servo wipe command to SMuFF
-				self.send_SMuFF_and_wait(G12)
-				return ""
-
 			# @SMuFF MOTORS
 			if action and action == MOTORS:
 				# send a servo command to SMuFF
@@ -259,6 +253,11 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 					# will unpause OctoPrint and it'll continue printing without filament! 
 					#finally:
 						#self._printer.set_job_on_hold(False)
+
+			# @SMuFF WIPE
+			if action and action == WIPE:
+				# send a servo wipe command to SMuFF
+				self.send_SMuFF_and_wait(G12)
 
 			# @SMuFF LOAD
 			if action and action == LOAD:
