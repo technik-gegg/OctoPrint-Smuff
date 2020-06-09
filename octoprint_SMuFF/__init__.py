@@ -28,6 +28,8 @@ M115	 	= "M115"
 M119	 	= "M119"
 M280	 	= "M280 P"
 M18			= "M18"
+M106 		= "M106 S100"
+M107 		= "M107"
 G12			= "G12" # change the wiping sequence on the SMuFF in SMuFF.CFG
 TOOL 		= "T"
 NOTOOL		= "T255"
@@ -38,6 +40,7 @@ LOAD 		= "LOAD"
 SERVO		= "SERVO"
 WIPE		= "WIPE"
 MOTORS		= "MOTORS"
+FAN			= "FAN"
 PRINTER		= "PRINTER"
 ALIGN_SPEED	= " F"
 ESTOP_ON	= "on"
@@ -204,6 +207,15 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			if action and action == MOTORS:
 				# send a servo command to SMuFF
 				self.send_SMuFF_and_wait(M18)
+				return ""
+
+			# @SMuFF FAN
+			if action and action == FAN:
+				# send a fan command to SMuFF
+				if v1 == 1:
+					self.send_SMuFF_and_wait(M106)
+				elif v1 == 0:
+					self.send_SMuFF_and_wait(M107)
 				return ""
 
 
