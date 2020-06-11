@@ -59,15 +59,20 @@ All necessary operations for a tool change (i.e. unloading current filament, loa
 ## Configuration
 
 There's not much configuration going on here, since the only relevant paramters are the baudrate and the serial port used to connect the Raspberry Pi to the SMuFF.
-The baudrate has been set constantly to **115200 baud**, which ought to be fast enough.
-If you have to change the baudrate or the port, you'll have to modify it within the __init__.py source file at the very top.
+The baudrate has been set preset to **115200 baud**, which ought to be fast enough.
+Though, if you have to change the baudrate or the port, enter the device name (without the '/dev/') and the baudrate. Also, if you change the baudrate here, please make sure you change it in the SMuFF accordingly.
 
-As you open the **Settings** dialog for the plugin, you'll be provided with some information whether or not the plugin was able to connect to the SMuFF. If the connection was sucessful, you'll see the firmware information coming directly from the SMuFF.
-If you don't see the firmware info here, you'll need to check your physical connection.
+As you open the **Settings** dialog for the plugin, you'll be provided with some information whether or not the plugin was able to connect to the SMuFF. If the connection was sucessful, you'll see the firmware information coming directly from the SMuFF. You'll also see the currently active tool and the status of the Feeder endstops (up to 2 possible, usually only one is being used).
+If you don't see the information here, you'll need to check either your settings or your physical connection.
 
 ![OctoPrint SMuFF plugin](extras/Settings-Screen.jpg)
 
-Also, there's an indicator in the navbar of OctoPrint, showing you which tool is currently selected and whether or not filament has been loaded (i.e. Feeder endstop has triggered). Please notice, that the navbar indicator is being updated frequently.
+**Please notice:** The plugin will preset the serial interface device differently, depending on the Raspberry Pi model you uses. It's **ttyS0** on the Raspi 3 and **ttyAMA1** on the Raspi 4, both are direct UART connections on the GIO header mentioned above.
+From SMuFF firmware version 2.06 on you'll also be able to connect via the USB connector of the Raspberry to the USB connector of the SKR mini V1.1,  which in most cases is easier to set up and also more reliable.
+To figure out which device name you have to put into the plugins settings in this case, open up a console (SSH) to your Raspberry Pi after you've connected the SMuFF and enter the command **ls -l /dev/serial/by-id**. The Raspbery is supposed to show a device named **usb-LeafLabs_Maple_ifxx** and the **/dev/tty** device it's linked to (something like *ttyACM0* or *ttyACM1* on the Raspi3, *ttyUSB1* on the Raspi 4).
+Use the device name after the **/dev/** in the SMuFF plugin settings.
+
+There's also an indicator in the navbar of OctoPrint showing you, which tool is currently selected and whether or not filament has been loaded (i.e. Feeder endstop has triggered). Please notice, that the navbar indicator is being updated frequently (aprox. every 2 seconds).
 
 ![OctoPrint SMuFF plugin Navbar](extras/Navbar.jpg)
 
@@ -89,21 +94,61 @@ Needless to say that you have to adopt these scripts (bowden length, hotend leng
     G60 S1				; save current positions (must be enabled in the FW)
     M83				; set extruder to relative mode (important)
     G1 E-5 F5000			; retract 5 mm to avoid oozing
+    ;-------------------------------------------
+    ; Raising the Z-Axis may cause offset issues when it
+    ; goes back due to backlash on the Z-Axis. If this 
+    ; happens to you, delete the G91 - G1 - G90 lines
+    ;-------------------------------------------
     G91				; switch to relative positioning
     G1 Z15 F8000			; lift nozzle
     G90				; switch back to absolute positioning
     G1 X0 Y0 F15000			; move to change position
     M83				; set extruder to relative mode (important)
     ;-------------------------------------------
-    ; the next two lines must match your setup
-    ; that's bowden length (500) + hotend length (45), 
+    ; Next up is the Marlin 2.0 MMU Ramming Sequence 
+    ; which I shamlessly nicked from Marlin.
+    ;
+    ; I don't know who wrote this sequence but hats off to
+    ; you Sir, for your enourmus effort and patience composing
+    ; this sequence.
+    ;
+    ; This sequence proofed to shape the tip nearly perfect 
+    ; before the filament gets retracted finally.
+    ; This is an important step, because it definitely reduces
+    ; the filament bulging and therefore reduces potenitial jams
+    ; when swapping filaments!
+    ; 
+    ; So, don't discard these lines. If the filament tip doesn't
+    ; seem shaped well enough for you, try playing with the
+    ; nozzle temperatures before you mess with the sequence.
+    ; Just a few degrees (5-10) up or down can make a huge
+    ; difference.
+    ;
+    ; This sequence retracts 77 mm in total - take this into account
+    ; for the rest that needs to be retracted. For example the E3D V6 
+    ; hotend has round about 61 mm (75-80 with fitting), whereas
+    ; the PTFE tube goes about 33 mm into the hotend, using a all metal
+    ; heat break.
+    ;-------------------------------------------
+    G1 E1 F1000
+    G1 E1 F1500
+    G1 E2 F2000
+    G1 E1.5 F3000
+    G1 E2.5 F4000
+    G1 E-15 F4500
+    G1 E-14 F1200
+    G1 E-6  F600
+    G1 E10  F700
+    G1 E-10 F400
+    G1 E-50 F2000
+    ;-------------------------------------------
+    ; the next retracts must match your setup
+    ; that's bowden length + hotend length + 
     ; SMuFF selector width (90)
     ;-------------------------------------------
-    G1 E-45 F5000 	; Retract from nozzle
-    G1 E-255 F4000	; Retract filament according to your bowden length
-    G1 E-240 F4000	; Retract filament according to your bowden length
-    G1 E-65 F1200	; Retract from selector (slowly)
-
+    G1 E-485 F4000	; Retract filament according to your bowden length
+    G4 S2			; wait 2 seconds (just for you to see where it ends)
+    G1 E-90 F1200	; Retract from selector (slowly)
     M400		; wait for move to complete
     ;-------------------------------------------
     ; the next line is important and must not be removed!
@@ -123,10 +168,10 @@ Needless to say that you have to adopt these scripts (bowden length, hotend leng
     ; use the next line only if you're not 
     ; printing with a purge tower!
     ;-------------------------------------------
-    ;G1 E100 F240	; Purge out old filament
+    ;G1 E80 F240	; Purge out old filament (adopt the E value to your needs)
 
     M400			; wait for move to finish
-    G61 S1 XYZ F2400	; restore saved positions (must be enabled in the FW)
+    G61 S1 XYZ F3600	; restore saved positions (must be enabled in the FW)
 
 The values for feed and retraction here apply to a bowden tube length of about 520 mm, which is feasible for the Ender 3, whereas the SmuFF was mounted on the top bar. The 45 mm for the hotend reflect the Ender 3s stock hotend. Remember that you have to adopt these values according to your printer setup. You can adjust those settings with the following step.
 

@@ -20,7 +20,7 @@ import binascii
 # change the baudrate and port here if you have to
 # this might move into the settings some day
 SERBAUD		= 115200
-SERDEVS		= [ "ttyS0", "ttyAMA1" ]
+SERDEVS		= [ "ttyS0", "ttyAMA1", "ttyUSB1", "ttyACM0" ]
 
 SERDEV		= ""	# will be initialized later on
 AT_SMUFF 	= "@SMuFF"
@@ -84,7 +84,17 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 	##~~ StartupPlugin mixin
 
 	def on_after_startup(self):
-		# nothing to do here yet...
+		port = self._settings.get(["tty"])
+		baud = self._settings.get_int(["baudrate"])
+		self._logger.debug("Opening serial {0} with {1}".format(port, baud))
+		if open_SMuFF_serial(port, baud):
+			self._serial = __ser0__
+			start_reader_thread()
+
+		# request firmware info from SMuFF 
+		if self._serial.is_open:
+			self._fw_info = self.send_SMuFF_and_wait(M115)
+			self._logger.debug("FW-Info: {}".format(self._fw_info))
 		pass
 
 	##~~ EventHandler mixin
@@ -103,7 +113,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		params = dict(
 			firmware_info	= "No data. Please check connection!",
 			baudrate	= SERBAUD,
-			tty 		= "Not found. Please enable the UART on your Raspi!",
+			tty 		= SERDEV,
 			tool		= self._cur_tool,
 			selector_end	= self._selector,
 			revolver_end	= self._revolver,
@@ -112,23 +122,32 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		)
 
 		# look up the serial port driver
-		if sys.platform == "win32":
-			if SERDEV.startswith("tty"):
-				params['tty'] = "Wrong device on WIN32 ({})".format(SERDEV)
-			else:
-				params['tty'] = SERDEV
-		else:
-			drvr = self.find_file(SERDEV, "/dev")
-			if len(drvr) > 0:
-				params['tty'] = "/dev/{}".format(SERDEV)
-
-		# request firmware info from SMuFF 
-		if self._serial.is_open:
-			self._fw_info = self.send_SMuFF_and_wait(M115)
-			if self._fw_info:
-				params['firmware_info'] = self._fw_info
+		#if sys.platform == "win32":
+		#	if SERDEV.startswith("tty"):
+		#		params['tty'] = "Wrong device on WIN32 ({})".format(SERDEV)
+		#	else:
+		#		params['tty'] = SERDEV
+		#else:
+		#	drvr = self.find_file(SERDEV, "/dev")
+		#	if len(drvr) > 0:
+		#		params['tty'] = "/dev/{}".format(SERDEV)
 
 		return  params
+	
+	def on_settings_save(self, data):
+		global __ser0__
+		baud = self._settings.get_int(["baudrate"])
+		port = self._settings.get(["tty"])
+		octoprint.plugin.SettingsPlugin.on_settings_save(self, data)
+		baud_new = self._settings.get_int(["baudrate"])
+		port_new = self._settings.get(["tty"])
+		self._logger.debug("Settings saved: {0}/{1}  {2}/{3}".format(baud, baud_new, port, port_new))
+		# did the settings change?
+		if not port_new == port or not baud_new == baud:
+			close_SMuFF_serial()
+			open_SMuFF_serial(port_new, baud_new)
+			self._serial = __ser0__
+			start_reader_thread()
 
 	def get_template_configs(self):
 		# self._logger.debug("Settings-Template was requested")
@@ -412,10 +431,11 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			self._feeder 	= m.group(11).strip() == ESTOP_ON
 			self._feeder2  	= m.group(13).strip() == ESTOP_ON
 			if hasattr(self, "_plugin_manager"):
-				self._plugin_manager.send_plugin_message(self._identifier, {'type': 'status', 'tool': self._cur_tool, 'feeder': self._feeder, 'feeder2': self._feeder2 })
+				self._plugin_manager.send_plugin_message(self._identifier, {'type': 'status', 'tool': self._cur_tool, 'feeder': self._feeder, 'feeder2': self._feeder2, 'fw_info': self._fw_info })
 			return True
 		else:
-			self._logger.error("No match in parse_states: [" + states + "]")
+ 			if hasattr(self, "_logger"):
+	 			self._logger.error("No match in parse_states: [" + states + "]")
 		return False
 
 	def parse_tool_number(self, tool):
@@ -506,26 +526,20 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		self._logger.debug("Received response: [{0}]".format(last_response))
 
 
-def open_SMuFF_serial():
+def open_SMuFF_serial(port, baudrate):
 	global __stop_ser__
 	global __ser0__
-	global SERDEV
 
 	_logger = logging.getLogger(LOGGER)
 	__stop_ser__ = False
 
-	SERDEV = SERDEVS[0]			# default is ttyS0
-	mod = get_pi_model()		# query current model
-	if mod == 4:
-		SERDEV = SERDEVS[1]		# switch to ttyAMA1 on Pi 4
-
 	try:
-		__ser0__ = serial.Serial("/dev/{}".format(SERDEV), baudrate=SERBAUD, timeout=10)
-		_logger.debug("Serial port /dev/{} is open".format(SERDEV))
+		__ser0__ = serial.Serial("/dev/{}".format(port), baudrate, timeout=10)
+		_logger.debug("Serial port /dev/{} is open".format(port))
 	except (OSError, serial.SerialException):
 		exc_type, exc_value, exc_traceback = sys.exc_info()
 		tb = traceback.format_exception(exc_type, exc_value, exc_traceback)
-		_logger.error("Can't open serial port /dev/{0}! Exc: {1}".format(SERDEV, tb))
+		_logger.error("Can't open serial port /dev/{0}! Exc: {1}".format(port, tb))
 		return False
 	return True
 
@@ -602,6 +616,24 @@ def get_pi_model():
 		model = 3
 	return model
 
+def start_reader_thread():
+	global __ser0__
+	global _logger
+	global __lock__
+	global __sreader__
+	global __plugin_implementation__
+	try:
+		# set up a separate task for reading the incoming SMuFF messages
+		__sreader__ = Thread(target = serial_reader, args=( _logger, __ser0__, __plugin_implementation__, __lock__, ))
+		__sreader__.daemon = True
+		__sreader__.start()
+		#_logger.debug("P={}".format(__sreader__))
+	except:
+		exc_type, exc_value, exc_traceback = sys.exc_info()
+		tb = traceback.format_exception(exc_type, exc_value, exc_traceback)
+		_logger.error("Unable to start serial reader thread: ".join(tb))
+
+
 __plugin_name__ = "SMuFF Plugin"
 __plugin_pythoncompat__ = ">=3,<4"
 
@@ -610,30 +642,19 @@ def __plugin_load__():
 	global __plugin_implementation__
 	global __plugin_hooks__
 	global __ser0__
-	global __stop_ser__
-	global __sreader__
 	global __lock__
-	global __event__
 	global _logger
+	global SERDEV
 
 	_logger = logging.getLogger(LOGGER)
 	__lock__ = Lock()
 
 	__plugin_implementation__ = SmuffPlugin(_logger, __lock__)
 
-	if open_SMuFF_serial():
-		__plugin_implementation__._serial = __ser0__
-		try:
-			# set up a separate task for reading the incoming SMuFF messages
-			__sreader__ = Thread(target = serial_reader, args=( _logger, __ser0__, __plugin_implementation__, __lock__, ))
-			__sreader__.daemon = True
-			__sreader__.start()
-			#_logger.debug("P={}".format(__sreader__))
-
-		except:
-			exc_type, exc_value, exc_traceback = sys.exc_info()
-			tb = traceback.format_exception(exc_type, exc_value, exc_traceback)
-			_logger.error("Unable to start serial reader thread: ".join(tb))
+	SERDEV = SERDEVS[0]			# default is ttyS0
+	mod = get_pi_model()		# query current model
+	if mod == 4:
+		SERDEV = SERDEVS[1]		# switch to ttyAMA1 on Pi 4
 
 	__plugin_hooks__ = {
 		"octoprint.comm.protocol.gcode.received":	__plugin_implementation__.extend_gcode_received,

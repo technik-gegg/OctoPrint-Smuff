@@ -8,9 +8,13 @@
         <div class="aligned">
             <label class="label-aligned">{{ _('Serial Port / Baudrate:') }}</label>
             <div class="ml-1">
-                <span id="SMuFF_setting_tty"      class="data" data-bind="html: _settings.tty()"></span>&nbsp;&nbsp;
-                <span id="SMuFF_setting_baudrate" class="data" data-bind="html: _settings.baudrate()"></span>
+                <input type="text" style="width: 20em" class="input-block-level" data-bind="value: _settings.tty">&nbsp;&nbsp;
+                <input type="text" style="width: 10em" class="input-block-level" data-bind="value: _settings.baudrate">
             </div>
+        </div>
+        <div class="serial-hint">
+            <b>Notice:</b> If you've connected the SMuFF through USB, do a <b>ls -l /dev/serial/by-id</b> on the console and pick the device named <b>usb-LeafLabs_Maple-if00</b><br/>
+            Don't include the <b>/dev/</b> in the device name!
         </div>
 
         <div class="aligned">

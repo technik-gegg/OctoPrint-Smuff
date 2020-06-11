@@ -39,6 +39,10 @@ $(function() {
                 var _cls = message.feeder2 ? "fa fa-check-circle" : "fa fa-times-circle";
                 $('#SMuFF_setting_feeder2').prop('class', _cls);
             }
+            if(message.fw_info != null) {
+                // console.log(" fw info: " + message.fw_info);
+                $('#SMuFF_setting_firmware').text(message.fw_info);
+            }
         };
     }
 

@@ -69,3 +69,10 @@
 .ml-1 {
     margin-left: 1em;
 }
+
+.serial-hint {
+    font-size: 9pt;
+    font-style: italic;
+    margin-left: 230px;
+    color: #FFA726;
+}
