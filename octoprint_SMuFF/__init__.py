@@ -144,10 +144,12 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		self._logger.debug("Settings saved: {0}/{1}  {2}/{3}".format(baud, baud_new, port, port_new))
 		# did the settings change?
 		if not port_new == port or not baud_new == baud:
+			# close the previous port, re-open it, start the reader thread and get SMuFF's firmware information
 			close_SMuFF_serial()
 			open_SMuFF_serial(port_new, baud_new)
 			self._serial = __ser0__
 			start_reader_thread()
+			self._fw_info = self.send_SMuFF_and_wait(M115)
 
 	def get_template_configs(self):
 		# self._logger.debug("Settings-Template was requested")
