@@ -242,3 +242,13 @@ To be able to slice multi material models you need to set up you slicer accordin
 
 Allthough Michael is referring to dual extrusion, the process is still the same for more than two materials.
 One important point is that you have configured all tools (i.e. feedrate, temperatures, etc.) according to your printer, before you move on setting up the different processes for each individual material (color).
+
+## Looking for multi material models?
+
+If you're looking for high quality models to print, have a look at [Roman Tyr's (a.k.a. Cipis) Thingiverse collection](https://www.thingiverse.com/search?q=cipis&type=things&sort=relevant).
+He has a really nice collection of models for multi material 3D printing. If you download one (or more) of his models, please make sure to leave him a like.
+
+## What else?
+
+If you like this plugin and find it useful, feel free to place a donation via PayPal.Me.
+[![paypal](extras/paypalme.png)](https://paypal.me/technikgegg)
