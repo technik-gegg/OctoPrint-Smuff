@@ -94,7 +94,7 @@ The picture below shows you a sample of such scripts. Please be aware that you a
 
 Here are the sample scripts in detail. Simply copy and paste these into your OctoPrint GCodes sections.
 
->   ;-------------------------------------------
+    ;-------------------------------------------
     ; beforeToolChange script
     ;-------------------------------------------
     M400				; wait for move to complete
@@ -164,7 +164,7 @@ Here are the sample scripts in detail. Simply copy and paste these into your Oct
     @SMuFF LOAD
 
     
->    ;-------------------------------------------
+    ;-------------------------------------------
     ; afterToolChange script
     ;-------------------------------------------
     M83		; set extruder to relative mode (important)
