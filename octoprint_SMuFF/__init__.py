@@ -38,6 +38,8 @@ ALIGN 	 	= "ALIGN"
 REPEAT 		= "REPEAT"
 LOAD 		= "LOAD"
 SERVO		= "SERVO"
+SERVOOPEN   = "SERVOOPEN"
+SERVOCLOSE  = "SERVOCLOSE"
 WIPE		= "WIPE"
 MOTORS		= "MOTORS"
 FAN			= "FAN"
@@ -46,6 +48,9 @@ ALIGN_SPEED	= " F"
 ESTOP_ON	= "on"
 LOGGER 		= "octoprint.plugins.SMuFF"
 ACTION_CMD 	= "//action:"
+ACTION_WAIT 	= "WAIT"
+ACTION_CONTINUE = "CONTINUE"
+ACTION_ABORT 	= "ABORT"
 
 class SmuffPlugin(octoprint.plugin.SettingsPlugin,
                   octoprint.plugin.AssetPlugin,
@@ -55,21 +60,23 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 				  octoprint.plugin.ShutdownPlugin):
 
 	def __init__(self, _logger, _lock):
-		self._serial 		= None		# serial instance to communicate with the SMuFF
-		self._serlock		= _lock		# lock object for reading/writing
-		self._serevent		= Event()	# event raised when a valid response has been received
-		self._fw_info 		= "?"		# SMuFFs firmware info
-		self._cur_tool 		= "-1"		# the current tool
-		self._pre_tool 		= "-1"		# the previous tool
-		self._pending_tool 	= "?"		# the tool on a pending tool change
-		self._selector 		= False		# status of the Selector endstop
-		self._revolver 		= False		# status of the Revolver endstop
-		self._feeder 		= False		# status of the Feeder endstop
-		self._feeder2		= False		# status of the 2nd Feeder endstop
-		self._is_busy		= False		# flag set when SMuFF signals "Busy"
-		self._is_error		= False		# flag set when SMuFF signals "Error" 
-		self._is_aligned 	= False		# flag set when Feeder endstop is reached (not used yet)
-		self._response		= None		# the response string from SMuFF
+		self._serial 			= None		# serial instance to communicate with the SMuFF
+		self._serlock			= _lock		# lock object for reading/writing
+		self._serevent			= Event()	# event raised when a valid response has been received
+		self._fw_info 			= "?"		# SMuFFs firmware info
+		self._cur_tool 			= "-1"		# the current tool
+		self._pre_tool 			= "-1"		# the previous tool
+		self._pending_tool 		= "?"		# the tool on a pending tool change
+		self._selector 			= False		# status of the Selector endstop
+		self._revolver 			= False		# status of the Revolver endstop
+		self._feeder 			= False		# status of the Feeder endstop
+		self._feeder2			= False		# status of the 2nd Feeder endstop
+		self._is_busy			= False		# flag set when SMuFF signals "Busy"
+		self._is_error			= False		# flag set when SMuFF signals "Error" 
+		self._is_aligned 		= False		# flag set when Feeder endstop is reached (not used yet)
+		self._response			= None		# the response string from SMuFF
+		self._wait_requested	= False 	# set when SMuFF requested a "Wait" (in case of jams or similar)
+		self._abort_requested	= False		# set when SMuFF requested a "Abort"
 
 
 	##~~ ShutdownPlugin mixin
@@ -218,12 +225,6 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 
 			# self._logger.debug("1>> " + cmd + "  action: " + str(action) + "  v1,v2: " + str(v1) + ", " + str(v2))
 
-			# @SMuFF SERVO
-			if action and action == SERVO:
-				# send a servo command to SMuFF
-				self.send_SMuFF_and_wait(M280 + str(v1) + " R" + str(v2))
-				return ""
-
 			# @SMuFF MOTORS
 			if action and action == MOTORS:
 				# send a servo command to SMuFF
@@ -287,6 +288,24 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 					#finally:
 						#self._printer.set_job_on_hold(False)
 
+			# @SMuFF SERVO
+			if action and action == SERVO:
+				# send a servo command to SMuFF
+				self.send_SMuFF_and_wait(M280 + str(v1) + " S" + str(v2))
+				return ""
+
+			# @SMuFF SERVOOPEN
+			if action and action == SERVOOPEN:
+				# send a servo open command to SMuFF
+				self.send_SMuFF_and_wait(M280 + str(v1) + " R0")
+				return ""
+
+			# @SMuFF SERVOCLOSE
+			if action and action == SERVOCLOSE:
+				# send a servo close command to SMuFF
+				self.send_SMuFF_and_wait(M280 + str(v1) + " R1")
+				return ""
+
 			# @SMuFF WIPE
 			if action and action == WIPE:
 				# send a servo wipe command to SMuFF
@@ -313,7 +332,10 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 							else:
 								# not the result expected, do it all again
 								self._logger.warning("Tool change failed, retrying (<{0}> not <{1}>)".format(res, self._pending_tool))
-								retry -= 1
+								if self._abort_requested:
+									retry = 0
+								if not self._wait_requested:
+									retry -= 1
 
 					except UnknownScript:
 						# shouldn't happen at all, since we're using default OctoPrint scripts
@@ -433,7 +455,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			self._feeder 	= m.group(11).strip() == ESTOP_ON
 			self._feeder2  	= m.group(13).strip() == ESTOP_ON
 			if hasattr(self, "_plugin_manager"):
-				self._plugin_manager.send_plugin_message(self._identifier, {'type': 'status', 'tool': self._cur_tool, 'feeder': self._feeder, 'feeder2': self._feeder2, 'fw_info': self._fw_info })
+				self._plugin_manager.send_plugin_message(self._identifier, {'type': 'status', 'tool': self._cur_tool, 'feeder': self._feeder, 'feeder2': self._feeder2, 'fw_info': self._fw_info, 'conn': self._serial.is_open })
 			return True
 		else:
  			if hasattr(self, "_logger"):
@@ -513,6 +535,21 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 				else:
 					self._logger.error("Can't change to tool {}, printer not ready or printing".format(tool))
 					self.send_SMuFF("{0} T: \"Printer not ready\"".format(ACTION_CMD))
+			
+			if data[10:].startswith(ACTION_WAIT):
+				self._wait_requested = True
+				self._logger.debug("waiting for SMuFF to come clear...")
+
+			if data[10:].startswith(ACTION_CONTINUE):
+				self._wait_requested = False
+				self._abort_requested = False
+				self._logger.debug("continuing after SMuFF cleared...")
+
+			if data[10:].startswith(ACTION_ABORT):
+				self._wait_requested = False
+				self._abort_requested = True
+				self._logger.debug("aborting operation...")
+
 			return
 
 		if data.startswith("ok\n"):

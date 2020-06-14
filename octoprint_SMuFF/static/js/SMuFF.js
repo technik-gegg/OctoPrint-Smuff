@@ -43,6 +43,11 @@ $(function() {
                 // console.log(" fw info: " + message.fw_info);
                 $('#SMuFF_setting_firmware').text(message.fw_info);
             }
+            if(message.conn != null) {
+                // console.log(" fw info: " + message.fw_info);
+                $('#SMuFF_navbar_item').removeClass('navbar-item-conn navbar-item-disc');
+                $('#SMuFF_navbar_item').addClass(message.conn ? 'navbar-item-conn' :'navbar-item-disc');
+            }
         };
     }
 
