@@ -74,6 +74,25 @@ If you're connected through the USB connector, you need to figure out the accord
 The Raspbery will show you a list of devices, amongst them a device called **usb-LeafLabs_Maple_ifxx**. It also shows the **/dev/tty** device it is linked to. Usually the device is something like *ttyACM0* or *ttyACM1* on the Raspi3, *ttyUSB1* on the Raspi 4.
 Take the device name after the **/dev/** and enter this into the SMuFF plugin *Serial Port* setting.
 
+## Defining the SMuFF serial permanent
+
+Unfortunatelly, if you use the USB connection from Raspi to SMuFF, the USB port assignment on the Raspi sometimes switches from *ttyACM0* and *ttyACM1* back and forth. This makes configuring the plugin harder than it needs to be.
+To override this behavior, you have to define the according USB port as permanant. To achieve this you have to:
+- open a SSH session to your Raspi
+- **cd** to the **/etc/udev/rules.d** folder
+- create a new ruleset with **sudo nano 98-usb-serial.rules**
+- insert the following line into that ruleset:
+
+```
+SUBSYSTEM=="tty", ATTRS{idVendor}=="1eaf", ATTRS{idProduct}=="0004", SYMLINK+="ttySMuFF"
+```
+
+- save the file (Ctrl+S / Ctrl+X)
+- disconnect and reconnect the SMuFF
+
+Now, if you type **ls -l /dev/ttySMuFF** in your console, you should be seeing an according linked entry.
+If that's the case, go into the SMuFF plugin settings and use the device name *ttySMuFF* for the serial port setting instead of *ttyACM0 / ttyACM1*.
+
 ## Navbar indicator
 
 This plugin also comes with an indicator in the navbar of OctoPrint. It's showing you which tool is currently selected and whether or not filament has been loaded (meand: The Feeder endstop has triggered). 
