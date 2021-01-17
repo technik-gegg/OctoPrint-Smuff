@@ -2,19 +2,41 @@
 <div id="settings_plugin_SMuFF">
     <div>
         <p>For connection details please visit <a href="https://github.com/technik-gegg/OctoPrint-Smuff" target="_blank">Github</a>.</p>
-        <p>&nbsp;</p>
     </div>
     <form class="form-horizontal">
+        <div class="serial-hint">
+            <b>Notice:</b><br/>
+            If you've connected the SMuFF through USB, do a <span class="code">ls -l /dev/serial/by-id</span> on the console and pick the device named <span class="code">usb-LeafLabs_Maple-if00</span>
+            without including the <span class="code">/dev/</span> in the device name!
+        </div>
         <div class="aligned">
             <label class="label-aligned">{{ _('Serial Port / Baudrate:') }}</label>
             <div class="ml-1">
                 <input type="text" style="width: 20em" class="input-block-level" data-bind="value: _settings.tty">&nbsp;&nbsp;
-                <input type="text" style="width: 10em" class="input-block-level" data-bind="value: _settings.baudrate">
+                <select style="max-width: 8em;" data-bind="value: _settings.baudrate">
+                    <option value="230400">230400</option>
+                    <option value="115200">115200</option>
+                    <option value="57600">57600</option>
+                    <option value="38400">38400</option>
+                    <option value="19200">19200</option>
+                    <option value="9600">9600</option>
+                    <option value="4800">4800</option>
+                </select>
             </div>
         </div>
-        <div class="serial-hint">
-            <b>Notice:</b> If you've connected the SMuFF through USB, do a <b>ls -l /dev/serial/by-id</b> on the console and pick the device named <b>usb-LeafLabs_Maple-if00</b><br/>
-            Don't include the <b>/dev/</b> in the device name!
+        <div class="aligned">
+            <label class="label-aligned">{{ _('Communication Timeouts:') }}</label>
+            <div class="ml-1">
+                {{_('Default:')}}&nbsp;<input type="number" min="1" max="100" style="width: 5em" class="input-block-level" data-bind="value: _settings.timeout1">&nbsp;{{_('sec.')}}&nbsp;&nbsp;&nbsp;
+                {{_('On tool change:')}}&nbsp;<input type="number" min="1" max="100" style="width: 5em" class="input-block-level" data-bind="value: _settings.timeout2">&nbsp;{{_('sec.')}}
+            </div>
+        </div>
+        <div class="aligned">
+            <label class="label-aligned">{{ _('Auto load:') }}</label>
+            <div class="ml-1">
+                <input class="checkbox" type="checkbox" style="width: 2em" class="input-block-level" data-bind="checked: _settings.autoload">
+                <span class="serial-hint" style="margin-left: 1em;">Tick this option only if you're using the new "Shared Stepper" feature of the SMuFF.</span>
+            </div>
         </div>
 
         <div class="aligned">
@@ -44,7 +66,6 @@
         </div>
         
         <div style="width: 100%">
-            <p>&nbsp;</p>
             <p>
                 <div class="info">
                     <i class="fa fa-warning fa-2x"></i>

@@ -4,6 +4,8 @@ This is a plugin for OctoPrint which handles tool changes for the SMuFF ([as pub
 This plugin runs in the background and tracks tool changes (**Tx**) via the **octoprint.comm.protocol.gcode.queuing** and **octoprint.comm.protocol.gcode.send** hooks of OctoPrint.
 When triggered, the plugin will send the according **Tx** command to the SMuFF via the Raspberry's second onboard UART **ttyS0** (RPI-3) or **ttyAMA1** (RPI-4).
 
+***
+
 ## Setup
 
 Install the plugin via the bundled [Plugin Manager](https://github.com/foosel/OctoPrint/wiki/Plugin:-Plugin-Manager) directly from the OctoPrint Repository or manually by using this URL:
@@ -45,6 +47,8 @@ Make sure that you have a cross-over connection for the TX and RX lines:
 
 Also, make sure that you have your SMuFF configured at the same baudrate you'll be using in the plugin (**115200 baud** recommended).
 
+***
+
 ## Interfacing
 
 Here's a picture how all the stuff comes together:
@@ -55,6 +59,8 @@ The main difference to point out would be, that your printers extuder stepper dr
 OctoPrint is controlling your printer and feeding it with the GCodes, while it's also controlling the SMuFF when a tool change is pending.
 All necessary operations for a tool change (i.e. unloading current filament, loading new filament, purging etc.) need to be configured in the OctoPrint settings within the GCode-Scripts section **Before tool change** and **After tool change**.
 
+***
+
 ## Configuration
 
 There's not much configuration going on here, since the only relevant paramters are the baudrate and the serial port used to connect the Raspberry Pi to the SMuFF.
@@ -64,7 +70,9 @@ To change either the baudrate or the port, key in the device name (without the '
 Within the **Settings** dialog for the plugin, you'll be provided with some additional information i.e. whether or not the plugin was able to connect to the SMuFF. If the connection was sucessful, you'll see the firmware information coming directly from the SMuFF. You'll also see the currently active tool and the status of the Feeder endstops (up to 2 possible, usually only one is being used).
 If you don't see this information here, you'll need to check either your settings or your physical connection.
 
-![OctoPrint SMuFF plugin](extras/Settings-Screen.jpg)
+The **Communication Timeouts** section (new in V1.1.6) let's you modify the default timeouts. Please adopt these to your environment if needed.
+
+![OctoPrint SMuFF plugin](extras/SMuFF-Settings.jpg)
 
 **Please notice:** The plugin will preset the serial interface device differently, depending on the Raspberry Pi model you use. It's **ttyS0** on the Raspi 3 and **ttyAMA1** on the Raspi 4, both are direct UART connections on the GIO header mentioned above.
 
@@ -74,37 +82,69 @@ If you're connected through the USB connector, you need to figure out the accord
 The Raspbery will show you a list of devices, amongst them a device called **usb-LeafLabs_Maple_ifxx**. It also shows the **/dev/tty** device it is linked to. Usually the device is something like *ttyACM0* or *ttyACM1* on the Raspi3, *ttyUSB1* on the Raspi 4.
 Take the device name after the **/dev/** and enter this into the SMuFF plugin *Serial Port* setting.
 
-## Defining the SMuFF serial permanent
+***
 
-Unfortunatelly, if you use the USB connection from Raspi to SMuFF, the USB port assignment on the Raspi sometimes switches from *ttyACM0* and *ttyACM1* back and forth. This makes configuring the plugin harder than it needs to be.
-To override this behavior, you have to define the according USB port as permanant. To achieve this you have to:
+## Defining the SMuFF serial permanently
+
+Unfortunatelly, if you use the USB connection from Raspi to SMuFF, the USB port assignment on the Raspi sometimes switches *ttyACM0* and *ttyACM1* back and forth. This makes configuring the plugin harder than it needs to be.
+To override this behavior, you may want to to define the according USB port as permanent. To achieve this you have to:
+
 - open a SSH session to your Raspi
 - **cd** to the **/etc/udev/rules.d** folder
-- create a new ruleset with **sudo nano 98-usb-serial.rules**
+- create a new ruleset using: **sudo nano 98-usb-serial.rules**
 - insert the following line into that ruleset:
 
-```
-SUBSYSTEM=="tty", ATTRS{idVendor}=="1eaf", ATTRS{idProduct}=="0004", SYMLINK+="ttySMuFF"
-```
+    ```bash
+    SUBSYSTEM=="tty", ATTRS{idVendor}=="1eaf", ATTRS{idProduct}=="0004", SYMLINK+="ttySMuFF"
+    ```
 
 - save the file (Ctrl+S / Ctrl+X)
 - disconnect and reconnect the SMuFF
 
 Now, if you type **ls -l /dev/ttySMuFF** in your console, you should be seeing an according linked entry.
-If that's the case, go into the SMuFF plugin settings and use the device name *ttySMuFF* for the serial port setting instead of *ttyACM0 / ttyACM1*.
+If that's the case, go into the SMuFF plugin settings and use the device name *ttySMuFF* for the serial port setting instead of *ttyACM0* or *ttyACM1*.
+
+### Update to the procedure above
+
+If your 3D printer controller is from the same manufacturer (i.e. Bigtreetech), the Raspberry will fail to assign the *ttySMuFF* symlink because of ambiguity (that's because both controllers have the same Vendor and Product IDs). In such case you have to extend the ruleset by adding the USB port id (a.k.a. **devpath**), for example:
+
+```bash
+SUBSYSTEM=="tty", ATTRS{idVendor}=="1eaf", ATTRS{idProduct}=="0004", ATTRS{devpath}=="1.4", SYMLINK+="ttySMuFF"
+```
+
+The easiest way to figure out the USB port id (in this case 1.4) is to unplug the SMuFF from the Raspi USB port and then start the **UDEV monitor** using:
+
+>udevadm monitor
+
+Then plug the SMuFF back in. The monitor will respond with something like this:
+
+```bash
+...
+UDEV  [2398.910490] add      /devices/platform/scb/fd500000.pcie/pci0000:00/0000:00:00.0/0000:01:00.0/usb1/1-1/1-1.4/1-1.4:1.0/tty/ttyACM2 (tty)
+UDEV  [2398.910707] bind     /devices/platform/scb/fd500000.pcie/pci0000:00/0000:00:00.0/0000:01:00.0/usb1/1-1/1-1.4/1-1.4:1.0 (usb)
+UDEV  [2398.931582] bind     /devices/platform/scb/fd500000.pcie/pci0000:00/0000:00:00.0/0000:01:00.0/usb1/1-1/1-1.4 (usb)
+...
+```
+
+The USB port id (devpath) needed is reported at the very end of the 2nd bind command ".../1-**1.4** (usb)".
+Reboot your Raspi after you've added the devpath to the ruleset. Now the Raspi is able to distinguish on which device to create the symlink *ttySMuFF*.
+
+***
 
 ## Navbar indicator
 
-This plugin also comes with an indicator in the navbar of OctoPrint. It's showing you which tool is currently selected and whether or not filament has been loaded (meand: The Feeder endstop has triggered). 
+This plugin also comes with an indicator in the navbar of OctoPrint. It's showing you which tool is currently selected and whether or not filament has been loaded (means: The Feeder endstop has triggered). 
 It also shows you whether or not the connection has been established successfully. If the connection is OK, the indicator will turn green, otherwise it'll stay gray.
 Please notice that the navbar indicator is being updated frequently (approx. every 2 seconds).
 
 ![OctoPrint SMuFF plugin Navbar](extras/Navbar.jpg)
 
+***
+
 ## Additional setup
 
 The main configuration for tool changes is happening in the **OctoPrint GCODE Scripts section**.
-You have to apply the GCodes which will be executed **before** and **after** a tool change triggers. 
+You have to apply the GCodes which will be executed **before** and **after** a tool change triggers.
 Within these scripts you're able to configure all the movements and retractions/feeds needed for a successful filament swapping.
 
 The picture below shows you a sample of such scripts. Please be aware that you always have to modify these scripts to accomodate your printers setup, i.e. bowden tube length, speeds and such.
@@ -116,20 +156,20 @@ Here are the sample scripts in detail. Simply copy and paste these into your Oct
     ;-------------------------------------------
     ; beforeToolChange script
     ;-------------------------------------------
-    M400				; wait for move to complete
-    G60 S1				; save current positions (must be enabled in the FW)
-    M83				; set extruder to relative mode (important)
-    G1 E-5 F5000			; retract 5 mm to avoid oozing
+    M400               ; wait for move to complete
+    G60 S1             ; save current positions (must be enabled in the FW)
+    M83                ; set extruder to relative mode (important)
+    G1 E-5 F5000       ; retract 5 mm to avoid oozing
     ;-------------------------------------------
     ; Raising the Z-Axis may cause offset issues when it
     ; goes back due to backlash on the Z-Axis. If this 
     ; happens to you, delete the G91 - G1 - G90 lines
     ;-------------------------------------------
-    G91				; switch to relative positioning
-    G1 Z15 F8000			; lift nozzle
-    G90				; switch back to absolute positioning
-    G1 X0 Y0 F15000			; move to change position
-    M83				; set extruder to relative mode (important)
+    G91               ; switch to relative positioning
+    G1 Z15 F8000      ; lift nozzle
+    G90               ; switch back to absolute positioning
+    G1 X0 Y0 F15000   ; move to change position
+    M83               ; set extruder to relative mode (important)
     ;-------------------------------------------
     ; Next up is the (slightly modified) Marlin 2.0 
     ; MMU Ramming Sequence which I've shamlessly nicked 
@@ -173,10 +213,10 @@ Here are the sample scripts in detail. Simply copy and paste these into your Oct
     ; that's bowden length + hotend length + 
     ; SMuFF selector width (90)
     ;-------------------------------------------
-    G1 E-485 F4000	; Retract filament according to your bowden length
-    G4 S2			; wait 2 seconds (just for you to see where it ends)
-    G1 E-90 F1200	; Retract from selector (slowly)
-    M400		; wait for move to complete
+    G1 E-485 F4000    ; Retract filament according to your bowden length
+    G4 S2             ; wait 2 seconds (just for you to see where it ends)
+    G1 E-90 F1200     ; Retract from selector (slowly)
+    M400              ; wait for move to complete
     ;-------------------------------------------
     ; the next line is important and must not be removed!
     ;-------------------------------------------
@@ -186,20 +226,24 @@ Here are the sample scripts in detail. Simply copy and paste these into your Oct
     ;-------------------------------------------
     ; afterToolChange script
     ;-------------------------------------------
-    M83		; set extruder to relative mode (important)
-    G1 E65 F1500	; Feed slowly from Selector into the bowden tube
-    G1 E300 F4000	; Feed to hot end (fast)
-    G1 E200 F4000	; Feed to hot end (fast)
-    G1 E45 F500	; Feed down to nozzle (slow)
+    M83               ; set extruder to relative mode (important)
+    G1 E65 F1500      ; Feed slowly from Selector into the bowden tube
+    G1 E300 F4000     ; Feed to hot end (fast)
+    G1 E200 F4000     ; Feed to hot end (fast)
+    G1 E45 F500       ; Feed down to nozzle (slow)
     ;-------------------------------------------
     ; use the next line only if you're not 
     ; printing with a purge tower!
     ;-------------------------------------------
-    ;G1 E80 F240	; Purge out old filament (adopt the E value to your needs)
-    M400			; wait for move to finish
-    G61 S1 XYZ F3600	; restore saved positions (must be enabled in the FW)
+    ;G1 E80 F240      ; Purge out old filament (adopt the E value to your needs)
+    M400              ; wait for move to finish
+    G61 S1 XYZ F3600  ; restore saved positions (must be enabled in the FW)
 
 The values for feed and retraction here apply to a bowden tube length of about 520 mm, which is feasible for the Ender 3, whereas the SmuFF was mounted on the top bar. The 45 mm for the hotend reflect the Ender 3s stock hotend. Remember that you have to adopt these values according to your printer setup. You can adjust those settings with the following step.
+
+**Please keep in mind**: The scripts ahown above apply only if you don't use the "Shared Stepper" option.
+
+***
 
 ## Testing your GCode scripts
 
@@ -214,6 +258,8 @@ As you may have spotted in the picture, there are some convenience commands such
 >**Important:** Remove the bowden tube from the hotend before you do this.
 
 If your scripts are set up correctly, the tool changing will end up with filament sticking out at the end of the bowden tube. The length of the filament sticking out is supposed to be the length of your hotend (more or less the distance from inlet/fitting to nozzle).
+
+***
 
 ## Marlin setup (IMPORTANT!)
 
@@ -238,6 +284,18 @@ Next, comment out **PREVENT_LENGTHY_EXTRUDE**. Otherwise this will lead to probl
 
 You may leave it in there and redefine the **EXTRUDE_MAXLENGTH**, as I've tried to, but it didn't work out for negative extrusions (a.k.a retractions). The Marlin firmware still reported an error.
 
+### On Marlin 2.0.7.x and later
+
+You have to do some additional changes, in **Configuration.h**:
+
+![Marlin 2.7.0.x](extras/Marlin-OctoPrint-2.0.7.2.jpg)
+
+As well as in **Configuration_adv.h**:
+
+![Marlin 2.7.0.x](extras/Marlin-OctoPrint-2.0.7.2-adv.jpg)
+
+If you don't apply these changes, the extruder stepper motor (on a shared nozzle) will be disabled after a tool change! That's not what we want.
+
 Finally, enable the option to store/restore positions by the **G60/G61** GCodes, since this feature is being used in the after-/beforeToolChange scripts:
 
 ![Marlin G60/G61](extras/G60-Enable.jpg)
@@ -247,10 +305,24 @@ The most convenient way doing this is by setting it up using the **M92** GCode i
 
 ![Marlin E-Steps](extras/Extruder-Steps.jpg)
 
-Since the SMuFF has a geared drive with a gear ratio of 3:1, the E-Steps sould be in the range of 402-405. Set it to **M92 E402** initialy and calibrate the exact value afterwards by utilizing the well known calibarion procedure.
+Since the SMuFF has a geared drive with a gear ratio of 3:1, the E-Steps sould be in the range of 402-410. Set it to **M92 E402** initialy and calibrate the exact value afterwards by utilizing the well known calibarion procedure.
 Don't forget to store the new setting with **M500** each time you change this value.
 
 >***Notice***: You can do this configuration directly in the Marlin firmware as well (look out for **DEFAULT_AXIS_STEPS_PER_UNIT**), though, I wouldn't reccomend doing so before you've calibrated the exact E-Steps for your printer.
+
+***
+
+## Known issues
+
+There are some issues I've discovered recently:
+
+- If you raise the Z-Axis within the Before/After Tool Chnage scripts, you may discover gaps in your print. If that's the case, your printer may suffer from backlash on the Z-Axis spindle. Try adding an anti backlash nut to your setup
+- In some cases, moving the Z-Axis in sayed scripts(and returning to the saved position using G61) may cause the printer to hang. Not sure what's causing this.
+- In some other cases, extruding / retracting filament in sayed scripts also will cause the printer to hang (extruder nt moving correctly) as it resumes printing. I have no clue why this happens.
+
+Please notice that in the latest version of the SMuFF firmware (2.19) you're able to control the whole tool change process by the SMuFF itself if you're utilizing the "Shared Stepper" option (additional relay board). This includes purging the filament as well.
+
+***
 
 ## Slicing multi material models
 
@@ -262,10 +334,14 @@ To be able to slice multi material models you need to set up you slicer accordin
 Allthough Michael is referring to dual extrusion, the process is still the same for more than two materials.
 One important point is that you have configured all tools (i.e. feedrate, temperatures, etc.) according to your printer, before you move on setting up the different processes for each individual material (color).
 
+***
+
 ## Looking for multi material models?
 
 If you're looking for high quality models to print, have a look at [Roman Tyr's (a.k.a. Cipis) Thingiverse collection](https://www.thingiverse.com/search?q=cipis&type=things&sort=relevant).
 He has a really nice collection of models for multi material 3D printing. If you download one (or more) of his models, please make sure to leave him a like.
+
+***
 
 ## What else?
 

@@ -32,6 +32,7 @@ M106 		= "M106 S100"
 M107 		= "M107"
 G12			= "G12" # change the wiping sequence on the SMuFF in SMuFF.CFG
 TOOL 		= "T"
+AUTOLOAD 	= "S1"
 NOTOOL		= "T255"
 G1_E	 	= "G1 E"
 ALIGN 	 	= "ALIGN"
@@ -51,6 +52,8 @@ ACTION_CMD 	= "//action:"
 ACTION_WAIT 	= "WAIT"
 ACTION_CONTINUE = "CONTINUE"
 ACTION_ABORT 	= "ABORT"
+ACTION_PING 	= "PING"
+ACTION_PONG 	= "PONG"
 
 class SmuffPlugin(octoprint.plugin.SettingsPlugin,
                   octoprint.plugin.AssetPlugin,
@@ -77,7 +80,8 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		self._response			= None		# the response string from SMuFF
 		self._wait_requested	= False 	# set when SMuFF requested a "Wait" (in case of jams or similar)
 		self._abort_requested	= False		# set when SMuFF requested a "Abort"
-
+		self._lastSerialEvent	= 0 		# last time (in millis) a serial receive took place
+		self._is_processing		= False		# set when SMuFF is supposed to be busy
 
 	##~~ ShutdownPlugin mixin
 
@@ -91,12 +95,19 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 	##~~ StartupPlugin mixin
 
 	def on_after_startup(self):
+		self._lastSerialEvent = nowMS()
+		self.connect_SMuFF()
+
+	def connect_SMuFF(self):
 		port = self._settings.get(["tty"])
 		baud = self._settings.get_int(["baudrate"])
-		self._logger.debug("Opening serial {0} with {1}".format(port, baud))
-		if open_SMuFF_serial(port, baud):
+		timeout = self._settings.get_int(["timeout2"])*2
+		self._logger.debug("Opening serial {0} with {1}, timeout: {2}".format(port, baud, timeout))
+		if open_SMuFF_serial(port, baud, timeout):
 			self._serial = __ser0__
 			start_reader_thread()
+		else:
+			self._logger.debug("Opening serial {0} has failed".format(port))
 
 		# request firmware info from SMuFF 
 		if self._serial.is_open:
@@ -114,33 +125,33 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 
 	##~~ SettingsPlugin mixin
 
+	def get_settings_version(self):
+		return 2
+
 	def get_settings_defaults(self):
 		self._logger.debug("SMuFF plugin loaded, getting defaults")
 
 		params = dict(
 			firmware_info	= "No data. Please check connection!",
-			baudrate	= SERBAUD,
-			tty 		= SERDEV,
-			tool		= self._cur_tool,
+			baudrate		= SERBAUD,
+			tty 			= SERDEV,
+			tool			= self._cur_tool,
 			selector_end	= self._selector,
 			revolver_end	= self._revolver,
-			feeder_end	= self._feeder,
-			feeder2_end	= self._feeder
+			feeder_end		= self._feeder,
+			feeder2_end		= self._feeder,
+			timeout1		= 10,
+			timeout2		= 40,
+			autoload 		= False
 		)
 
-		# look up the serial port driver
-		#if sys.platform == "win32":
-		#	if SERDEV.startswith("tty"):
-		#		params['tty'] = "Wrong device on WIN32 ({})".format(SERDEV)
-		#	else:
-		#		params['tty'] = SERDEV
-		#else:
-		#	drvr = self.find_file(SERDEV, "/dev")
-		#	if len(drvr) > 0:
-		#		params['tty'] = "/dev/{}".format(SERDEV)
-
 		return  params
-	
+
+	def on_settings_migrate(self, target, current):
+		if current == None or target < current:
+			self._logger.debug("Migrating old settings...")
+			self._settings.save()
+
 	def on_settings_save(self, data):
 		global __ser0__
 		baud = self._settings.get_int(["baudrate"])
@@ -148,15 +159,12 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		octoprint.plugin.SettingsPlugin.on_settings_save(self, data)
 		baud_new = self._settings.get_int(["baudrate"])
 		port_new = self._settings.get(["tty"])
-		self._logger.debug("Settings saved: {0}/{1}  {2}/{3}".format(baud, baud_new, port, port_new))
+		# self._logger.debug("Settings saved: {0}/{1}  {2}/{3}".format(baud, baud_new, port, port_new))
 		# did the settings change?
 		if not port_new == port or not baud_new == baud:
 			# close the previous port, re-open it, start the reader thread and get SMuFF's firmware information
 			close_SMuFF_serial()
-			open_SMuFF_serial(port_new, baud_new)
-			self._serial = __ser0__
-			start_reader_thread()
-			self._fw_info = self.send_SMuFF_and_wait(M115)
+			self.connect_SMuFF()
 
 	def get_template_configs(self):
 		# self._logger.debug("Settings-Template was requested")
@@ -262,7 +270,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 				if len(tmp) > 4:
 					spd = int(tmp[4])
 
-			self._logger.debug("2>> " + cmd + "  action: " + str(action) + "  v1,v2: " + str(v1) + ", " + str(v2))
+			#self._logger.debug("2>> " + cmd + "  action: " + str(action) + "  v1,v2: " + str(v1) + ", " + str(v2))
 
 			# @SMuFF T0...T99
 			if action and action.startswith(TOOL):
@@ -272,11 +280,11 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 						self._pending_tool = str(action)
 						# check if there's filament loaded
 						if self._feeder:
-							self._logger.debug("2>> calling script 'beforeToolChange'")
+							#self._logger.debug("2>> calling script 'beforeToolChange'")
 							# if so, send the OctoPrints default "Before Tool Change" script to the printer
 							self._printer.script("beforeToolChange")
 						else:
-							self._logger.debug("2>> calling SMuFF LOAD")
+							#self._logger.debug("2>> calling SMuFF LOAD")
 							# not loaded, nothing to retract, so send the tool change to the SMuFF
 							self._printer.commands(AT_SMUFF + " " + LOAD)
 
@@ -315,17 +323,18 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			if action and action == LOAD:
 				with self._printer.job_on_hold():
 					try:
-						self._logger.debug("1>> LOAD: Feeder: " + str(self._feeder) + ", Pending: " + str(self._pending_tool) + ", Current: " + str(self._cur_tool))
+						#self._logger.debug("1>> LOAD: Feeder: " + str(self._feeder) + ", Pending: " + str(self._pending_tool) + ", Current: " + str(self._cur_tool))
 						retry = 3	# retry up to 3 times
 						while retry > 0:
 							# send a tool change command to SMuFF
-							res = self.send_SMuFF_and_wait(self._pending_tool)
+							autoload = self._settings.get_boolean(["autoload"])
+							res = self.send_SMuFF_and_wait(self._pending_tool + (AUTOLOAD if autoload else ""))
 							# do we have the tool requested now?
 							if str(res) == str(self._pending_tool):
 								self._pre_tool = self._cur_tool
 								self._cur_tool = self._pending_tool
 								comm_instance._currentTool = self.parse_tool_number(self._cur_tool)
-								self._logger.debug("2>> calling script 'afterToolChange'")
+								#self._logger.debug("2>> calling script 'afterToolChange'")
 								# send the default OctoPrint "After Tool Change" script to the printer
 								self._printer.script("afterToolChange")
 								retry = 0
@@ -376,6 +385,12 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 
 	# sending data to SMuFF
 	def send_SMuFF(self, data):
+		now = nowMS()
+		if (now - self._lastSerialEvent)/1000 > self._settings.get_int(["timeout2"]):
+			self._logger.error("Communication timeout error...")
+			close_SMuFF_serial()
+			self.connect_SMuFF()
+
 		if self._serial and self._serial.is_open:
 			try:
 				b = bytearray(80)		# not expecting commands longer then that
@@ -401,11 +416,15 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		if self.send_SMuFF(data) == False:
 			return None
 
-		timeout = 10 	# wait max. 10 seconds for a response
+		if data.startswith("T"):
+			timeout = self._settings.get_int(["timeout2"]) 	# wait max. 30 seconds for a response while swapping tools
+		else:
+			timeout = self._settings.get_int(["timeout1"])	# wait max. 5 seconds for other operations
 		done = False
 		resp = None
-		self.set_busy(False)	# reset busy and
-		self.set_error(False)	# error flags
+		self.set_busy(False)		# reset busy and
+		self.set_error(False)		# error flags
+		self.set_processing(True)	# SMuFF is currently doing something
 		while not done:
 			self._serevent.clear()
 			is_set = self._serevent.wait(timeout)
@@ -422,6 +441,8 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 				self._logger.info("No event received... aborting")
 				if self._is_busy == False:
 					done = True
+
+		self.set_processing(False)	# SMuFF is not supposed to do anything
 		return resp
 
 	def find_file(self, pattern, path):
@@ -431,6 +452,9 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 				if fnmatch.fnmatch(name, pattern):
 					result.append(os.path.join(root, name))
 		return result
+
+	def set_processing(self, processing):
+		self._is_processing = processing
 
 	def set_busy(self, busy):
 		self._is_busy = busy
@@ -481,6 +505,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		#self._logger.debug("Raw data: [{0}]".format(data.rstrip("\n")))
 
 		global last_response
+		self._lastSerialEvent = nowMS()
 		self._serevent.clear()
 
 		# after first connect the response from the SMuFF is supposed to be 'start'
@@ -550,6 +575,9 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 				self._abort_requested = True
 				self._logger.debug("aborting operation...")
 
+			if data[10:].startswith(ACTION_PONG):
+				self._logger.debug("PONG received")
+
 			return
 
 		if data.startswith("ok\n"):
@@ -565,7 +593,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		self._logger.debug("Received response: [{0}]".format(last_response))
 
 
-def open_SMuFF_serial(port, baudrate):
+def open_SMuFF_serial(port, baudrate, tmout):
 	global __stop_ser__
 	global __ser0__
 
@@ -573,7 +601,7 @@ def open_SMuFF_serial(port, baudrate):
 	__stop_ser__ = False
 
 	try:
-		__ser0__ = serial.Serial("/dev/{}".format(port), baudrate, timeout=10)
+		__ser0__ = serial.Serial("/dev/{}".format(port), baudrate, timeout=tmout)
 		_logger.debug("Serial port /dev/{} is open".format(port))
 	except (OSError, serial.SerialException):
 		exc_type, exc_value, exc_traceback = sys.exc_info()
@@ -632,9 +660,11 @@ def serial_reader(_logger, _serial, _instance, _lock):
 
 		cnt += 1
 		time.sleep(0.01)
-		if cnt >= 6000:		# send some "I'm still alive" signal every 60 seconds
+		if cnt >= 6000:		
+			# send some "I'm still alive" signal every 60 seconds (for debugging purposes only)
 			_logger.debug("Serial Reader Ping...")
 			cnt = 0
+
 
 	_logger.info("Exiting serial port receiver")
 
@@ -654,6 +684,9 @@ def get_pi_model():
 		_logger.info("Can't read cpuinfo, assuming  Pi 3")
 		model = 3
 	return model
+
+def nowMS():
+	return int(round(time.time() * 1000))
 
 def start_reader_thread():
 	global __ser0__

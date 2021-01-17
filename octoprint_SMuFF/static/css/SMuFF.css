@@ -24,7 +24,8 @@
     border-radius: 4px;
     border: 1px solid #81D4FA;
     padding: 4px;
-    width: 450px;
+    width: auto;
+    max-width: 30em;
 }
 
 .info {
@@ -33,6 +34,7 @@
     border-radius: 6px;
     padding: 0.8em;
     line-height: 1.5em;
+    margin: 1em;
 }
 
 .navbar-item-conn {
@@ -68,13 +70,19 @@
 
 .label-aligned {
     width: 210px;
-    align-self: flex-start;
     text-align: end;
     margin-right: 0.5em;
+    min-width: 15em;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    margin-top: 4px;    
 }
 
 .ml-1 {
     margin-left: 1em;
+    display: flex;
+    align-items: center;
 }
 
 .serial-hint {
@@ -82,4 +90,14 @@
     font-style: italic;
     margin-left: 230px;
     color: #FFA726;
+    max-width: 38em;
+}
+
+.code  {
+    background: #333;
+    padding: 3px 5px;
+    color: #fff;
+    font-family: monospace;
+    font-style: normal;
+    font-weight: 100;
 }
