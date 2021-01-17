@@ -83,12 +83,20 @@ The Raspbery will show you a list of devices, amongst them a device called **usb
 Take the device name after the **/dev/** and enter this into the SMuFF plugin *Serial Port* setting.
 
 ***
+<<<<<<< HEAD
 
 ## Defining the SMuFF serial permanently
 
 Unfortunatelly, if you use the USB connection from Raspi to SMuFF, the USB port assignment on the Raspi sometimes switches *ttyACM0* and *ttyACM1* back and forth. This makes configuring the plugin harder than it needs to be.
 To override this behavior, you may want to to define the according USB port as permanent. To achieve this you have to:
 
+=======
+
+## Defining the SMuFF serial permanently
+
+Unfortunatelly, if you use the USB connection from Raspi to SMuFF, the USB port assignment on the Raspi sometimes switches *ttyACM0* and *ttyACM1* back and forth. This makes configuring the plugin harder than it needs to be.
+To override this behavior, you may want to to define the according USB port as permanent. To achieve this you have to:
+>>>>>>> dbb96845e0c8ab89316fc1be8415e2dc17fb9d15
 - open a SSH session to your Raspi
 - **cd** to the **/etc/udev/rules.d** folder
 - create a new ruleset using: **sudo nano 98-usb-serial.rules**
@@ -108,7 +116,11 @@ If that's the case, go into the SMuFF plugin settings and use the device name *t
 
 If your 3D printer controller is from the same manufacturer (i.e. Bigtreetech), the Raspberry will fail to assign the *ttySMuFF* symlink because of ambiguity (that's because both controllers have the same Vendor and Product IDs). In such case you have to extend the ruleset by adding the USB port id (a.k.a. **devpath**), for example:
 
+<<<<<<< HEAD
 ```bash
+=======
+```
+>>>>>>> dbb96845e0c8ab89316fc1be8415e2dc17fb9d15
 SUBSYSTEM=="tty", ATTRS{idVendor}=="1eaf", ATTRS{idProduct}=="0004", ATTRS{devpath}=="1.4", SYMLINK+="ttySMuFF"
 ```
 
@@ -118,7 +130,11 @@ The easiest way to figure out the USB port id (in this case 1.4) is to unplug th
 
 Then plug the SMuFF back in. The monitor will respond with something like this:
 
+<<<<<<< HEAD
 ```bash
+=======
+```
+>>>>>>> dbb96845e0c8ab89316fc1be8415e2dc17fb9d15
 ...
 UDEV  [2398.910490] add      /devices/platform/scb/fd500000.pcie/pci0000:00/0000:00:00.0/0000:01:00.0/usb1/1-1/1-1.4/1-1.4:1.0/tty/ttyACM2 (tty)
 UDEV  [2398.910707] bind     /devices/platform/scb/fd500000.pcie/pci0000:00/0000:00:00.0/0000:01:00.0/usb1/1-1/1-1.4/1-1.4:1.0 (usb)
@@ -126,7 +142,11 @@ UDEV  [2398.931582] bind     /devices/platform/scb/fd500000.pcie/pci0000:00/0000
 ...
 ```
 
+<<<<<<< HEAD
 The USB port id (devpath) needed is reported at the very end of the 2nd bind command ".../1-**1.4** (usb)".
+=======
+The USB port id (devpath) needed is reported at the very end of the 2nd bind command ".../1-**1.4** (usb)". 
+>>>>>>> dbb96845e0c8ab89316fc1be8415e2dc17fb9d15
 Reboot your Raspi after you've added the devpath to the ruleset. Now the Raspi is able to distinguish on which device to create the symlink *ttySMuFF*.
 
 ***
@@ -241,8 +261,11 @@ Here are the sample scripts in detail. Simply copy and paste these into your Oct
 
 The values for feed and retraction here apply to a bowden tube length of about 520 mm, which is feasible for the Ender 3, whereas the SmuFF was mounted on the top bar. The 45 mm for the hotend reflect the Ender 3s stock hotend. Remember that you have to adopt these values according to your printer setup. You can adjust those settings with the following step.
 
+<<<<<<< HEAD
 **Please keep in mind**: The scripts ahown above apply only if you don't use the "Shared Stepper" option.
 
+=======
+>>>>>>> dbb96845e0c8ab89316fc1be8415e2dc17fb9d15
 ***
 
 ## Testing your GCode scripts
@@ -312,6 +335,7 @@ Don't forget to store the new setting with **M500** each time you change this va
 
 ***
 
+<<<<<<< HEAD
 ## Known issues
 
 There are some issues I've discovered recently:
@@ -324,6 +348,8 @@ Please notice that in the latest version of the SMuFF firmware (2.19) you're abl
 
 ***
 
+=======
+>>>>>>> dbb96845e0c8ab89316fc1be8415e2dc17fb9d15
 ## Slicing multi material models
 
 To set up a test print, you need to slice a multi material model first and then upload it to OctoPrint.
