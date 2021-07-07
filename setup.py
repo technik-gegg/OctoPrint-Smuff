@@ -14,7 +14,7 @@ plugin_package = "octoprint_SMuFF"
 plugin_name = "SMuFF Plugin"
 
 # The plugin's version. Can be overwritten within OctoPrint's internal data via __plugin_version__ in the plugin module
-plugin_version = "1.1.6"
+plugin_version = "1.1.7"
 
 # The plugin's description. Can be overwritten within OctoPrint's internal data via __plugin_description__ in the plugin
 # module

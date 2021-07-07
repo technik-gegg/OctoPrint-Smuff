@@ -82,6 +82,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		self._abort_requested	= False		# set when SMuFF requested a "Abort"
 		self._lastSerialEvent	= 0 		# last time (in millis) a serial receive took place
 		self._is_processing		= False		# set when SMuFF is supposed to be busy
+		self._isReconnect 	= False		# set when trying to re-establish serial connection
 
 	##~~ ShutdownPlugin mixin
 
@@ -108,6 +109,10 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			start_reader_thread()
 		else:
 			self._logger.debug("Opening serial {0} has failed".format(port))
+
+		if self._isReconnect:
+			self._isReconnect = False
+			return
 
 		# request firmware info from SMuFF 
 		if self._serial.is_open:
@@ -140,8 +145,8 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			revolver_end	= self._revolver,
 			feeder_end		= self._feeder,
 			feeder2_end		= self._feeder,
-			timeout1		= 10,
-			timeout2		= 40,
+			timeout1		= 5,
+			timeout2		= 30,
 			autoload 		= False
 		)
 
@@ -152,6 +157,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			self._logger.debug("Migrating old settings...")
 			self._settings.save()
 
+
 	def on_settings_save(self, data):
 		global __ser0__
 		baud = self._settings.get_int(["baudrate"])
@@ -159,7 +165,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		octoprint.plugin.SettingsPlugin.on_settings_save(self, data)
 		baud_new = self._settings.get_int(["baudrate"])
 		port_new = self._settings.get(["tty"])
-		# self._logger.debug("Settings saved: {0}/{1}  {2}/{3}".format(baud, baud_new, port, port_new))
+		self._logger.debug("Settings saved: {0}/{1}  {2}/{3}".format(baud, baud_new, port, port_new))
 		# did the settings change?
 		if not port_new == port or not baud_new == baud:
 			# close the previous port, re-open it, start the reader thread and get SMuFF's firmware information
@@ -270,7 +276,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 				if len(tmp) > 4:
 					spd = int(tmp[4])
 
-			#self._logger.debug("2>> " + cmd + "  action: " + str(action) + "  v1,v2: " + str(v1) + ", " + str(v2))
+			self._logger.debug("2>> " + cmd + "  action: " + str(action) + "  v1,v2: " + str(v1) + ", " + str(v2))
 
 			# @SMuFF T0...T99
 			if action and action.startswith(TOOL):
@@ -280,11 +286,11 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 						self._pending_tool = str(action)
 						# check if there's filament loaded
 						if self._feeder:
-							#self._logger.debug("2>> calling script 'beforeToolChange'")
+							self._logger.debug("2>> calling script 'beforeToolChange'")
 							# if so, send the OctoPrints default "Before Tool Change" script to the printer
 							self._printer.script("beforeToolChange")
 						else:
-							#self._logger.debug("2>> calling SMuFF LOAD")
+							self._logger.debug("2>> calling SMuFF LOAD")
 							# not loaded, nothing to retract, so send the tool change to the SMuFF
 							self._printer.commands(AT_SMUFF + " " + LOAD)
 
@@ -323,7 +329,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			if action and action == LOAD:
 				with self._printer.job_on_hold():
 					try:
-						#self._logger.debug("1>> LOAD: Feeder: " + str(self._feeder) + ", Pending: " + str(self._pending_tool) + ", Current: " + str(self._cur_tool))
+						self._logger.debug("1>> LOAD: Feeder: " + str(self._feeder) + ", Pending: " + str(self._pending_tool) + ", Current: " + str(self._cur_tool))
 						retry = 3	# retry up to 3 times
 						while retry > 0:
 							# send a tool change command to SMuFF
@@ -334,7 +340,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 								self._pre_tool = self._cur_tool
 								self._cur_tool = self._pending_tool
 								comm_instance._currentTool = self.parse_tool_number(self._cur_tool)
-								#self._logger.debug("2>> calling script 'afterToolChange'")
+								self._logger.debug("2>> calling script 'afterToolChange'")
 								# send the default OctoPrint "After Tool Change" script to the printer
 								self._printer.script("afterToolChange")
 								retry = 0
@@ -387,8 +393,9 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 	def send_SMuFF(self, data):
 		now = nowMS()
 		if (now - self._lastSerialEvent)/1000 > self._settings.get_int(["timeout2"]):
-			self._logger.error("Communication timeout error...")
+			self._logger.error("Possible communication error...{0}/{1}".format(now, self._lastSerialEvent))
 			close_SMuFF_serial()
+			self._isReconnect = True
 			self.connect_SMuFF()
 
 		if self._serial and self._serial.is_open:
@@ -406,11 +413,16 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			except (OSError, serial.SerialException):
 				self._serlock.release()
 				self._logger.error("Can't send command to SMuFF")
+				if hasattr(self, "_plugin_manager"):
+					self._plugin_manager.send_plugin_message(self._identifier, {'type': 'status', 'tool': -1, 'feeder': False, 'feeder2': False, 'fw_info': '', 'conn': False })
+				close_SMuFF_serial()
+				self._logger.error("Trying a reconnect")
+				self.connect_SMuFF()
 				return False
 		else:
 			self._logger.error("Serial not open")
 			return False
-		
+
 	# sending data to SMuFF and waiting for a response
 	def send_SMuFF_and_wait(self, data):
 		if self.send_SMuFF(data) == False:
@@ -471,20 +483,24 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			return False
 		# Note: SMuFF sends periodically states in this notation: 
 		# 	"echo: states: T: T4     S: off  R: off  F: off  F2: off"
-		m = re.search(r'^((\w+:.)(\w+:))\s([T]:\s)(\w+)\s([S]:\s)(\w+)\s([R]:\s)(\w+)\s([F]:\s)(\w+)\s([F,2]+:\s)(\w+)', states)
-		if m:
-			self._cur_tool 	= m.group(5).strip()
-			self._selector 	= m.group(7).strip() == ESTOP_ON
-			self._revolver 	= m.group(9).strip() == ESTOP_ON
-			self._feeder 	= m.group(11).strip() == ESTOP_ON
-			self._feeder2  	= m.group(13).strip() == ESTOP_ON
-			if hasattr(self, "_plugin_manager"):
-				self._plugin_manager.send_plugin_message(self._identifier, {'type': 'status', 'tool': self._cur_tool, 'feeder': self._feeder, 'feeder2': self._feeder2, 'fw_info': self._fw_info, 'conn': self._serial.is_open })
-			return True
-		else:
- 			if hasattr(self, "_logger"):
-	 			self._logger.error("No match in parse_states: [" + states + "]")
-		return False
+		#m = re.search(r'^((\w+:.)(\w+:))\s([T]:\s)(\w+)\s([S]:\s)(\w+)\s([R]:\s)(\w+)\s([F]:\s)(\w+)\s([F,2]+:\s)(\w+)', states)
+		for m in re.finditer(r'([A-Z]{1,3}[\d|:]+).(\+?\w+|-?\d+)+',states):
+			if m[1] == "T:":
+				self._cur_tool = m[2].strip()
+			elif m[1] == "S:":
+				self._selector = m[2].strip() == ESTOP_ON
+			elif m[1] == "R:":
+				self._revolver = m[2].strip() == ESTOP_ON
+			elif m[1] == "F:":
+				self._feeder = m[2].strip() == ESTOP_ON
+			elif m[1] == "F2:":
+				self._feeder2 = m[2].strip() == ESTOP_ON
+			#else:
+				#if (hasattr(self, "_logger")):
+				#	self._logger.error("Unknown state: [" + m[1] + "]")
+		if hasattr(self, "_plugin_manager"):
+			self._plugin_manager.send_plugin_message(self._identifier, {'type': 'status', 'tool': self._cur_tool, 'feeder': self._feeder, 'feeder2': self._feeder2, 'fw_info': self._fw_info, 'conn': self._serial.is_open })
+		return True
 
 	def parse_tool_number(self, tool):
 		try:
@@ -560,7 +576,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 				else:
 					self._logger.error("Can't change to tool {}, printer not ready or printing".format(tool))
 					self.send_SMuFF("{0} T: \"Printer not ready\"".format(ACTION_CMD))
-			
+
 			if data[10:].startswith(ACTION_WAIT):
 				self._wait_requested = True
 				self._logger.debug("waiting for SMuFF to come clear...")
@@ -660,11 +676,13 @@ def serial_reader(_logger, _serial, _instance, _lock):
 
 		cnt += 1
 		time.sleep(0.01)
-		if cnt >= 6000:		
+		if cnt >= 6000:
 			# send some "I'm still alive" signal every 60 seconds (for debugging purposes only)
 			_logger.debug("Serial Reader Ping...")
 			cnt = 0
 
+	if hasattr(_instance, "_plugin_manager"):
+		_instance._plugin_manager.send_plugin_message(_instance._identifier, {'type': 'status', 'tool': -1, 'feeder': False, 'feeder2': False, 'fw_info': '', 'conn': False })
 
 	_logger.info("Exiting serial port receiver")
 
