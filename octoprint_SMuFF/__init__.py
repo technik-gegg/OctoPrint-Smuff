@@ -1,59 +1,49 @@
+#---------------------------------------------------------------------------------------------
+# SMuFF OctoPrint Plugin
+#---------------------------------------------------------------------------------------------
+#
+# Copyright (C) 2020-2022 Technik Gegg <technik.gegg@gmail.com>
+#
+# This file may be distributed under the terms of the GNU AGPLv3 license.
+#
+#
+# This plugin implements the communication to the SMuFF for tool changing
+# very similar to the Klipper module.
+
 #coding=utf-8
 
 from __future__ import absolute_import
-from threading import Thread, Lock, Event
+from multiprocessing import connection
+from sqlite3 import connect
 
-from octoprint.util import RepeatedTimer
 from octoprint.printer import UnknownScript
 from octoprint.events import Events
+
+from . import smuff_core
+
 import octoprint.plugin
-
-import serial                    # we need this for the serial communcation with the SMuFF
-import os, fnmatch
-import re
-import time
-import sys
-import traceback
 import logging
-import binascii
 
-# change the baudrate and port here if you have to
-# this might move into the settings some day
-SERBAUD		= 115200
-SERDEVS		= [ "ttyS0", "ttyAMA1", "ttyUSB1", "ttyACM0" ]
+LOGGER			= "octoprint.plugins.SMuFF"
+DEFAULT_BAUD	= 115200
+IS_KLIPPER		= False 				# flag has to be set to True for Klipper
 
-SERDEV		= ""	# will be initialized later on
-AT_SMUFF 	= "@SMuFF"
-M115	 	= "M115"
-M119	 	= "M119"
-M280	 	= "M280 P"
-M18			= "M18"
-M106 		= "M106 S100"
-M107 		= "M107"
-G12			= "G12" # change the wiping sequence on the SMuFF in SMuFF.CFG
-TOOL 		= "T"
-AUTOLOAD 	= "S1"
-NOTOOL		= "T255"
-G1_E	 	= "G1 E"
-ALIGN 	 	= "ALIGN"
-REPEAT 		= "REPEAT"
-LOAD 		= "LOAD"
-SERVO		= "SERVO"
-SERVOOPEN   = "SERVOOPEN"
-SERVOCLOSE  = "SERVOCLOSE"
-WIPE		= "WIPE"
-MOTORS		= "MOTORS"
-FAN			= "FAN"
-PRINTER		= "PRINTER"
-ALIGN_SPEED	= " F"
-ESTOP_ON	= "on"
-LOGGER 		= "octoprint.plugins.SMuFF"
-ACTION_CMD 	= "//action:"
-ACTION_WAIT 	= "WAIT"
-ACTION_CONTINUE = "CONTINUE"
-ACTION_ABORT 	= "ABORT"
-ACTION_PING 	= "PING"
-ACTION_PONG 	= "PONG"
+AT_SMUFF 		= "@SMuFF"				# prefix for pseudo GCode for SMuFF functions
+DEBUG			= "DEBUG"
+LOAD 			= "LOAD"
+UNLOAD 			= "UNLOAD"
+RELOAD 			= "RELOAD"
+SERVO			= "SERVO"
+SERVOOPEN		= "SERVOOPEN"
+SERVOCLOSE		= "SERVOCLOSE"
+WIPENOZZLE		= "WIPE"
+CUTFIL			= "CUT"
+MOTORS			= "MOTORS"
+FAN				= "FAN"
+STATUS 			= "STATUS"
+UNJAM 			= "UNJAM"
+RESET 			= "RESET"
+RESETAVG 		= "RESETAVG"
 
 class SmuffPlugin(octoprint.plugin.SettingsPlugin,
                   octoprint.plugin.AssetPlugin,
@@ -62,125 +52,117 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 				  octoprint.plugin.EventHandlerPlugin,
 				  octoprint.plugin.ShutdownPlugin):
 
-	def __init__(self, _logger, _lock):
-		self._serial 			= None		# serial instance to communicate with the SMuFF
-		self._serlock			= _lock		# lock object for reading/writing
-		self._serevent			= Event()	# event raised when a valid response has been received
-		self._fw_info 			= "?"		# SMuFFs firmware info
-		self._cur_tool 			= "-1"		# the current tool
-		self._pre_tool 			= "-1"		# the previous tool
-		self._pending_tool 		= "?"		# the tool on a pending tool change
-		self._selector 			= False		# status of the Selector endstop
-		self._revolver 			= False		# status of the Revolver endstop
-		self._feeder 			= False		# status of the Feeder endstop
-		self._feeder2			= False		# status of the 2nd Feeder endstop
-		self._is_busy			= False		# flag set when SMuFF signals "Busy"
-		self._is_error			= False		# flag set when SMuFF signals "Error" 
-		self._is_aligned 		= False		# flag set when Feeder endstop is reached (not used yet)
-		self._response			= None		# the response string from SMuFF
-		self._wait_requested	= False 	# set when SMuFF requested a "Wait" (in case of jams or similar)
-		self._abort_requested	= False		# set when SMuFF requested a "Abort"
-		self._lastSerialEvent	= 0 		# last time (in millis) a serial receive took place
-		self._is_processing		= False		# set when SMuFF is supposed to be busy
-		self._isReconnect 	= False		# set when trying to re-establish serial connection
+	def __init__(self, logger):
+		self._log = logger
+		self.SC = smuff_core.SmuffCore(logger, IS_KLIPPER, self.smuffStatusCallback, self.smuffResponseCallback)
+		self._reset()
 
-	##~~ ShutdownPlugin mixin
-
-	def on_startup(self, host, port):
-		self._logger.info("Yeah... starting up...")
-
-	def on_shutdown(self):
-		close_SMuFF_serial()
-		self._logger.debug("Booo... shutting down...")
-
-	##~~ StartupPlugin mixin
-
-	def on_after_startup(self):
-		self._lastSerialEvent = nowMS()
-		self.connect_SMuFF()
-
-	def connect_SMuFF(self):
-		port = self._settings.get(["tty"])
-		baud = self._settings.get_int(["baudrate"])
-		timeout = self._settings.get_int(["timeout2"])*2
-		self._logger.debug("Opening serial {0} with {1}, timeout: {2}".format(port, baud, timeout))
-		if open_SMuFF_serial(port, baud, timeout):
-			self._serial = __ser0__
-			start_reader_thread()
-		else:
-			self._logger.debug("Opening serial {0} has failed".format(port))
-
-		if self._isReconnect:
-			self._isReconnect = False
-			return
-
-		# request firmware info from SMuFF 
-		if self._serial.is_open:
-			self._fw_info = self.send_SMuFF_and_wait(M115)
-			self._logger.debug("FW-Info: {}".format(self._fw_info))
+	def _reset(self):
 		pass
 
-	##~~ EventHandler mixin
+	def smuffStatusCallback(self, active):
+		if hasattr(self, "_plugin_manager"):
+			tool 	= self.SC.curTool 		if active else -1
+			feeder 	= self.SC.feeder 		if active else False
+			feeder2	= self.SC.feeder2 		if active else False
+			info 	= self.SC.fwInfo 		if active else ""
+			conn	= self.SC.isConnected 	if active else False
+			jammed 	= self.SC.isJammed 		if active else False
+			self._plugin_manager.send_plugin_message(self._identifier, {'type': 'status', 'tool': tool, 'feeder': feeder, 'feeder2': feeder2, 'fw_info': info, 'conn': conn, 'jammed': jammed })
+			if not self.SC.isConnected:
+				self._setResponse("Not connected", True)
+		pass
 
+	def smuffResponseCallback(self, message):
+		self._setResponse(message, False)
+	#------------------------------------------------------------------------------
+	# OctoPrint plugin functions
+	#------------------------------------------------------------------------------
+
+	#
+	# ShutdownPlugin mixin
+	#
+	def on_startup(self, host, port):
+		self._log.info("Yeah... starting up...")
+
+	def on_shutdown(self):
+		self.SC.close_serial()
+		self._log.debug("Booo... shutting down...")
+
+	#
+	# StartupPlugin mixin
+	#
+	def on_after_startup(self):
+		self.SC.serialPort 		= "/dev/{}".format(self._settings.get(["tty"]))
+		self.SC.baudrate 		= self._settings.get_int(["baudrate"])
+		self.SC.cmdTimeout 		= self._settings.get_int(["timeout1"])
+		self.SC.tcTimeout 		= self._settings.get_int(["timeout2"])
+		self.SC.wdTimeout 		= self.SC.tcTimeout * 2
+		self.SC.timeout 		= self.SC.tcTimeout * 2
+		self.SC.connect_SMuFF()
+
+	#
+	# EventHandler mixin
+	#
 	def on_event(self, event, payload):
-		#self._logger.debug("Event: [" + event + ", {0}".format(payload) + "]")
+		#self._log.debug("Event: [" + event + ", {0}".format(payload) + "]")
 		if event == Events.SHUTDOWN:
-			self._logger.debug("Shutting down, closing serial")
-			close_SMuFF_serial()
+			self._log.debug("Shutting down, closing serial")
+			self.SC.close_serial()
 
-	##~~ SettingsPlugin mixin
-
+	#
+	# SettingsPlugin mixin
+	#
 	def get_settings_version(self):
 		return 2
 
 	def get_settings_defaults(self):
-		self._logger.debug("SMuFF plugin loaded, getting defaults")
-
+		self._log.debug("SMuFF plugin loaded, getting defaults")
 		params = dict(
 			firmware_info	= "No data. Please check connection!",
-			baudrate		= SERBAUD,
-			tty 			= SERDEV,
-			tool			= self._cur_tool,
-			selector_end	= self._selector,
-			revolver_end	= self._revolver,
-			feeder_end		= self._feeder,
-			feeder2_end		= self._feeder,
-			timeout1		= 5,
-			timeout2		= 30,
-			autoload 		= False
+			baudrate		= DEFAULT_BAUD,
+			tty 			= "ttySMuFF",
+			tool			= self.SC.curTool,
+			selector_end	= self.SC.selector,
+			revolver_end	= self.SC.revolver,
+			feeder_end		= self.SC.feeder,
+			feeder2_end		= self.SC.feeder2,
+			timeout1		= 30,
+			timeout2		= 90,
+			autoload 		= True
 		)
-
 		return  params
 
 	def on_settings_migrate(self, target, current):
 		if current == None or target < current:
-			self._logger.debug("Migrating old settings...")
+			self._log.debug("Migrating old settings...")
 			self._settings.save()
 
 
 	def on_settings_save(self, data):
-		global __ser0__
-		baud = self._settings.get_int(["baudrate"])
-		port = self._settings.get(["tty"])
+		baud_now = self._settings.get_int(["baudrate"])
+		port_now = self._settings.get(["tty"])
 		octoprint.plugin.SettingsPlugin.on_settings_save(self, data)
+
 		baud_new = self._settings.get_int(["baudrate"])
 		port_new = self._settings.get(["tty"])
-		self._logger.debug("Settings saved: {0}/{1}  {2}/{3}".format(baud, baud_new, port, port_new))
+		self._log.debug("Settings saved: Baudrate: {0} -> {1}  Port: {2} -> {3}".format(baud_now, baud_new, port_now, port_new))
 		# did the settings change?
-		if not port_new == port or not baud_new == baud:
-			# close the previous port, re-open it, start the reader thread and get SMuFF's firmware information
-			close_SMuFF_serial()
-			self.connect_SMuFF()
+		if not port_new == port_now or not baud_new == baud_now:
+			# reconnect on the new port (with new baudrate)
+			self.SC.reconnect_SMuFF()
 
 	def get_template_configs(self):
-		# self._logger.debug("Settings-Template was requested")
+		# self._log.debug("Settings-Template was requested")
 		return [
-			dict(type="settings", custom_bindings=True, template='SMuFF_settings.jinja2'),
-			dict(type="navbar", custom_bindings=True, template='SMuFF_navbar.jinja2')
+			dict(type="settings", 	custom_bindings=True,  template="SMuFF_settings.jinja2"),
+			dict(type="navbar", 	custom_bindings=True,  template="SMuFF_navbar.jinja2"),
+			dict(type="tab", 		custom_bindings=True,  template="SMuFF_tab.jinja2", name="SMuFF")
 		]
 
-	##~~ AssetPlugin mixin
-
+	#
+	# AssetPlugin mixin
+	#
 	def get_assets(self):
 		return dict(
 			js=["js/SMuFF.js"],
@@ -188,8 +170,9 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			less=["less/SMuFF.less"]
 		)
 
-	##~~ Softwareupdate hook
-
+	#
+	# Softwareupdate hook
+	#
 	def get_update_information(self):
 		return dict(
 			SMuFF=dict(
@@ -207,488 +190,270 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			)
 		)
 
-	##~~ GCode hooks
+	#
+	# Split up a command into action and its parameters (up to 3)
+	#
+	def _split_cmd(self, cmd):
+		action = None
+		param1 = None
+		param2 = None
+		param3 = None
 
+		tmp = cmd.split()
+
+		if len(tmp):
+			action = tmp[1].upper()
+			if len(tmp) > 2:
+				param1 = int(tmp[2])
+			if len(tmp) > 3:
+				param2 = int(tmp[3])
+			if len(tmp) > 4:
+				param3 = int(tmp[4])
+		return action, param1, param2, param3
+
+	#
+	# GCode hooks
+	#
 	def extend_tool_queuing(self, comm_instance, phase, cmd, cmd_type, gcode, subcode, tags, *args, **kwargs):
-		# self._logger.debug("Processing queuing: [" + cmd + "," + str(cmd_type)+ "," + str(tags) + "]")
+		#self._log.debug("Processing tool queuing: [ Cmd: {0}, Type: {1}, Tags: {2} ]".format(cmd, str(cmd_type), str(tags)))
 
-		if gcode and gcode.startswith(TOOL):
-			self._logger.debug("OctoPrint current tool: {0}".format(comm_instance._currentTool))
+		if gcode and gcode.startswith(smuff_core.TOOL):
+			self._log.debug("OctoPrint current tool: {0}".format(comm_instance._currentTool))
+
 			# if the tool that's already loaded is addressed, ignore the filament change
-			if cmd == self._cur_tool and self._feeder:
-				self._logger.info(cmd + " equals " + self._cur_tool + " -- no tool change needed")
-				return "M117 Tool already selected"
-			self._is_aligned = False
-			# replace the tool change command
+			if cmd == self.SC.curTool and self.SC.feeder:
+				self._log.info("Current tool {0} equals {1} -- no tool change needed".format(cmd, self.SC.curTool))
+				self._setResponse("Tool already selected", True)
+				return
+			self.SC.isAligned = False
+			# replace the tool change command Tx with @SMuFF Tx
 			return [ AT_SMUFF + " " + cmd ]
 
+		# handle SMuFF pseudo GCodes
 		if cmd and cmd.startswith(AT_SMUFF):
-			v1 = None
-			v2 = None
-			spd = 300
-			action = None
-			tmp = cmd.split()
-			if len(tmp):
-				action = tmp[1]
-				if len(tmp) > 2:
-					v1 = int(tmp[2])
-				if len(tmp) > 3:
-					v2 = int(tmp[3])
-				if len(tmp) > 4:
-					spd = int(tmp[4])
-
-			# self._logger.debug("1>> " + cmd + "  action: " + str(action) + "  v1,v2: " + str(v1) + ", " + str(v2))
+			action, v1, v2, v3 = self._split_cmd(cmd)
+			self._log.debug("1>> Cmd: {0}  Action: {1}  Params: {2}; {3}; {4}".format(cmd, str(action), str(v1), str(v2), str(v3)))
 
 			# @SMuFF MOTORS
 			if action and action == MOTORS:
 				# send a servo command to SMuFF
-				self.send_SMuFF_and_wait(M18)
-				return ""
+				self.SC.send_SMuFF_and_wait(smuff_core.MOTORSOFF)
+				self._setResponse(smuff_core.T_MOTORS_OFF, True)
+				return
 
 			# @SMuFF FAN
 			if action and action == FAN:
 				# send a fan command to SMuFF
-				if v1 == 1:
-					self.send_SMuFF_and_wait(M106)
-				elif v1 == 0:
-					self.send_SMuFF_and_wait(M107)
-				return ""
+				self.SC.send_SMuFF_and_wait(smuff_core.FAN_ON if v1 == 1 else smuff_core.FAN_OFF)
+				self._setResponse(smuff_core.T_FAN.format("ON" if v1 == 1 else "OFF"), True)
+				return
 
-
-	def extend_tool_sending(self, comm_instance, phase, cmd, cmd_type, gcode, subcode, tags, *args, **kwargs):
-
-		if gcode and gcode.startswith(TOOL):
-			return ""
-
-		# is this the replaced tool change command?
-		if cmd and cmd.startswith(AT_SMUFF):
-			v1 = None
-			v2 = None
-			spd = 300
-			action = None
-			tmp = cmd.split()
-			if len(tmp):
-				action = tmp[1]
-				if len(tmp) > 2:
-					v1 = int(tmp[2])
-				if len(tmp) > 3:
-					v2 = int(tmp[3])
-				if len(tmp) > 4:
-					spd = int(tmp[4])
-
-			self._logger.debug("2>> " + cmd + "  action: " + str(action) + "  v1,v2: " + str(v1) + ", " + str(v2))
-
-			# @SMuFF T0...T99
-			if action and action.startswith(TOOL):
-				if self._printer.set_job_on_hold(True, False):
-					try:
-						# store the new tool for later
-						self._pending_tool = str(action)
-						# check if there's filament loaded
-						if self._feeder:
-							self._logger.debug("2>> calling script 'beforeToolChange'")
-							# if so, send the OctoPrints default "Before Tool Change" script to the printer
-							self._printer.script("beforeToolChange")
-						else:
-							self._logger.debug("2>> calling SMuFF LOAD")
-							# not loaded, nothing to retract, so send the tool change to the SMuFF
-							self._printer.commands(AT_SMUFF + " " + LOAD)
-
-					except UnknownScript:
-						self._logger.error("Script 'beforeToolChange' not found!")
-					# Notice: set_job_on_hold(False) must not be set yet since the
-					# whole tool change procedure isn't finished yet. Setting it now
-					# will unpause OctoPrint and it'll continue printing without filament! 
-					#finally:
-						#self._printer.set_job_on_hold(False)
+			# @SMuFF DEBUG
+			if action and action == DEBUG:
+				# toggle debug state
+				self.SC.dumpRawData = not self.SC.dumpRawData
+				self._setResponse(smuff_core.T_DUMP_RAW.format("ON" if self.SC.dumpRawData else "OFF"), True)
+				return
 
 			# @SMuFF SERVO
 			if action and action == SERVO:
 				# send a servo command to SMuFF
-				self.send_SMuFF_and_wait(M280 + str(v1) + " S" + str(v2))
-				return ""
+				self.SC.send_SMuFF_and_wait(smuff_core.SETSERVO.format(str(v1), str(v2)))
+				self._setResponse(smuff_core.T_POSITIONING.format(v1, v2), True)
+				return
 
 			# @SMuFF SERVOOPEN
 			if action and action == SERVOOPEN:
 				# send a servo open command to SMuFF
-				self.send_SMuFF_and_wait(M280 + str(v1) + " R0")
-				return ""
+				self._setResponse(smuff_core.T_OPENING_LID, True)
+				self.SC.send_SMuFF_and_wait(smuff_core.LIDOPEN)
+				return
 
 			# @SMuFF SERVOCLOSE
 			if action and action == SERVOCLOSE:
 				# send a servo close command to SMuFF
-				self.send_SMuFF_and_wait(M280 + str(v1) + " R1")
-				return ""
+				self._setResponse(smuff_core.T_CLOSING_LID, True)
+				self.SC.send_SMuFF_and_wait(smuff_core.LIDCLOSE)
+				return
 
 			# @SMuFF WIPE
-			if action and action == WIPE:
-				# send a servo wipe command to SMuFF
-				self.send_SMuFF_and_wait(G12)
+			if action and action == WIPENOZZLE:
+				# send a wipe command to SMuFF
+				self._setResponse(smuff_core.T_WIPING, True)
+				self.SC.send_SMuFF_and_wait(smuff_core.WIPE)
+				return
+
+			# @SMuFF CUT
+			if action and action == CUTFIL:
+				# send a cut command to SMuFF
+				self._setResponse(smuff_core.T_CUTTING, True)
+				self.SC.send_SMuFF_and_wait(smuff_core.CUT)
+				return
+
+			# @SMuFF STATUS
+			if action and action == STATUS:
+				self._setResponse(self.SC.get_states(), False)
+				return
+
+			# @SMuFF UNJAM
+			if action and action == UNJAM:
+				# send a un-jam command to SMuFF
+				self.SC.send_SMuFF_and_wait(smuff_core.UNJAM)
+				self._setResponse(smuff_core.T_UNJAMMED, True)
+				return
+
+			# @SMuFF RESET
+			if action and action == RESET:
+				# send a reset command to SMuFF
+				self.SC.send_SMuFF_and_wait(smuff_core.RESET)
+				self._setResponse(smuff_core.T_RESET, False)
+				return
+
+			# @SMuFF UNLOAD
+			if action and action == UNLOAD:
+				# send a M701 command to SMuFF
+				self.SC.send_SMuFF_and_wait(smuff_core.UNLOADFIL)
+				self._setResponse(smuff_core.T_UNLOADING, False)
+				return
+
+			# @SMuFF RELOAD
+			if action and action == RELOAD:
+				# send a M700 command to SMuFF
+				self.SC.send_SMuFF_and_wait(smuff_core.LOADFIL)
+				self._setResponse(smuff_core.T_RELOADING, False)
+				return
+
+			# @SMuFF RESETAVG
+			if action and action == RESETAVG:
+				# reset tool change counters / average
+				self.SC.reset_avg()
+				return
+
+	def extend_tool_sending(self, comm_instance, phase, cmd, cmd_type, gcode, subcode, tags, *args, **kwargs):
+
+		if gcode and gcode.startswith(smuff_core.TOOL):
+			# ignore default Tx commands
+			return
+
+		# check for the replaced tool change command
+		if cmd and cmd.startswith(AT_SMUFF):
+			action, v1, v2, v3 = self._split_cmd(cmd)
+			self._log.debug("2>> Cmd: {0}  Action: {1}  Params: {2}; {3}; {4}".format(cmd, str(action), str(v1), str(v2), str(v3)))
+
+			# @SMuFF T0...T99
+			if action and action.startswith(smuff_core.TOOL):
+				try:
+					if self._printer.set_job_on_hold(True, False):
+						self.SC.start_tc_timer()
+						try:
+							# store the new tool for later
+							self.SC.pendingTool = str(action)
+							# check if there's filament loaded
+							if self.SC.feeder:
+								self._log.debug("2>> calling script 'beforeToolChange'")
+								# if so, send the OctoPrints default "Before Tool Change" script to the printer
+								self._printer.script("beforeToolChange")
+							else:
+								self._log.debug("2>> calling SMuFF LOAD")
+								# not loaded, nothing to retract, so send the tool change to the SMuFF
+								self._printer.commands(AT_SMUFF + " " + LOAD)
+
+						except UnknownScript as err:
+							errmsg = "Script 'beforeToolChange' not found! (Error: {})".format(err)
+							self._log.error(errmsg)
+							self._setResponse(errmsg, True)
+
+						finally:
+							# Notice:
+							# 	self._printer.set_job_on_hold(False)
+							# must not be called here since the whole tool change procedure
+							# isn't finished yet. Setting it now would unpause OctoPrint
+							# and continue printing without filament!
+							pass
+				except RuntimeError as err:
+					# might happen if the printer is offline
+					errmsg = "Can't put printer on pause because: {})".format(err)
+					self._setResponse(errmsg, True)
+					self._log.error(errmsg)
 
 			# @SMuFF LOAD
 			if action and action == LOAD:
-				with self._printer.job_on_hold():
-					try:
-						self._logger.debug("1>> LOAD: Feeder: " + str(self._feeder) + ", Pending: " + str(self._pending_tool) + ", Current: " + str(self._cur_tool))
-						retry = 3	# retry up to 3 times
-						while retry > 0:
-							# send a tool change command to SMuFF
+				try:
+					continuePrint = False
+					with self._printer.job_on_hold():
+						try:
+							self._log.debug("1>> LOAD: Feeder:  {0}, Pending: {1}, Current: {2}".format(str(self.SC.feeder), str(self.SC.pendingTool), str(self.SC.curTool)))
+
 							autoload = self._settings.get_boolean(["autoload"])
-							res = self.send_SMuFF_and_wait(self._pending_tool + (AUTOLOAD if autoload else ""))
+							# send a tool change command to SMuFF
+							res = self.SC.send_SMuFF_and_wait(self.SC.pendingTool + (smuff_core.AUTOLOAD if autoload else ""))
 							# do we have the tool requested now?
-							if str(res) == str(self._pending_tool):
-								self._pre_tool = self._cur_tool
-								self._cur_tool = self._pending_tool
-								comm_instance._currentTool = self.parse_tool_number(self._cur_tool)
-								self._logger.debug("2>> calling script 'afterToolChange'")
-								# send the default OctoPrint "After Tool Change" script to the printer
-								self._printer.script("afterToolChange")
-								retry = 0
+							if str(res) == str(self.SC.pendingTool):
+								self.SC.setTool()
+								comm_instance._currentTool = self.SC.parse_tool_number(self.SC.curTool)
+								# check if filament has been loaded
+								if self.SC.loadState == 2 or self.SC.loadState == 3:
+									self._log.debug("2>> calling script 'afterToolChange'")
+									# send the default OctoPrint "After Tool Change" script to the printer
+									self._printer.script("afterToolChange")
+									continuePrint = True
+								else:
+									self._log.warning("Tool load failed, retrying ({0} is in feeder state: {1})".format(res, self.SC.loadState))
 							else:
-								# not the result expected, do it all again
-								self._logger.warning("Tool change failed, retrying (<{0}> not <{1}>)".format(res, self._pending_tool))
-								if self._abort_requested:
-									retry = 0
-								if not self._wait_requested:
-									retry -= 1
+								# not the result we expected, do it all again
+								self._log.warning("Tool change failed, retrying (<{0}> not <{1}>)".format(res, self.SC.pendingTool))
 
-					except UnknownScript:
-						# shouldn't happen at all, since we're using default OctoPrint scripts
-						# but you never know
-						self._logger.error("Script 'afterToolChange' not found!")
+						except UnknownScript as err:
+							# shouldn't happen at all, since we're using default OctoPrint scripts
+							# but you never know
+							errmsg = "Script 'afterToolChange' not found! (Error: {})".format(err)
+							self._log.error(errmsg)
+							self._setResponse(errmsg, True)
 
-					finally:
-						# now is the time to release the hold and continue printing
-						self._printer.set_job_on_hold(False)
-
+						finally:
+							duration = self.SC.stop_tc_timer()
+							self._setResponse("Toolchange took {:4.2f} secs.".format(duration), True)
+							if continuePrint:
+								try:
+									# now is the time to release the hold and continue printing
+									self._printer.set_job_on_hold(False)
+								except RuntimeError as err:
+									# might happen if the printer is offline
+									errmsg = "Can't unpause printer because: {})".format(err)
+									self._setResponse(errmsg, True)
+									self._log.error(errmsg)
+				except RuntimeError as err:
+					# might happen if the printer is offline
+					errmsg = "Can't put printer on pause because: {})".format(err)
+					self._setResponse(errmsg, True)
+					self._log.error(errmsg)
 
 	def extend_script_variables(self, comm_instance, script_type, script_name, *args, **kwargs):
-		# This section was supposed to pass the current endstop states to OctoPrint scripts when requested.
-		# Unfortunatelly, OctoPrint caches the variables after the very first call and doesn't update
-		# them on consecutive calls while in the same script.
-		# This renders my attempt aligning the position of the filament based on the Feeder endstop trigger
-		# unusable until OctoPrint updates this feature someday in the future.
-		if script_type and script_type == "gcode":
-			variables = dict(
-				feeder	= "on" if self._feeder else "off",
-				feeder2	= "on" if self._feeder2 else "off",
-				tool	= self._cur_tool,
-				aligned = "yes" if self._is_aligned else "no"
-			)
-			#self._logger.debug(" >> Script vars query: [" + str(script_type) + "," + str(script_name) + "] {0}".format(variables))
-			return None, None, variables
 		return None
 
 	def extend_gcode_received(self, comm_instance, line, *args, **kwargs):
 		# Refresh the current tool in OctoPrint on each command coming from the printer - just in case
 		# This is needed because OctoPrint manages the current tool itself and it might try to swap
 		# tools because of the wrong information.
-		comm_instance._currentTool = self.parse_tool_number(self._cur_tool)
+		comm_instance._currentTool = self.SC.parse_tool_number(self.SC.curTool)
 		# don't process any of the GCodes received
 		return line
 
-	##~~ helper functions
-
-	# sending data to SMuFF
-	def send_SMuFF(self, data):
-		now = nowMS()
-		if (now - self._lastSerialEvent)/1000 > self._settings.get_int(["timeout2"]):
-			self._logger.error("Possible communication error...{0}/{1}".format(now, self._lastSerialEvent))
-			close_SMuFF_serial()
-			self._isReconnect = True
-			self.connect_SMuFF()
-
-		if self._serial and self._serial.is_open:
-			try:
-				b = bytearray(80)		# not expecting commands longer then that
-				b = "{}\n".format(data).encode("ascii")
-				# lock down the reader thread just in case 
-				# (shouldn't be needed at all, since simultanous read/write operations should
-				# be no big deal)
-				self._serlock.acquire()
-				n = self._serial.write(b)
-				self._serlock.release()
-				self._logger.debug("Sending {1} bytes: [{0}]".format(b, n))
-				return True
-			except (OSError, serial.SerialException):
-				self._serlock.release()
-				self._logger.error("Can't send command to SMuFF")
-				if hasattr(self, "_plugin_manager"):
-					self._plugin_manager.send_plugin_message(self._identifier, {'type': 'status', 'tool': -1, 'feeder': False, 'feeder2': False, 'fw_info': '', 'conn': False })
-				close_SMuFF_serial()
-				self._logger.error("Trying a reconnect")
-				self.connect_SMuFF()
-				return False
-		else:
-			self._logger.error("Serial not open")
-			return False
-
-	# sending data to SMuFF and waiting for a response
-	def send_SMuFF_and_wait(self, data):
-		if self.send_SMuFF(data) == False:
-			return None
-
-		if data.startswith("T"):
-			timeout = self._settings.get_int(["timeout2"]) 	# wait max. 30 seconds for a response while swapping tools
-		else:
-			timeout = self._settings.get_int(["timeout1"])	# wait max. 5 seconds for other operations
-		done = False
-		resp = None
-		self.set_busy(False)		# reset busy and
-		self.set_error(False)		# error flags
-		self.set_processing(True)	# SMuFF is currently doing something
-		while not done:
-			self._serevent.clear()
-			is_set = self._serevent.wait(timeout)
-			if is_set:
-				self._logger.info("To [{0}] SMuFF says [{1}] (is_error = {2})".format(data, self._response, self._is_error))
-				resp = self._response
-				if self._response == None or self._is_error:
-					done = True
-				elif not self._response.startswith('echo:'):
-					done = True
-
-				self._response = None
-			else:
-				self._logger.info("No event received... aborting")
-				if self._is_busy == False:
-					done = True
-
-		self.set_processing(False)	# SMuFF is not supposed to do anything
-		return resp
-
-	def find_file(self, pattern, path):
-		result = []
-		for root, dirs, files in os.walk(path):
-			for name in files:
-				if fnmatch.fnmatch(name, pattern):
-					result.append(os.path.join(root, name))
-		return result
-
-	def set_processing(self, processing):
-		self._is_processing = processing
-
-	def set_busy(self, busy):
-		self._is_busy = busy
-
-	def set_error(self, error):
-		self._is_error = error
-
-	def set_response(self, response):
-		self._response = response
-
-	def parse_states(self, states):
-		#self._logger.debug("States received: [" + states + "]")
-		if len(states) == 0:
-			return False
-		# Note: SMuFF sends periodically states in this notation: 
-		# 	"echo: states: T: T4     S: off  R: off  F: off  F2: off"
-		#m = re.search(r'^((\w+:.)(\w+:))\s([T]:\s)(\w+)\s([S]:\s)(\w+)\s([R]:\s)(\w+)\s([F]:\s)(\w+)\s([F,2]+:\s)(\w+)', states)
-		for m in re.finditer(r'([A-Z]{1,3}[\d|:]+).(\+?\w+|-?\d+)+',states):
-			if m[1] == "T:":
-				self._cur_tool = m[2].strip()
-			elif m[1] == "S:":
-				self._selector = m[2].strip() == ESTOP_ON
-			elif m[1] == "R:":
-				self._revolver = m[2].strip() == ESTOP_ON
-			elif m[1] == "F:":
-				self._feeder = m[2].strip() == ESTOP_ON
-			elif m[1] == "F2:":
-				self._feeder2 = m[2].strip() == ESTOP_ON
-			#else:
-				#if (hasattr(self, "_logger")):
-				#	self._logger.error("Unknown state: [" + m[1] + "]")
-		if hasattr(self, "_plugin_manager"):
-			self._plugin_manager.send_plugin_message(self._identifier, {'type': 'status', 'tool': self._cur_tool, 'feeder': self._feeder, 'feeder2': self._feeder2, 'fw_info': self._fw_info, 'conn': self._serial.is_open })
-		return True
-
-	def parse_tool_number(self, tool):
-		try:
-			return int(re.findall(r'[-\d]+', tool)[0])
-		except Exception:
-			self._logger.error("Can't parse tool number in {0}".format(tool))
-		return -1
-
-	def hex_dump(self, s):
-		self._logger.debug(":".join("{:02x}".format(ord(c)) for c in s))
+	#
+	# Send a response (text) to the OctoPrint Terminal
+	#
+	def _setResponse(self, response, addPrefix = False):
+		if response != "":
+			if hasattr(self, "_plugin_manager"):
+				self._plugin_manager.send_plugin_message(self._identifier, {'terminal':  response })
 
 
-	# parse the response we've got from the SMuFF
-	def parse_serial_data(self, data):
-		if self == None:
-			return
+#------------------------------------------------------------------------------
+# Helper functions
+#------------------------------------------------------------------------------
 
-		#self._logger.debug("Raw data: [{0}]".format(data.rstrip("\n")))
-
-		global last_response
-		self._lastSerialEvent = nowMS()
-		self._serevent.clear()
-
-		# after first connect the response from the SMuFF is supposed to be 'start'
-		if data.startswith('start\n'):
-			self._logger.debug("SMuFF has sent \"start\" response")
-			return
-
-		if data.startswith("echo:"):
-			# don't process any general debug messages
-			if data[6:].startswith("dbg:"):
-				self._logger.debug("SMuFF has sent a debug response: [" + data.rstrip() + "]")
-			# but do process the tool/endstop states
-			elif data[6:].startswith("states:"):
-				last_response = None
-				self.parse_states(data.rstrip())
-			# and register whether SMuFF is busy
-			elif data[6:].startswith("busy"):
-				self._logger.debug("SMuFF has sent a busy response: [" + data.rstrip() + "]")
-				self.set_busy(True)
-			return
-
-		if data.startswith("error:"):
-			self._logger.info("SMuFF has sent a error response: [" + data.rstrip() + "]")
-			# maybe the SMuFF has received garbage
-			if data[7:].startswith("Unknown command:"):
-				self._serial.flushOutput()
-			self.set_error(True)
-			return
-
-		if data.startswith(ACTION_CMD):
-			self._logger.info("SMuFF has sent an action request: [" + data.rstrip() + "]")
-			# what action is it? is it a tool change?
-			if data[10:].startswith("T"):
-				tool = self.parse_tool_number(data[10:])
-				# only if the printer isn't printing
-				state = self._printer.get_state_id()
-				self._logger.debug("SMuFF requested an action while printer in state '{}'".format(state))
-				if state == "OPERATIONAL":
-					# query the nozzle temp
-					temps = self._printer.get_current_temperatures()
-					try:
-						if temps['tool0']['actual'] > 160:
-							self._logger.debug("Nozzle temp. > 160")
-							self._printer.change_tool("tool{}".format(tool))
-							self.send_SMuFF("{0} T: OK".format(ACTION_CMD))
-						else:
-							self._logger.error("Can't change to tool {}, nozzle too cold".format(tool))
-							self.send_SMuFF("{0} T: \"Nozzle too cold\"".format(ACTION_CMD))
-					except:
-						self._logger.debug("Can't query temperatures. Aborting.")
-						self.send_SMuFF("{0} T: \"No nozzle temp. avail.\"".format(ACTION_CMD))
-				else:
-					self._logger.error("Can't change to tool {}, printer not ready or printing".format(tool))
-					self.send_SMuFF("{0} T: \"Printer not ready\"".format(ACTION_CMD))
-
-			if data[10:].startswith(ACTION_WAIT):
-				self._wait_requested = True
-				self._logger.debug("waiting for SMuFF to come clear...")
-
-			if data[10:].startswith(ACTION_CONTINUE):
-				self._wait_requested = False
-				self._abort_requested = False
-				self._logger.debug("continuing after SMuFF cleared...")
-
-			if data[10:].startswith(ACTION_ABORT):
-				self._wait_requested = False
-				self._abort_requested = True
-				self._logger.debug("aborting operation...")
-
-			if data[10:].startswith(ACTION_PONG):
-				self._logger.debug("PONG received")
-
-			return
-
-		if data.startswith("ok\n"):
-			if self._is_error:
-				self.set_response(None)
-			else:
-				self.set_response(last_response)
-			self._serevent.set()
-			return
-
-		# store the last response before the "ok"
-		last_response = data.rstrip("\n")
-		self._logger.debug("Received response: [{0}]".format(last_response))
-
-
-def open_SMuFF_serial(port, baudrate, tmout):
-	global __stop_ser__
-	global __ser0__
-
-	_logger = logging.getLogger(LOGGER)
-	__stop_ser__ = False
-
-	try:
-		__ser0__ = serial.Serial("/dev/{}".format(port), baudrate, timeout=tmout)
-		_logger.debug("Serial port /dev/{} is open".format(port))
-	except (OSError, serial.SerialException):
-		exc_type, exc_value, exc_traceback = sys.exc_info()
-		tb = traceback.format_exception(exc_type, exc_value, exc_traceback)
-		_logger.error("Can't open serial port /dev/{0}! Exc: {1}".format(port, tb))
-		return False
-	return True
-
-def close_SMuFF_serial():
-	global __stop_ser__
-	global __ser0__
-
-	_logger = logging.getLogger(LOGGER)
-	__stop_ser__ = True
-	# shutdown the reader thread first
-	if not __sreader__ == None:
-		__sreader__.join()
-	# then close the serial port
-	try:
-		if __ser0__.is_open:
-			__ser0__.close()
-		_logger.debug("Serial port {} closed".format(__ser0__.port))
-
-	except (OSError, serial.SerialException):
-		exc_type, exc_value, exc_traceback = sys.exc_info()
-		tb = traceback.format_exception(exc_type, exc_value, exc_traceback)
-		_logger.error("Can't close serial port /dev/{0}! Exc: {1}".format(SERDEV, tb))
-
-# Serial reader thread
-def serial_reader(_logger, _serial, _instance, _lock):
-	global __stop_ser__
-
-	_logger.debug("Entering serial port receiver for {0}".format(_serial.port))
-	cnt = 0
-
-	# this loop basically runs forever, unless __stop_ser__ is set or the
-	# serial port gets closed
-	while not __stop_ser__: 
-		if _serial.is_open:
-			b = _serial.in_waiting
-			#_logger.debug("{} bytes received".format(b))
-			if b > 0:
-				try:
-					_lock.acquire()
-					data = _serial.readline().decode("ascii")	# read to EOL
-					_lock.release()
-					#_logger.debug("Incoming data: [{}]".format(data))
-					_instance.parse_serial_data(data)
-				except:
-					exc_type, exc_value, exc_traceback = sys.exc_info()
-					tb = traceback.format_exception(exc_type, exc_value, exc_traceback)
-					_logger.error("Serial reader error: ".join(tb))
-		else:
-			_logger.error("Serial {} has been closed".format(_serial.port))
-			break
-
-		cnt += 1
-		time.sleep(0.01)
-		if cnt >= 6000:
-			# send some "I'm still alive" signal every 60 seconds (for debugging purposes only)
-			_logger.debug("Serial Reader Ping...")
-			cnt = 0
-
-	if hasattr(_instance, "_plugin_manager"):
-		_instance._plugin_manager.send_plugin_message(_instance._identifier, {'type': 'status', 'tool': -1, 'feeder': False, 'feeder2': False, 'fw_info': '', 'conn': False })
-
-	_logger.info("Exiting serial port receiver")
-
-def get_pi_model():
+def get_pi_model(_log):
 	# get Pi model from cpuinfo
-	_logger = logging.getLogger(LOGGER)
 	model = 4
 	try:
 		f = open("/proc/cpuinfo","r")
@@ -696,68 +461,36 @@ def get_pi_model():
 			if line.startswith("Model"):
 				if line.find("Pi 4") == -1:
 					model = 3
-				_logger.info("Running on Pi {}".format(model))
+				_log.info("Running on Pi {}".format(model))
 		f.close()
 	except:
-		_logger.info("Can't read cpuinfo, assuming  Pi 3")
+		_log.info("Can't read cpuinfo, assuming  Pi 3")
 		model = 3
 	return model
 
-def nowMS():
-	return int(round(time.time() * 1000))
-
-def start_reader_thread():
-	global __ser0__
-	global _logger
-	global __lock__
-	global __sreader__
-	global __plugin_implementation__
-	try:
-		# set up a separate task for reading the incoming SMuFF messages
-		__sreader__ = Thread(target = serial_reader, args=( _logger, __ser0__, __plugin_implementation__, __lock__, ))
-		__sreader__.daemon = True
-		__sreader__.start()
-		#_logger.debug("P={}".format(__sreader__))
-	except:
-		exc_type, exc_value, exc_traceback = sys.exc_info()
-		tb = traceback.format_exception(exc_type, exc_value, exc_traceback)
-		_logger.error("Unable to start serial reader thread: ".join(tb))
-
-
-__plugin_name__ = "SMuFF Plugin"
-__plugin_pythoncompat__ = ">=3,<4"
-
+#------------------------------------------------------------------------------
+# Main plugin functions
+#------------------------------------------------------------------------------
+__plugin_name__ 		= "SMuFF Plugin"
+__plugin_pythoncompat__ = ">=3, <4"
 
 def __plugin_load__():
 	global __plugin_implementation__
 	global __plugin_hooks__
-	global __ser0__
-	global __lock__
-	global _logger
-	global SERDEV
 
-	_logger = logging.getLogger(LOGGER)
-	__lock__ = Lock()
-
-	__plugin_implementation__ = SmuffPlugin(_logger, __lock__)
-
-	SERDEV = SERDEVS[0]			# default is ttyS0
-	mod = get_pi_model()		# query current model
-	if mod == 4:
-		SERDEV = SERDEVS[1]		# switch to ttyAMA1 on Pi 4
-
+	logger = logging.getLogger(LOGGER)
+	__plugin_implementation__ = SmuffPlugin(logger)
 	__plugin_hooks__ = {
-		"octoprint.comm.protocol.gcode.received":	__plugin_implementation__.extend_gcode_received,
-		"octoprint.comm.protocol.scripts": 		__plugin_implementation__.extend_script_variables,
-		"octoprint.comm.protocol.gcode.sending": 	__plugin_implementation__.extend_tool_sending,
-		"octoprint.comm.protocol.gcode.queuing": 	__plugin_implementation__.extend_tool_queuing,
+		"octoprint.comm.protocol.gcode.received":		__plugin_implementation__.extend_gcode_received,
+		"octoprint.comm.protocol.scripts": 				__plugin_implementation__.extend_script_variables,
+		"octoprint.comm.protocol.gcode.sending": 		__plugin_implementation__.extend_tool_sending,
+		"octoprint.comm.protocol.gcode.queuing": 		__plugin_implementation__.extend_tool_queuing,
 		"octoprint.plugin.softwareupdate.check_config": __plugin_implementation__.get_update_information
 	}
 
 def __plugin_unload__():
-	close_SMuFF_serial()
-
+	__plugin_implementation__.on_shutdown()
 
 def __plugin_disabled():
-	close_SMuFF_serial()
+	__plugin_implementation__.on_shutdown()
 

@@ -38,19 +38,23 @@
 }
 
 .navbar-item-conn {
-    background-color: #CDDC39;
+    background-color: #2196f3 /* #CDDC39; */;
 }
 
 .navbar-item-disc {
     background-color: #9E9E9E;
 }
 
+.navbar-item-jammed {
+    background-color: #b40000;
+}
+
 .navbar-item {
-    padding: 2px;
+    padding: 6px;
     margin-right: 1em;
     margin-left: 1em;
-    border: 1px solid rgba(0,0,0,0.5);
-    border-radius: 5px;
+    border: 1px solid rgba(0,0,0,0.3);
+    border-radius: 4px;
     min-width: 20px;
 }
 
@@ -76,7 +80,7 @@
     display: flex;
     align-items: center;
     justify-content: flex-end;
-    margin-top: 4px;    
+    margin-top: 4px;
 }
 
 .ml-1 {
@@ -100,4 +104,32 @@
     font-family: monospace;
     font-style: normal;
     font-weight: 100;
+}
+
+.smuff-msg {
+    color: #03a9f4;
+    font-style: italic;
+    margin-top: 0.5em;
+    padding-bottom: 0.5em;
+    border-bottom: 1px solid #90a4ae;
+}
+
+#SMuFF-output {
+    height: 340px;
+}
+
+.smuff-buttons {
+    height: 3em;
+    margin-bottom: 0.25em;
+}
+
+.navbar-feeder1-icon,
+.navbar-feeder2-icon {
+    margin-left: 0.5em;
+}
+
+.navbar-tool {
+    font-size: 130%;
+    position: relative;
+    top: 2px;
 }

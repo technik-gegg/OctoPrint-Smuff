@@ -1,6 +1,11 @@
-<div id="id="navbar_plugin_SMuFF"" class="navbar-text">
+<div id="navbar_plugin_SMuFF" class="navbar-text">
     <span class="navbar-item navbar-item-disc" id="SMuFF_navbar_item">
-        <span id="SMuFF_navbar_tool" data-bind="attr: { title: 'SMuFF Tool' }, html: _settings.tool()"></span>
-        &nbsp;<i id="SMuFF_navbar_feeder" class="fa fa-times-circle" data-bind="attr: { title: 'Feed', class: _settings.feeder_end() }"></i>
+        <span id="SMuFF_navbar_tool" class="navbar-tool" data-bind="attr: { title: 'SMuFF Current Tool' }, html: _settings.tool()"></span>
+        <span class="navbar-feeder1-icon">
+            <i id="SMuFF_navbar_feeder"  class="fa fa-times-circle" data-bind="attr: { title: 'Feeder Endstop', class: _settings.feeder_end() }"></i>
+        </span>
+        <span class="navbar-feeder2-icon">
+           <i id="SMuFF_navbar_feeder2" class="fa fa-times-circle" data-bind="attr: { title: 'Feeder2 Endstop', class: _settings.feeder2_end() }"></i>
+        <span>
     </span>
 </div>
