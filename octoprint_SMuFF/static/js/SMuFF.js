@@ -25,7 +25,10 @@ $(function() {
 
         self.send_pgcode = function(gcode) {
             // console.log('Sending SMuFF pseudo GCode: ' + gcode);
-            OctoPrint.control.sendGcode("@SMuFF " + gcode);
+            if($('#SMuFF-InstanceA').is(':checked'))
+                OctoPrint.control.sendGcode("@SMuFF " + gcode);
+            else
+                OctoPrint.control.sendGcode("@SMuFF2 " + gcode);
         };
 
         self.get_status = function() {
@@ -89,6 +92,9 @@ $(function() {
                 $('#SMuFF_setting_tool').text(message.tool);
                 $('#SMuFF_navbar_tool').text(message.tool);
             }
+            if(message.toolCount != null) {
+                $('#SMuFF_tool_count').text(message.toolCount);
+            }
             if(message.feeder != null) {
                 // console.log(" feeder: " + message.feeder);
                 var _cls = message.feeder ? "fa fa-check-circle" : "fa fa-times-circle";
@@ -117,6 +123,45 @@ $(function() {
                 $('#SMuFF_navbar_item').addClass(self._isJammed ? 'navbar-item-jammed' :'navbar-item-conn');
                 $('#smuff-btn-unjam').removeClass('btn-danger btn-primary');
                 $('#smuff-btn-unjam').addClass(self._isJammed ? 'btn-danger' :'btn-primary');
+            }
+            if(message.toolB != null) {
+                // console.log(" tool B: " + message.toolB);
+                if(message.toolB == '-1')
+                    message.toolB = 'T--'
+                $('#SMuFF2_setting_tool').text(message.toolB);
+                $('#SMuFF2_navbar_tool').text(message.toolB);
+            }
+            if(message.toolCountB != null) {
+                $('#SMuFF2_tool_count').text(message.toolCountB);
+            }
+            if(message.feederB != null) {
+                // console.log(" feeder B: " + message.feederB);
+                var _cls = message.feederB ? "fa fa-check-circle" : "fa fa-times-circle";
+                $('#SMuFF2_setting_feeder').prop('class', _cls);
+                $('#SMuFF2_navbar_feeder').prop('class', _cls);
+            }
+            if(message.feeder2B != null) {
+                // console.log(" feeder2 B: " + message.feeder2B);
+                var _cls = message.feeder2B ? "fa fa-check-circle" : "fa fa-times-circle";
+                $('#SMuFF2_setting_feeder2').prop('class', _cls);
+                $('#SMuFF2_navbar_feeder2').prop('class', _cls);
+            }
+            if(message.fw_infoB != null) {
+                // console.log(" fw info B: " + message.fw_infoB);
+                $('#SMuFF2_setting_firmware').text(message.fw_infoB);
+            }
+            if(message.connB != null) {
+                // console.log(" conn B: " + message.connB);
+                $('#SMuFF2_navbar_item').removeClass('navbar-item-conn navbar-item-disc navbar-item-jammed');
+                $('#SMuFF2_navbar_item').addClass(message.connB ? 'navbar-item-conn' :'navbar-item-disc');
+            }
+            if(message.jammedB != null) {
+                // console.log(" jammed B: " + message.jammedB);
+                self._isJammedB = message.jammedB;
+                $('#SMuFF2_navbar_item').removeClass('navbar-item-conn navbar-item-disc navbar-item-jammed');
+                $('#SMuFF2_navbar_item').addClass(self._isJammedB ? 'navbar-item-jammed' :'navbar-item-conn');
+                $('#smuff2-btn-unjam').removeClass('btn-danger btn-primary');
+                $('#smuff2-btn-unjam').addClass(self._isJammedB ? 'btn-danger' :'btn-primary');
             }
             if(message.terminal != null) {
                 // console.log(" output: " + message.terminal);

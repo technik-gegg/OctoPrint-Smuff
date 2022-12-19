@@ -4,7 +4,7 @@
         <p>For connection details please visit <a href="https://github.com/technik-gegg/OctoPrint-Smuff" target="_blank">Github</a>.</p>
     </div>
     <form class="form-horizontal">
-        <div class="serial-hint">
+        <div class="serial-hint" style="display: none">
             <b>Notice:</b><br/>
             If you've connected the SMuFF through USB, do a <span class="code">ls -l /dev/serial/by-id</span> on the console and pick the device named <span class="code">usb-LeafLabs_Maple-if00</span>
             without including the <span class="code">/dev/</span> in the device name!
@@ -50,7 +50,8 @@
             <label class="label-aligned">{{ _('Active Tool:') }}</label>
             <div class="ml-1">
                 <span id="SMuFF_setting_tool" class="data" data-bind="html: _settings.tool()"></span>
-            </div>
+                <span id="SMuFF_tool_count" class="tool-count"></span>
+             </div>
         </div>
 
         <div class="aligned">
@@ -64,7 +65,59 @@
                 </span>
             </div>
         </div>
-        
+
+        <div><hr /></div>
+        <div class="aligned">
+            <label class="label-aligned">{{ _('2nd SMuFF:') }}</label>
+            <div class="ml-1">
+                <input class="checkbox" type="checkbox" style="width: 2em" class="input-block-level" data-bind="checked: _settings.hasIDEX">
+                <span class="serial-hint" style="margin-left: 1em;">Tick this option only if you're running an IDEX machine with two SMuFFs.</span>
+            </div>
+        </div>
+        <div class="secondSMuFF" id="second-smuff-settings" data-bind="visible: _settings.hasIDEX">
+            <div class="aligned">
+                <label class="label-aligned">{{ _('Serial Port 2 / Baudrate:') }}</label>
+                <div class="ml-1">
+                    <input type="text" style="width: 20em" class="input-block-level" data-bind="value: _settings.ttyB">&nbsp;&nbsp;
+                    <select style="max-width: 8em;" data-bind="value: _settings.baudrateB">
+                        <option value="230400">230400</option>
+                        <option value="115200">115200</option>
+                        <option value="57600">57600</option>
+                        <option value="38400">38400</option>
+                        <option value="19200">19200</option>
+                        <option value="9600">9600</option>
+                        <option value="4800">4800</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="aligned">
+                <label class="label-aligned">{{ _('Firmware Info:') }}</label>
+                <div class="ml-1">
+                    <div id="SMuFF2_setting_firmware" class="data" data-bind="html: _settings.firmware_infoB()"></div>
+                </div>
+            </div>
+
+            <div class="aligned">
+                <label class="label-aligned">{{ _('Active Tool:') }}</label>
+                <div class="ml-1">
+                    <span id="SMuFF2_setting_tool" class="data" data-bind="html: _settings.toolB()"></span>
+                    <span id="SMuFF2_tool_count" class="tool-count"></span>
+                </div>
+            </div>
+
+            <div class="aligned">
+                <label class="label-aligned">{{ _('Feeder:') }}</label>
+                <div class="ml-1">
+                    <span style="margin-right: 1em;">
+                        1&nbsp;<i id="SMuFF2_setting_feeder" class="fa fa-times-circle" data-bind="attr: { class: _settings.feeder_endB() }"></i>
+                    </span>
+                    <span style="margin-left: 1em;">
+                        2&nbsp;<i id="SMuFF2_setting_feeder2" class="fa fa-times-circle" data-bind="attr: { class: _settings.feeder2_endB() }"></i>
+                    </span>
+                </div>
+            </div>
+        </div>
         <div style="width: 100%">
             <p>
                 <div class="info">

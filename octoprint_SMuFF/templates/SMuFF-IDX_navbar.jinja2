@@ -1,0 +1,24 @@
+<div id="navbar_plugin_SMuFF" class="navbar-text">
+    <span class="navbar-item navbar-item-disc" id="SMuFF_navbar_item">
+        <span class="navbar-instance">A</span>
+        <span id="SMuFF_navbar_tool" class="navbar-tool" data-bind="attr: { title: 'SMuFF Current Tool' }, html: _settings.tool()">
+        </span>
+        <span class="navbar-feeder1-icon">
+            <i id="SMuFF_navbar_feeder"  class="fa fa-times-circle" data-bind="attr: { title: 'Feeder Endstop', class: _settings.feeder_end() }"></i>
+        </span>
+        <span class="navbar-feeder2-icon">
+           <i id="SMuFF_navbar_feeder2" class="fa fa-times-circle" data-bind="attr: { title: 'Feeder2 Endstop', class: _settings.feeder2_end() }"></i>
+        </span>
+    </span>
+    <span class="navbar-item navbar-item-disc" id="SMuFF2_navbar_item">
+        <span class="navbar-instance">B</span>
+        <span id="SMuFF2_navbar_tool" class="navbar-tool" data-bind="attr: { title: 'SMuFF Current Tool' }, html: _settings.toolB()">
+        </span>
+        <span class="navbar-feeder1-icon">
+            <i id="SMuFF2_navbar_feeder"  class="fa fa-times-circle" data-bind="attr: { title: 'Feeder Endstop', class: _settings.feeder_endB() }"></i>
+        </span>
+        <span class="navbar-feeder2-icon">
+           <i id="SMuFF2_navbar_feeder2" class="fa fa-times-circle" data-bind="attr: { title: 'Feeder2 Endstop', class: _settings.feeder2_endB() }"></i>
+        </span>
+    </span>
+</div>

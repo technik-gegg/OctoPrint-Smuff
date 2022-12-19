@@ -133,3 +133,27 @@
     position: relative;
     top: 2px;
 }
+
+.navbar-instance {
+    font-size: 85%;
+    font-weight: bold;
+    color:#ffffff;
+    background-color: #444444;
+    padding: 1px 4px;
+    border-radius: 10px;
+}
+
+.instance-selector {
+    display: flex;
+    justify-content: space-between;
+    background-color: #f5f5f5;
+    align-content: center;
+    padding: 10px 8px;
+    margin-bottom: 5px;
+    border-radius: 5px;
+}
+
+.tool-count {
+    margin-left: 2em;
+    display: none;
+}

@@ -77,6 +77,13 @@ He has a really nice collection of models for multi material 3D printing. If you
 
 ## Recent Changes
 
+**V1.2.1** - Added pseudo commands *@SMuFF T++* / *@SMuFF T--* handling
+
+- extended the tool change pseudo GCode to handle **T++** / **T--** instructions, which will automatically increment or decrement the current tool number in order to achieve an automatic tool change, whenever a filament runout has been detected (for continous printing).
+In order to use this feature, you'll need a plugin that is able to detect a filament runout and send custom GCodes, such as the [Filament Sensor Simplified](https://plugins.octoprint.org/plugins/filamentsensorsimplified/) plugin.
+- added the option of using two SMuFFs on an **IDEX printer**. Tools are numbered sequentially, i.e. 0-4 on the first SMuFF/printhead, 5-9 on the second, if both SMuFFs support 5 tools/materials. Your OctoPrint printer profile has to be modified accordingly. You have to configure port and baudrate for each SMuFF. Both SMuFFs status infos are displayed in the OctoPrint Navbar separately. The SMuFF console supports switching between the two instances and the buttons will affect the currently selected instance.
+**Please keep in mind, this feature is "Work In Progress" and may need some further modifications!**
+
 **V1.2.0** - Updated plugin for the latest SMuFF firmware, version (V3.13)
 
 ##### Please be aware: You must update your SMuFF firmware to the latest version before you move on using this version of the plugin

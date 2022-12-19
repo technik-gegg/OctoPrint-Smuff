@@ -1,0 +1,30 @@
+<div id="tab_plugin_SMuFF" class="tab-pane">
+    <pre id="SMuFF-output" class="pre-scrollable pre-output UICvertResize">
+    </pre>
+    <fieldset class="instance-selector">
+        <label class="radio" for="SMuFF-InstanceA">
+            <input type="radio" name="SMuFFInstance" id="SMuFF-InstanceA" checked="checked">
+            SMuFF A
+        </label>
+        <label class="radio" for="SMuFF-InstanceB">
+            <input type="radio" name="SMuFFInstance" id="SMuFF-InstanceB">
+            SMuFF B
+        </label>
+    </fieldset>
+    <div class="smuff-buttons">
+        <button class="btn btn-primary span3" data-bind="click: get_status"     id="smuff-btn-status"      title="Show SMuFF status">Status</button>
+        <button class="btn btn-primary span3" data-bind="click: set_debug"      id="smuff-btn-debug"       title="Toggle SMuFF Debug">Debug</button>
+        <button class="btn btn-primary span3" data-bind="click: do_wipe"        id="smuff-btn-wipe"        title="Wipe Nozzle">Wipe</button>
+        <button class="btn btn-primary span3" data-bind="click: do_cut"         id="smuff-btn-cut"         title="Cut Filament">Cut</button>
+    </div>
+    <div class="smuff-buttons">
+        <button class="btn btn-primary span4" data-bind="click: do_lid_open"    id="smuff-btn-open"        title="Open Lid Servo">Lid Open</button>
+        <button class="btn btn-primary span4" data-bind="click: do_lid_close"   id="smuff-btn-close"       title="Close Lid Servo">Lid Close</button>
+        <button class="btn btn-primary span4" data-bind="click: do_motors_off"  id="smuff-btn-motors"      title="Turn Stepper Motors off">Motors Off</button>
+    </div>
+    <div class="smuff-buttons">
+        <button class="btn span4" data-bind="click: do_unjam, css: {'btn-danger': isJammed == true, 'btn-primary': isJammed == false } " id="smuff-btn-unjam"       title="Reset Jam Flag">Reset Jam</button>
+        <button class="btn btn-primary span4" data-bind="click: do_reset_stats" id="smuff-btn-resetstats"  title="Reset Tool Change Stats">Reset Stats</button>
+        <button class="btn btn-warning span4" data-bind="click: do_reset"       id="smuff-btn-reset"       title="Reset SMuFF">Reset</button>
+    </div>
+</div>

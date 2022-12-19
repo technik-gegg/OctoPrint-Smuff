@@ -54,27 +54,47 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 
 	def __init__(self, logger):
 		self._log = logger
-		self.SC = smuff_core.SmuffCore(logger, IS_KLIPPER, self.smuffStatusCallback, self.smuffResponseCallback)
+		self.SCA = smuff_core.SmuffCore(logger, IS_KLIPPER, self.smuffStatusCallbackA, self.smuffResponseCallbackA)
+		self.SCB = smuff_core.SmuffCore(logger, IS_KLIPPER, self.smuffStatusCallbackB, self.smuffResponseCallbackB)
 		self._reset()
 
 	def _reset(self):
 		pass
 
-	def smuffStatusCallback(self, active):
+	def smuffStatusCallbackA(self, active):
 		if hasattr(self, "_plugin_manager"):
-			tool 	= self.SC.curTool 		if active else -1
-			feeder 	= self.SC.feeder 		if active else False
-			feeder2	= self.SC.feeder2 		if active else False
-			info 	= self.SC.fwInfo 		if active else ""
-			conn	= self.SC.isConnected 	if active else False
-			jammed 	= self.SC.isJammed 		if active else False
-			self._plugin_manager.send_plugin_message(self._identifier, {'type': 'status', 'tool': tool, 'feeder': feeder, 'feeder2': feeder2, 'fw_info': info, 'conn': conn, 'jammed': jammed })
-			if not self.SC.isConnected:
-				self._setResponse("Not connected", True)
+			tool 	= self.SCA.curTool		if active else -1
+			toolCount = self.SCA.toolCount	if active else -1
+			feeder 	= self.SCA.feeder		if active else False
+			feeder2	= self.SCA.feeder2		if active else False
+			info 	= self.SCA.fwInfo		if active else ""
+			conn	= self.SCA.isConnected	if active else False
+			jammed 	= self.SCA.isJammed		if active else False
+			self._plugin_manager.send_plugin_message(self._identifier, {'type': 'status', 'tool': tool, 'feeder': feeder, 'feeder2': feeder2, 'fw_info': info, 'conn': conn, 'jammed': jammed, 'toolCount': toolCount })
+			if not self.SCA.isConnected:
+				self._setResponse("Not connected", True, self.SCA)
 		pass
 
-	def smuffResponseCallback(self, message):
-		self._setResponse(message, False)
+	def smuffStatusCallbackB(self, active):
+		if hasattr(self, "_plugin_manager"):
+			if self._settings.get_boolean(["hasIDEX"]):
+				toolB 	= self.SCB.curTool		if active else -1
+				toolCountB = self.SCB.toolCount	if active else -1
+				feederB = self.SCB.feeder		if active else False
+				feeder2B= self.SCB.feeder2		if active else False
+				infoB 	= self.SCB.fwInfo		if active else ""
+				connB	= self.SCB.isConnected	if active else False
+				jammedB = self.SCB.isJammed		if active else False
+				self._plugin_manager.send_plugin_message(self._identifier, {'type': 'status', 'toolB': toolB, 'feederB': feederB, 'feeder2B': feeder2B, 'fw_infoB': infoB, 'connB': connB, 'jammedB': jammedB, 'toolCountB': toolCountB })
+				if not self.SCB.isConnected:
+					self._setResponse("Not connected", True, self.SCB)
+		pass
+
+	def smuffResponseCallbackA(self, message):
+		self._setResponse(message, False, self.SCA)
+
+	def smuffResponseCallbackB(self, message):
+		self._setResponse(message, False, self.SCB)
 	#------------------------------------------------------------------------------
 	# OctoPrint plugin functions
 	#------------------------------------------------------------------------------
@@ -86,20 +106,30 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		self._log.info("Yeah... starting up...")
 
 	def on_shutdown(self):
-		self.SC.close_serial()
+		self.SCA.close_serial()
+		self.SCB.close_serial()
 		self._log.debug("Booo... shutting down...")
 
 	#
 	# StartupPlugin mixin
 	#
 	def on_after_startup(self):
-		self.SC.serialPort 		= "/dev/{}".format(self._settings.get(["tty"]))
-		self.SC.baudrate 		= self._settings.get_int(["baudrate"])
-		self.SC.cmdTimeout 		= self._settings.get_int(["timeout1"])
-		self.SC.tcTimeout 		= self._settings.get_int(["timeout2"])
-		self.SC.wdTimeout 		= self.SC.tcTimeout * 2
-		self.SC.timeout 		= self.SC.tcTimeout * 2
-		self.SC.connect_SMuFF()
+		self.SCA.serialPort 	= "/dev/{0}".format(self._settings.get(["tty"]))
+		self.SCA.baudrate 		= self._settings.get_int(["baudrate"])
+		self.SCA.cmdTimeout 	= self._settings.get_int(["timeout1"])
+		self.SCA.tcTimeout 		= self._settings.get_int(["timeout2"])
+		self.SCA.wdTimeout 		= self.SCA.tcTimeout * 2
+		self.SCA.timeout 		= self.SCA.tcTimeout * 2
+		self.SCA.connect_SMuFF()
+
+		self.SCB.serialPort 	="/dev/{0}".format(self._settings.get(["ttyB"]))
+		if self.SCB.serialPort:
+			self.SCB.baudrate 		= self._settings.get_int(["baudrateB"])
+			self.SCB.cmdTimeout 	= self.SCA.cmdTimeout
+			self.SCB.tcTimeout 		= self.SCA.tcTimeout
+			self.SCB.wdTimeout 		= self.SCA.wdTimeout
+			self.SCB.timeout 		= self.SCA.timeout
+			self.SCB.connect_SMuFF()
 
 	#
 	# EventHandler mixin
@@ -108,7 +138,8 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		#self._log.debug("Event: [" + event + ", {0}".format(payload) + "]")
 		if event == Events.SHUTDOWN:
 			self._log.debug("Shutting down, closing serial")
-			self.SC.close_serial()
+			self.SCA.close_serial()
+			self.SCB.close_serial()
 
 	#
 	# SettingsPlugin mixin
@@ -122,14 +153,26 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			firmware_info	= "No data. Please check connection!",
 			baudrate		= DEFAULT_BAUD,
 			tty 			= "ttySMuFF",
-			tool			= self.SC.curTool,
-			selector_end	= self.SC.selector,
-			revolver_end	= self.SC.revolver,
-			feeder_end		= self.SC.feeder,
-			feeder2_end		= self.SC.feeder2,
+			tool			= self.SCA.curTool,
+			toolCount 		= self.SCA.toolCount,
+			selector_end	= self.SCA.selector,
+			revolver_end	= self.SCA.revolver,
+			feeder_end		= self.SCA.feeder,
+			feeder2_end		= self.SCA.feeder2,
 			timeout1		= 30,
 			timeout2		= 90,
-			autoload 		= True
+			autoload 		= True,
+			hasIDEX			= False,
+			firmware_infoB	= "No data. Please check connection!",
+			baudrateB		= DEFAULT_BAUD,
+			ttyB 			= "",
+			toolB			= self.SCB.curTool,
+			toolCountB 		= self.SCB.toolCount,
+			selector_endB	= self.SCB.selector,
+			revolver_endB	= self.SCB.revolver,
+			feeder_endB		= self.SCB.feeder,
+			feeder2_endB	= self.SCB.feeder2,
+			activeInstance 	= "A"
 		)
 		return  params
 
@@ -142,23 +185,39 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 	def on_settings_save(self, data):
 		baud_now = self._settings.get_int(["baudrate"])
 		port_now = self._settings.get(["tty"])
+		baud_nowB = self._settings.get_int(["baudrateB"])
+		port_nowB = self._settings.get(["ttyB"])
 		octoprint.plugin.SettingsPlugin.on_settings_save(self, data)
 
 		baud_new = self._settings.get_int(["baudrate"])
 		port_new = self._settings.get(["tty"])
-		self._log.debug("Settings saved: Baudrate: {0} -> {1}  Port: {2} -> {3}".format(baud_now, baud_new, port_now, port_new))
+		baud_newB = self._settings.get_int(["baudrateB"])
+		port_newB = self._settings.get(["ttyB"])
+		self._log.debug("Settings saved [A]: Baudrate: {0} -> {1}  Port: {2} -> {3}".format(baud_now, baud_new, port_now, port_new))
+		self._log.debug("Settings saved [B]: Baudrate: {0} -> {1}  Port: {2} -> {3}".format(baud_nowB, baud_newB, port_nowB, port_newB))
 		# did the settings change?
 		if not port_new == port_now or not baud_new == baud_now:
 			# reconnect on the new port (with new baudrate)
-			self.SC.reconnect_SMuFF()
+			self.SCA.reconnect_SMuFF()
+
+		if not port_newB == port_nowB or not baud_newB == baud_nowB:
+			# reconnect on the new port (with new baudrate)
+			self.SCB.reconnect_SMuFF()
 
 	def get_template_configs(self):
 		# self._log.debug("Settings-Template was requested")
-		return [
-			dict(type="settings", 	custom_bindings=True,  template="SMuFF_settings.jinja2"),
-			dict(type="navbar", 	custom_bindings=True,  template="SMuFF_navbar.jinja2"),
-			dict(type="tab", 		custom_bindings=True,  template="SMuFF_tab.jinja2", name="SMuFF")
-		]
+		if self._settings.get_boolean(["hasIDEX"]):
+			return [
+				dict(type="settings", 	custom_bindings=True,  template="SMuFF_settings.jinja2"),
+				dict(type="navbar", 	custom_bindings=True,  template="SMuFF-IDX_navbar.jinja2"),
+				dict(type="tab", 		custom_bindings=True,  template="SMuFF-IDX_tab.jinja2", name="SMuFF")
+			]
+		else:
+			return [
+				dict(type="settings", 	custom_bindings=True,  template="SMuFF_settings.jinja2"),
+				dict(type="navbar", 	custom_bindings=True,  template="SMuFF_navbar.jinja2"),
+				dict(type="tab", 		custom_bindings=True,  template="SMuFF_tab.jinja2", name="SMuFF")
+			]
 
 	#
 	# AssetPlugin mixin
@@ -220,113 +279,134 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		if gcode and gcode.startswith(smuff_core.TOOL):
 			self._log.debug("OctoPrint current tool: {0}".format(comm_instance._currentTool))
 
-			# if the tool that's already loaded is addressed, ignore the filament change
-			if cmd == self.SC.curTool and self.SC.feeder:
-				self._log.info("Current tool {0} equals {1} -- no tool change needed".format(cmd, self.SC.curTool))
-				self._setResponse("Tool already selected", True)
+			instance = self.SCA
+			toolnew = -1
+			tool = instance.parse_tool_number(gcode)
+			toolcount = instance.toolCount
+			if tool == -1:
 				return
-			self.SC.isAligned = False
+			# is the tool required on the 2nd SMUFF?
+			if tool >= toolcount:
+				#if so, adjust instance and tool number
+				instance = self.SCB
+				toolnew = tool - toolcount
+				cmd = smuff_core.TOOL + toolnew
+				self._log.debug("Using 2nd SMuFF, tool: {0} changed to {1}".format(tool, cmd))
+
+			# if the tool that's already loaded is addressed, ignore the filament change
+			if cmd == instance.curTool and instance.feeder:
+				self._log.info("Current tool {0} equals {1} -- no tool change needed".format(cmd, instance.curTool))
+				self._setResponse("Tool already selected", True, instance)
+				return
+			instance.isAligned = False
 			# replace the tool change command Tx with @SMuFF Tx
-			return [ AT_SMUFF + " " + cmd ]
+			if toolnew == -1:
+				return [ AT_SMUFF + " " + cmd ]
+			else:
+				return [ AT_SMUFF + "2 " + cmd ]
 
 		# handle SMuFF pseudo GCodes
 		if cmd and cmd.startswith(AT_SMUFF):
 			action, v1, v2, v3 = self._split_cmd(cmd)
 			self._log.debug("1>> Cmd: {0}  Action: {1}  Params: {2}; {3}; {4}".format(cmd, str(action), str(v1), str(v2), str(v3)))
 
+			instance = self.SCA
+			if cmd.startswith(AT_SMUFF+"2"):		# command is @SMUFF2, handle 2nd device
+				instance = self.SCB
+
 			# @SMuFF MOTORS
 			if action and action == MOTORS:
 				# send a servo command to SMuFF
-				self.SC.send_SMuFF_and_wait(smuff_core.MOTORSOFF)
-				self._setResponse(smuff_core.T_MOTORS_OFF, True)
+				instance.send_SMuFF_and_wait(smuff_core.MOTORSOFF)
+				self._setResponse(smuff_core.T_MOTORS_OFF, True, instance)
 				return
 
 			# @SMuFF FAN
 			if action and action == FAN:
 				# send a fan command to SMuFF
-				self.SC.send_SMuFF_and_wait(smuff_core.FAN_ON if v1 == 1 else smuff_core.FAN_OFF)
-				self._setResponse(smuff_core.T_FAN.format("ON" if v1 == 1 else "OFF"), True)
+				instance.send_SMuFF_and_wait(smuff_core.FAN_ON if v1 == 1 else smuff_core.FAN_OFF)
+				self._setResponse(smuff_core.T_FAN.format("ON" if v1 == 1 else "OFF"), True, instance)
 				return
 
 			# @SMuFF DEBUG
 			if action and action == DEBUG:
 				# toggle debug state
-				self.SC.dumpRawData = not self.SC.dumpRawData
-				self._setResponse(smuff_core.T_DUMP_RAW.format("ON" if self.SC.dumpRawData else "OFF"), True)
+				instance.dumpRawData = not instance.dumpRawData
+				self._setResponse(smuff_core.T_DUMP_RAW.format("ON" if instance.dumpRawData else "OFF"), True, instance)
 				return
 
 			# @SMuFF SERVO
 			if action and action == SERVO:
 				# send a servo command to SMuFF
-				self.SC.send_SMuFF_and_wait(smuff_core.SETSERVO.format(str(v1), str(v2)))
-				self._setResponse(smuff_core.T_POSITIONING.format(v1, v2), True)
+				instance.send_SMuFF_and_wait(smuff_core.SETSERVO.format(str(v1), str(v2)))
+				self._setResponse(smuff_core.T_POSITIONING.format(v1, v2), True, instance)
 				return
 
 			# @SMuFF SERVOOPEN
 			if action and action == SERVOOPEN:
 				# send a servo open command to SMuFF
-				self._setResponse(smuff_core.T_OPENING_LID, True)
-				self.SC.send_SMuFF_and_wait(smuff_core.LIDOPEN)
+				self._setResponse(smuff_core.T_OPENING_LID, True, instance)
+				instance.send_SMuFF_and_wait(smuff_core.LIDOPEN)
 				return
 
 			# @SMuFF SERVOCLOSE
 			if action and action == SERVOCLOSE:
 				# send a servo close command to SMuFF
-				self._setResponse(smuff_core.T_CLOSING_LID, True)
-				self.SC.send_SMuFF_and_wait(smuff_core.LIDCLOSE)
+				self._setResponse(smuff_core.T_CLOSING_LID, True, instance)
+				instance.send_SMuFF_and_wait(smuff_core.LIDCLOSE)
 				return
 
 			# @SMuFF WIPE
 			if action and action == WIPENOZZLE:
 				# send a wipe command to SMuFF
-				self._setResponse(smuff_core.T_WIPING, True)
-				self.SC.send_SMuFF_and_wait(smuff_core.WIPE)
+				self._setResponse(smuff_core.T_WIPING, True, instance)
+				instance.send_SMuFF_and_wait(smuff_core.WIPE)
 				return
 
 			# @SMuFF CUT
 			if action and action == CUTFIL:
 				# send a cut command to SMuFF
-				self._setResponse(smuff_core.T_CUTTING, True)
-				self.SC.send_SMuFF_and_wait(smuff_core.CUT)
+				self._setResponse(smuff_core.T_CUTTING, True, instance)
+				instance.send_SMuFF_and_wait(smuff_core.CUT)
 				return
 
 			# @SMuFF STATUS
 			if action and action == STATUS:
-				self._setResponse(self.SC.get_states(), False)
+				self._setResponse(instance.get_states(), False, instance)
 				return
 
 			# @SMuFF UNJAM
 			if action and action == UNJAM:
 				# send a un-jam command to SMuFF
-				self.SC.send_SMuFF_and_wait(smuff_core.UNJAM)
-				self._setResponse(smuff_core.T_UNJAMMED, True)
+				instance.send_SMuFF_and_wait(smuff_core.UNJAM)
+				self._setResponse(smuff_core.T_UNJAMMED, True, instance)
 				return
 
 			# @SMuFF RESET
 			if action and action == RESET:
 				# send a reset command to SMuFF
-				self.SC.send_SMuFF_and_wait(smuff_core.RESET)
-				self._setResponse(smuff_core.T_RESET, False)
+				instance.send_SMuFF_and_wait(smuff_core.RESET)
+				self._setResponse(smuff_core.T_RESET, False, instance)
 				return
 
 			# @SMuFF UNLOAD
 			if action and action == UNLOAD:
 				# send a M701 command to SMuFF
-				self.SC.send_SMuFF_and_wait(smuff_core.UNLOADFIL)
-				self._setResponse(smuff_core.T_UNLOADING, False)
+				instance.send_SMuFF_and_wait(smuff_core.UNLOADFIL)
+				self._setResponse(smuff_core.T_UNLOADING, False, instance)
 				return
 
 			# @SMuFF RELOAD
 			if action and action == RELOAD:
 				# send a M700 command to SMuFF
-				self.SC.send_SMuFF_and_wait(smuff_core.LOADFIL)
-				self._setResponse(smuff_core.T_RELOADING, False)
+				instance.send_SMuFF_and_wait(smuff_core.LOADFIL)
+				self._setResponse(smuff_core.T_RELOADING, False, instance)
 				return
 
 			# @SMuFF RESETAVG
 			if action and action == RESETAVG:
 				# reset tool change counters / average
-				self.SC.reset_avg()
+				instance.reset_avg()
 				return
 
 	def extend_tool_sending(self, comm_instance, phase, cmd, cmd_type, gcode, subcode, tags, *args, **kwargs):
@@ -340,28 +420,62 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			action, v1, v2, v3 = self._split_cmd(cmd)
 			self._log.debug("2>> Cmd: {0}  Action: {1}  Params: {2}; {3}; {4}".format(cmd, str(action), str(v1), str(v2), str(v3)))
 
+			instance = self.SCA
+			if cmd.endswith("FF2"):		# command is @SMUFF2, handle 2nd device
+				instance = self.SCB
+
 			# @SMuFF T0...T99
 			if action and action.startswith(smuff_core.TOOL):
 				try:
 					if self._printer.set_job_on_hold(True, False):
-						self.SC.start_tc_timer()
+						instance.start_tc_timer()
 						try:
+							# determine if the current tool is to be incremented or decremented
+							# in order to achieve an automatic tool swap on filament runout
+							# in junction with a decent filament runout plugin.
+							# A "@SMUFF T++" command will use the next tool, a "@SMUFF T--" the previous
+							if action == "T++" or action == "T--":
+								try:
+									actTool = instance.get_active_tool()
+									maxTools = instance.toolCount
+									# on "++" increment the current tool number
+									if action[1:] == "++":
+										if actTool+1 == maxTools:
+											# use tool 0 if the active tool is the last one available
+											action = smuff_core.TOOL + "0"
+										else:
+											action = smuff_core.TOOL + str(actTool+1)
+									# on "--" decrement the current tool number
+									elif action[1:] == "--":
+										if actTool > 0:
+											action = smuff_core.TOOL + str(actTool-1)
+										else:
+											# use last tool to avoid an underrun
+											action = smuff_core.TOOL + str(maxTools-1)
+								except Exception as err:
+									errmsg = "Can't determine next/previous tool number! (Error: {})".format(err)
+									self._log.error(errmsg)
+									self._setResponse(errmsg, True, instance)
+
 							# store the new tool for later
-							self.SC.pendingTool = str(action)
+							instance.pendingTool = str(action)
 							# check if there's filament loaded
-							if self.SC.feeder:
+							if instance.feeder:
 								self._log.debug("2>> calling script 'beforeToolChange'")
 								# if so, send the OctoPrints default "Before Tool Change" script to the printer
 								self._printer.script("beforeToolChange")
 							else:
 								self._log.debug("2>> calling SMuFF LOAD")
 								# not loaded, nothing to retract, so send the tool change to the SMuFF
-								self._printer.commands(AT_SMUFF + " " + LOAD)
+								if instance == self.SCA:
+									self._printer.commands(AT_SMUFF + " " + LOAD)
+								else:
+									self._printer.commands(AT_SMUFF + "2 " + LOAD)
 
 						except UnknownScript as err:
 							errmsg = "Script 'beforeToolChange' not found! (Error: {})".format(err)
 							self._log.error(errmsg)
-							self._setResponse(errmsg, True)
+							self._setResponse(errmsg, True, instance)
 
 						finally:
 							# Notice:
@@ -373,7 +487,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 				except RuntimeError as err:
 					# might happen if the printer is offline
 					errmsg = "Can't put printer on pause because: {})".format(err)
-					self._setResponse(errmsg, True)
+					self._setResponse(errmsg, True, instance)
 					self._log.error(errmsg)
 
 			# @SMuFF LOAD
@@ -382,37 +496,37 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 					continuePrint = False
 					with self._printer.job_on_hold():
 						try:
-							self._log.debug("1>> LOAD: Feeder:  {0}, Pending: {1}, Current: {2}".format(str(self.SC.feeder), str(self.SC.pendingTool), str(self.SC.curTool)))
+							self._log.debug("1>> LOAD: Feeder:  {0}, Pending: {1}, Current: {2}".format(str(instance.feeder), str(instance.pendingTool), str(instance.curTool)))
 
 							autoload = self._settings.get_boolean(["autoload"])
 							# send a tool change command to SMuFF
-							res = self.SC.send_SMuFF_and_wait(self.SC.pendingTool + (smuff_core.AUTOLOAD if autoload else ""))
+							res = instance.send_SMuFF_and_wait(instance.pendingTool + (smuff_core.AUTOLOAD if autoload else ""))
 							# do we have the tool requested now?
-							if str(res) == str(self.SC.pendingTool):
-								self.SC.setTool()
-								comm_instance._currentTool = self.SC.parse_tool_number(self.SC.curTool)
+							if str(res) == str(instance.pendingTool):
+								instance.set_tool()
+								comm_instance._currentTool = instance.parse_tool_number(instance.curTool)
 								# check if filament has been loaded
-								if self.SC.loadState == 2 or self.SC.loadState == 3:
+								if instance.loadState == 2 or instance.loadState == 3:
 									self._log.debug("2>> calling script 'afterToolChange'")
 									# send the default OctoPrint "After Tool Change" script to the printer
 									self._printer.script("afterToolChange")
 									continuePrint = True
 								else:
-									self._log.warning("Tool load failed, retrying ({0} is in feeder state: {1})".format(res, self.SC.loadState))
+									self._log.warning("Tool load failed, retrying ({0} is in feeder state: {1})".format(res, instance.loadState))
 							else:
 								# not the result we expected, do it all again
-								self._log.warning("Tool change failed, retrying (<{0}> not <{1}>)".format(res, self.SC.pendingTool))
+								self._log.warning("Tool change failed, retrying (<{0}> not <{1}>)".format(res, instance.pendingTool))
 
 						except UnknownScript as err:
 							# shouldn't happen at all, since we're using default OctoPrint scripts
 							# but you never know
 							errmsg = "Script 'afterToolChange' not found! (Error: {})".format(err)
 							self._log.error(errmsg)
-							self._setResponse(errmsg, True)
+							self._setResponse(errmsg, True, instance)
 
 						finally:
-							duration = self.SC.stop_tc_timer()
-							self._setResponse("Toolchange took {:4.2f} secs.".format(duration), True)
+							duration = instance.stop_tc_timer()
+							self._setResponse("Toolchange took {:4.2f} secs.".format(duration), True, instance)
 							if continuePrint:
 								try:
 									# now is the time to release the hold and continue printing
@@ -420,12 +534,12 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 								except RuntimeError as err:
 									# might happen if the printer is offline
 									errmsg = "Can't unpause printer because: {})".format(err)
-									self._setResponse(errmsg, True)
+									self._setResponse(errmsg, True, instance)
 									self._log.error(errmsg)
 				except RuntimeError as err:
 					# might happen if the printer is offline
 					errmsg = "Can't put printer on pause because: {})".format(err)
-					self._setResponse(errmsg, True)
+					self._setResponse(errmsg, True, instance)
 					self._log.error(errmsg)
 
 	def extend_script_variables(self, comm_instance, script_type, script_name, *args, **kwargs):
@@ -435,17 +549,20 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		# Refresh the current tool in OctoPrint on each command coming from the printer - just in case
 		# This is needed because OctoPrint manages the current tool itself and it might try to swap
 		# tools because of the wrong information.
-		comm_instance._currentTool = self.SC.parse_tool_number(self.SC.curTool)
+		comm_instance._currentTool = self.SCA.parse_tool_number(self.SCA.curTool)
 		# don't process any of the GCodes received
 		return line
 
 	#
 	# Send a response (text) to the OctoPrint Terminal
 	#
-	def _setResponse(self, response, addPrefix = False):
+	def _setResponse(self, response, addPrefix = False, instance = None):
+		fromInst = ""
+		if self._settings.get_boolean(["hasIDEX"]) and not instance == None:
+			fromInst = " [ A ]  " if instance == self.SCA else " [ B ]  "
 		if response != "":
 			if hasattr(self, "_plugin_manager"):
-				self._plugin_manager.send_plugin_message(self._identifier, {'terminal':  response })
+				self._plugin_manager.send_plugin_message(self._identifier, {'terminal': fromInst + response })
 
 
 #------------------------------------------------------------------------------
