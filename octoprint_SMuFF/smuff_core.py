@@ -300,7 +300,7 @@ class SmuffCore():
 		#self._log.info("get_status being called. M:{0} S:{1} ")
 		values = {
 			"tools":   		self.toolCount,
-			"activetool":   self._parse_tool_number(self.curTool),
+			"activetool":   self.get_active_tool(),
 			"pendingtool":  self.pendingTool,
 			"selector":     self.selector,
 			"revolver":     self.revolver,
@@ -332,9 +332,12 @@ class SmuffCore():
 		}
 		return values
 
-	def setTool(self):
+	def set_tool(self):
 		self.preTool = self.curTool
 		self.curTool = self.pendingTool
+
+	def get_active_tool(self):
+		return self._parse_tool_number(self.curTool)
 
 	#
 	# Async basic init
