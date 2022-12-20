@@ -56,6 +56,8 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		self._log = logger
 		self.SCA = smuff_core.SmuffCore(logger, IS_KLIPPER, self.smuffStatusCallbackA, self.smuffResponseCallbackA)
 		self.SCB = smuff_core.SmuffCore(logger, IS_KLIPPER, self.smuffStatusCallbackB, self.smuffResponseCallbackB)
+		self.activeInstance = "A"
+		self._octoprintTool = ""
 		self._reset()
 
 	def _reset(self):
@@ -145,7 +147,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 	# SettingsPlugin mixin
 	#
 	def get_settings_version(self):
-		return 2
+		return 3
 
 	def get_settings_defaults(self):
 		self._log.debug("SMuFF plugin loaded, getting defaults")
@@ -281,17 +283,22 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 
 			instance = self.SCA
 			toolnew = -1
-			tool = instance.parse_tool_number(gcode)
+			tool = instance.parse_tool_number(cmd)
 			toolcount = instance.toolCount
+			self._log.debug("CMD: {0}; ToolCount [A]: {1}; New Tool: {2}".format(cmd, toolcount, tool))
 			if tool == -1:
 				return
+			self._octoprintTool = cmd
 			# is the tool required on the 2nd SMUFF?
 			if tool >= toolcount:
 				#if so, adjust instance and tool number
 				instance = self.SCB
 				toolnew = tool - toolcount
-				cmd = smuff_core.TOOL + toolnew
+				self._log.debug("ToolCount [B]: {0}; RealTool on [B]: {1}".format(instance.toolCount, toolnew))
+				cmd = "{0}{1}".format(smuff_core.TOOL, toolnew)
 				self._log.debug("Using 2nd SMuFF, tool: {0} changed to {1}".format(tool, cmd))
+
+			self.activeInstance = ("A" if instance == self.SCA else "B")
 
 			# if the tool that's already loaded is addressed, ignore the filament change
 			if cmd == instance.curTool and instance.feeder:
@@ -421,8 +428,13 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			self._log.debug("2>> Cmd: {0}  Action: {1}  Params: {2}; {3}; {4}".format(cmd, str(action), str(v1), str(v2), str(v3)))
 
 			instance = self.SCA
-			if cmd.endswith("FF2"):		# command is @SMUFF2, handle 2nd device
+			if cmd.startswith(AT_SMUFF+"2"):		# command is @SMUFF2, handle 2nd device
 				instance = self.SCB
+				self.activeInstance ="B"
+
+			if self.activeInstance == "B":
+				instance = self.SCB
+				self._log.debug("Switched instance to [B]...")
 
 			# @SMuFF T0...T99
 			if action and action.startswith(smuff_core.TOOL):
@@ -465,11 +477,12 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 								# if so, send the OctoPrints default "Before Tool Change" script to the printer
 								self._printer.script("beforeToolChange")
 							else:
-								self._log.debug("2>> calling SMuFF LOAD")
 								# not loaded, nothing to retract, so send the tool change to the SMuFF
 								if instance == self.SCA:
+									self._log.debug("2>> calling SMuFF LOAD [A]")
 									self._printer.commands(AT_SMUFF + " " + LOAD)
 								else:
+									self._log.debug("2>> calling SMuFF LOAD [B]")
 									self._printer.commands(AT_SMUFF + "2 " + LOAD)
 
 						except UnknownScript as err:
@@ -496,15 +509,15 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 					continuePrint = False
 					with self._printer.job_on_hold():
 						try:
-							self._log.debug("1>> LOAD: Feeder:  {0}, Pending: {1}, Current: {2}".format(str(instance.feeder), str(instance.pendingTool), str(instance.curTool)))
+							self._log.debug("1>> LOAD{3}: Feeder:  {0}, Pending: {1}, Current: {2}".format(str(instance.feeder), str(instance.pendingTool), str(instance.curTool), " [A]" if instance == self.SCA else " [B]"))
 
 							autoload = self._settings.get_boolean(["autoload"])
 							# send a tool change command to SMuFF
-							res = instance.send_SMuFF_and_wait(instance.pendingTool + (smuff_core.AUTOLOAD if autoload else ""))
+							res = instance.send_SMuFF_and_wait(str(instance.pendingTool) + (smuff_core.AUTOLOAD if autoload else ""))
 							# do we have the tool requested now?
 							if str(res) == str(instance.pendingTool):
 								instance.set_tool()
-								comm_instance._currentTool = instance.parse_tool_number(instance.curTool)
+								comm_instance._currentTool = instance.parse_tool_number(self._octoprintTool)
 								# check if filament has been loaded
 								if instance.loadState == 2 or instance.loadState == 3:
 									self._log.debug("2>> calling script 'afterToolChange'")
@@ -549,8 +562,11 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 		# Refresh the current tool in OctoPrint on each command coming from the printer - just in case
 		# This is needed because OctoPrint manages the current tool itself and it might try to swap
 		# tools because of the wrong information.
-		comm_instance._currentTool = self.SCA.parse_tool_number(self.SCA.curTool)
-		# don't process any of the GCodes received
+		if self._octoprintTool == -1:
+			comm_instance._currentTool = self.SCA.parse_tool_number(self.SCA.curTool)
+		else:
+			comm_instance._currentTool = self.SCA.parse_tool_number(self._octoprintTool)
+		# don't process any of the GCodes received further
 		return line
 
 	#

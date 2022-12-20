@@ -160,8 +160,8 @@ $(function() {
                 self._isJammedB = message.jammedB;
                 $('#SMuFF2_navbar_item').removeClass('navbar-item-conn navbar-item-disc navbar-item-jammed');
                 $('#SMuFF2_navbar_item').addClass(self._isJammedB ? 'navbar-item-jammed' :'navbar-item-conn');
-                $('#smuff2-btn-unjam').removeClass('btn-danger btn-primary');
-                $('#smuff2-btn-unjam').addClass(self._isJammedB ? 'btn-danger' :'btn-primary');
+                $('#smuff-btn-unjam').removeClass('btn-danger btn-primary');
+                $('#smuff-btn-unjam').addClass(self._isJammedB ? 'btn-danger' :'btn-primary');
             }
             if(message.terminal != null) {
                 // console.log(" output: " + message.terminal);
