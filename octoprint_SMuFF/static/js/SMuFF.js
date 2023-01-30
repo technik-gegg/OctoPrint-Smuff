@@ -25,10 +25,10 @@ $(function() {
 
         self.send_pgcode = function(gcode) {
             // console.log('Sending SMuFF pseudo GCode: ' + gcode);
-            if($('#SMuFF-InstanceA').is(':checked'))
-                OctoPrint.control.sendGcode("@SMuFF " + gcode);
-            else
+            if($('#SMuFF-InstanceB').is(':checked'))
                 OctoPrint.control.sendGcode("@SMuFF2 " + gcode);
+            else
+                OctoPrint.control.sendGcode("@SMuFF " + gcode);
         };
 
         self.get_status = function() {
