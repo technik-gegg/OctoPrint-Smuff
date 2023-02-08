@@ -414,6 +414,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			if action and action == RESETAVG:
 				# reset tool change counters / average
 				instance.reset_avg()
+				self._setResponse(smuff_core.T_RESETAVG, False, instance)
 				return
 
 	def extend_tool_sending(self, comm_instance, phase, cmd, cmd_type, gcode, subcode, tags, *args, **kwargs):
@@ -440,7 +441,6 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			if action and action.startswith(smuff_core.TOOL):
 				try:
 					if self._printer.set_job_on_hold(True, False):
-						instance.start_tc_timer()
 						try:
 							# determine if the current tool is to be incremented or decremented
 							# in order to achieve an automatic tool swap on filament runout
@@ -507,10 +507,17 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			if action and action == LOAD:
 				try:
 					continuePrint = False
+					instance.start_tc_timer()
+
 					with self._printer.job_on_hold():
 						try:
 							self._log.debug("1>> LOAD{3}: Feeder:  {0}, Pending: {1}, Current: {2}".format(str(instance.feeder), str(instance.pendingTool), str(instance.curTool), " [A]" if instance == self.SCA else " [B]"))
 
+							# no tool change needed if pending tool is -1
+							if instance.pendingTool == -1 or (str(instance.pendingTool) == str(instance.curTool) and instance.feeder):
+								self._log.debug("Tool already set, skipping tool change request...")
+								continuePrint = True
+								return
 							autoload = self._settings.get_boolean(["autoload"])
 							# send a tool change command to SMuFF
 							res = instance.send_SMuFF_and_wait(str(instance.pendingTool) + (smuff_core.AUTOLOAD if autoload else ""))

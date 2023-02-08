@@ -90,6 +90,7 @@ T_RESET 			= "SMuFF has been reset"
 T_RELOADING 		= "Loading filament again..."
 T_UNLOADING 		= "Unloading filament..."
 T_NOT_READY 		= "Busy with other async task, aborting!"
+T_RESETAVG 			= "Tool change statistics have been reset."
 T_STATE_INFO_NC		= """SMuFF Status:
 Connected:\t{0}
 Port:\t\t{1}"""
@@ -116,7 +117,7 @@ FW-Mode:\t{16}
 FW-Options:\t{17}
 ------------------------
 Tool changes:\t{18}
-Average duration:\t{19} s\n"""
+Average duration:\t{19:4.2f} secs.\n"""
 
 # Help texts for commands
 T_HELP_CONN 		= "Connect to the SMuFF."

@@ -77,6 +77,10 @@ He has a really nice collection of models for multi material 3D printing. If you
 
 ## Recent Changes
 
+**V1.2.2** - bug fixes
+
+- fixed a couple of minor bugs, introduced by the new IDEX feature when plugin is operating in "Single mode" (when option "2nd SMuFF" isn't ticked).
+
 **V1.2.1** - Added pseudo commands *@SMuFF T++* / *@SMuFF T--* handling
 
 - extended the tool change pseudo GCode to handle **T++** / **T--** instructions, which will automatically increment or decrement the current tool number in order to achieve an automatic tool change, whenever a filament runout has been detected (for continous printing).
