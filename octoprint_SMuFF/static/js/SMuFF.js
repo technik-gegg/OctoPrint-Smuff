@@ -66,6 +66,11 @@ $(function() {
             self.send_pgcode("MOTORS");
         };
 
+        self.do_clear = function() {
+            // console.log(" clear_output clicked: ");
+            $('#SMuFF-output').empty();
+        };
+
         self.do_unjam = function() {
             // console.log(" do_unjam clicked: ");
             self.send_pgcode("UNJAM");
@@ -79,6 +84,11 @@ $(function() {
         self.do_reset = function() {
             // console.log(" do_reset clicked: ");
             self.send_pgcode("RESET");
+        };
+
+        self.do_resume = function() {
+            // console.log(" do_resume clicked: ");
+            self.send_pgcode("FORCERESUME");
         };
 
         self.onDataUpdaterPluginMessage = function(plugin, message) {

@@ -17,16 +17,16 @@ VERSION_NUMBER 	= 1.13 					# Module version number (for scripting)
 VERSION_DATE 	= "2022/06/22"
 VERSION_STRING	= "SMuFF Module V{0} ({1})" # Module version string
 
-FWINFO			= "M115"        		# SMuFF GCode to query firmware info
-PERSTATE    	= "M155"     			# SMuFF GCode for enabling sending periodical states
-OPT_ON 			= " S1" 				# SMuFF GCode option for turning features on
+FWINFO			= "M115"				# SMuFF GCode to query firmware info
+PERSTATE    	= "M155"				# SMuFF GCode for enabling sending periodical states
+OPT_ON 			= " S1"					# SMuFF GCode option for turning features on
 OPT_OFF			= " S0"					# SMuFF GCode option for turning features off
-WIPE			= "G12"         		# SMuFF GCode to wipe nozzle
-CUT				= "G12 C"        		# SMuFF GCode to cut filament
-SETSERVO		= "M280 P{0} S{1}" 		# SMuFF GCode to position a servo
-LIDOPEN			= "M280 R0"     		# SMuFF GCode to open Lid servo
-LIDCLOSE		= "M280 R1"     		# SMuFF GCode to close lid servo
-TOOL			= "T"           		# SMuFF GCode to swap tools
+WIPE			= "G12"					# SMuFF GCode to wipe nozzle
+CUT				= "G12 C"				# SMuFF GCode to cut filament
+SETSERVO		= "M280 P{0} S{1}"		# SMuFF GCode to position a servo
+LIDOPEN			= "M280 R0"				# SMuFF GCode to open Lid servo
+LIDCLOSE		= "M280 R1"				# SMuFF GCode to close lid servo
+TOOL			= "T"					# SMuFF GCode to swap tools
 HOME 			= "G28"					# SMuFF GCode for homing
 GETCONFIG 		= "M503 S{0}W"			# SMuFF Gcode to query configuration settings (in JSON format)
 SETPARAM 		= "M205 P\"{0}\"S{1}"	# SMuFF GCode for setting config params
@@ -35,10 +35,11 @@ UNLOADFIL		= "M701"				# SMuFF GCode to unload active tool
 MOTORSOFF		= "M18"					# SMuFF GCode to turn stepper motors off
 UNJAM 			= "M562"				# SMuFF GCode to reset the Feeder jammed flag
 RESET 			= "M999"				# SMuFF GCode to reset the device
-AUTOLOAD		= " S1"          		# additional parameter for auto load after tool swap
+AUTOLOAD		= " S1"					# additional parameter for auto load after tool swap
 FAN_ON 			= "M106 S100"			# SMuFF GCode to turn on housing fan (100%)
 FAN_OFF 		= "M107"				# SMuFF GCode to turn off housing fan
 ANY 			= "ANY"
+EXTRUDE			= "G1 E{0} F{1}"		# Gcode for extrusion (used along with purging)
 
 # Texts used in console response
 T_OK 				= "Ok."
@@ -117,7 +118,10 @@ FW-Mode:\t{16}
 FW-Options:\t{17}
 ------------------------
 Tool changes:\t{18}
-Average duration:\t{19:4.2f} secs.\n"""
+Avg. duration:\t{19:4.2f} secs.\n"""
+T_SET_PURGE 	= "Purge {0} mm after tool change has been set"
+T_RESET_PURGE 	= "Purge has been reset"
+T_PURGING 		= "Purging {0} mm with speed {1} mm/s"
 
 # Help texts for commands
 T_HELP_CONN 		= "Connect to the SMuFF."
@@ -491,8 +495,15 @@ class SmuffCore():
 					b = self._serial.in_waiting
 					if b > 0:
 						try:
-							data = self._serial.readline().decode("ascii")	# read to EOL
-							self._parse_serial_data(data)
+							ln = self._serial.readline() 	# read to EOL
+							if ln:
+								data = ln.decode("ascii", errors='ignore')
+								if data: 					# don't parse empty strings
+									self._parse_serial_data(data)
+								else:
+									self._log.error("No valid data received: [{0}]".format(data))
+							else:
+								self._log.error("Empty line received: [{0}]".format(ln))
 						except UnicodeDecodeError as err:
 							self._log.error("Serial reader has thrown an exception:\n\t{0}\n\tData: [{1}]".format(err, data))
 							self._serial.reset_input_buffer()
@@ -673,7 +684,10 @@ class SmuffCore():
 
 				self._response = None
 			else:
-				self._log.info("Timed out while waiting for a response on cmd '{0}'. Try increasing the {1} timeout (={2} sec.).".format(data, tmName, timeout))
+				resp = "*** Timed out *** while waiting for a response on cmd '{0}'. Try increasing the {1} timeout (={2} sec.).".format(data, tmName, timeout)
+				if not self._responseCB == None:
+					self._responseCB(resp)
+				self._log.info(resp)
 				if self.isBusy == False:
 					done = True
 					self._set_processing(False)

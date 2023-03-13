@@ -18,13 +18,21 @@
         <button class="btn btn-primary span3" data-bind="click: do_cut"         id="smuff-btn-cut"         title="Cut Filament">Cut</button>
     </div>
     <div class="smuff-buttons">
-        <button class="btn btn-primary span4" data-bind="click: do_lid_open"    id="smuff-btn-open"        title="Open Lid Servo">Lid Open</button>
-        <button class="btn btn-primary span4" data-bind="click: do_lid_close"   id="smuff-btn-close"       title="Close Lid Servo">Lid Close</button>
-        <button class="btn btn-primary span4" data-bind="click: do_motors_off"  id="smuff-btn-motors"      title="Turn Stepper Motors off">Motors Off</button>
+        <button class="btn btn-primary   span3" data-bind="click: do_lid_open"    id="smuff-btn-open"      title="Open Lid Servo">Lid Open</button>
+        <button class="btn btn-primary   span3" data-bind="click: do_lid_close"   id="smuff-btn-close"     title="Close Lid Servo">Lid Close</button>
+        <button class="btn btn-primary   span3" data-bind="click: do_motors_off"  id="smuff-btn-motors"    title="Turn Stepper Motors off">Motors Off</button>
+        <button class="btn btn-secondary span3" data-bind="click: do_clear"       id="smuff-btn-clear"     title="Clear Output Messages">Clear Output</button>
     </div>
     <div class="smuff-buttons">
-        <button class="btn span4" data-bind="click: do_unjam, css: {'btn-danger': isJammed == true, 'btn-primary': isJammed == false } " id="smuff-btn-unjam"       title="Reset Jam Flag">Reset Jam</button>
-        <button class="btn btn-primary span4" data-bind="click: do_reset_stats" id="smuff-btn-resetstats"  title="Reset Tool Change Stats">Reset Stats</button>
-        <button class="btn btn-warning span4" data-bind="click: do_reset"       id="smuff-btn-reset"       title="Reset SMuFF">Reset</button>
+        <button class="btn span3" data-bind="click: do_unjam, css: {'btn-danger': _isJammed == true, 'btn-primary': _isJammed == false } " id="smuff-btn-unjam"       title="Reset Jam Flag">Reset Jam</button>
+        <button class="btn btn-primary span3" data-bind="click: do_reset_stats" id="smuff-btn-resetstats"  title="Reset Tool Change Stats">Reset Stats</button>
+        <button class="btn btn-warning span3" data-bind="click: do_reset"       id="smuff-btn-reset"       title="Reset SMuFF">Reset SMuFF</button>
+        <button class="btn btn-danger span3" data-bind="click:  do_resume"      id="smuff-btn-forceresume" title="Force Resume Printing">Force Resume</button>
+    </div>
+    <div class="smuff-buttons">
+    </div>
+    <div>
+        <b>Hint:</b> "Force Resume" will not work if the printer is not in "paused" state!
+        Use this button <b>only</b> to resume a print after a Jam has occured on the SMuFF and has already been cleared.
     </div>
 </div>
