@@ -23,6 +23,7 @@ from . import smuff_core
 
 import octoprint.plugin
 import logging
+import re
 
 LOGGER			= "octoprint.plugins.SMuFF"
 DEFAULT_BAUD	= 115200
@@ -485,7 +486,7 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 			# @SMuFF FORCERESUME
 			if action and action == FORCERESUME:
 				if self._printer.is_pausing():
-					self._log.debug("SMuFF load-state: {0}").format(instance.loadState)
+					self._log.debug("SMuFF load-state: {0}".format(instance.loadState))
 					instance.stop_tc_timer()
 					# send the default OctoPrint "After Tool Change" script to the printer
 					self._printer.script("afterToolChange")
@@ -580,6 +581,10 @@ class SmuffPlugin(octoprint.plugin.SettingsPlugin,
 							autoload = self._settings.get_boolean(["autoload"])
 							# send a tool change command to SMuFF
 							res = instance.send_SMuFF_and_wait(str(instance.pendingTool) + (smuff_core.AUTOLOAD if autoload else ""))
+							# make sure there's no garbage in the received string - filter for 'Tx' only, ignore the rest
+							match = re.search(r'^T\d+', res)
+							if match != None:
+								res = match[0]
 							# do we have the tool requested now?
 							if str(res) == str(instance.pendingTool):
 								instance.set_tool()

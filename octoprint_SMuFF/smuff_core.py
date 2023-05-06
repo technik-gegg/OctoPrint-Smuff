@@ -944,7 +944,17 @@ class SmuffCore():
 			# don't process any general debug messages
 			index = len(R_ECHO)+1
 			if data[index:].startswith(R_DEBUG):
-				self._log.debug("SMuFF has sent a debug response: [{0}]".format(data.rstrip()))
+				err = "SMuFF has sent a debug response: [{0}]".format(data.rstrip())
+				self._log.debug(err)
+				# filter out ESC sequences
+				match = re.sub(r'\033\[\d+m', '', err)
+				if match != None:
+					err = match
+				if self._isKlipper:
+					self.gcode.respond_info(err)
+				else:
+					if not self._responseCB == None:
+						self._responseCB(err)
 			# but do process the tool/endstop states
 			elif data[index:].startswith(R_STATES):
 				self._parse_states(data.rstrip())
